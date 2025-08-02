@@ -408,6 +408,8 @@ displayComponentName(data) {
 - `UI_IMPROVEMENT_GUIDE.md` - **Shoelace component library guide**
 - `MISSING_FEATURES.md` - All features to implement
 - `ROADMAP.md` - Sprint planning and priorities
+- **Original Project**: `/Users/edeclan/FantasyFootballTest/SleeperLiveDraftRankings`
+- **Current Project**: `/Users/edeclan/FantasyFootballTest/SleeperLiveDraftRankingsV2`
 - `src/frontend/app.js` - Frontend patterns
 - `src/frontend/index_enhanced.html` - **Enhanced HTML with Shoelace**
 - `src/frontend/style_enhanced.css` - **Enhanced CSS with theming**

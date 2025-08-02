@@ -12,9 +12,11 @@ This comprehensive guide provides instructions for AI assistants to correctly it
 - **Progress**: 22/100 features completed (22%)
 
 ### **Original System Reference**
-- **Location**: Files in `src/backend/rankings/` show original structure
+- **Location**: `/Users/edeclan/FantasyFootballTest/SleeperLiveDraftRankings` (original project)
+- **Current Project**: `/Users/edeclan/FantasyFootballTest/SleeperLiveDraftRankingsV2` (V2 rewrite)
 - **Key Files**: `PlayerRankings.py`, `BestAvailable.py`, `RankingsUtil.py`, `Constants.py`
 - **Functionality**: Command-line tool with CSV rankings and Sleeper API
+- **Reference for Features**: Always check original project for existing implementations before creating new ones
 
 ## 🐛 Bug Reports and Feature Suggestions
 

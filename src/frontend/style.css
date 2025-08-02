@@ -197,6 +197,21 @@ body {
     flex-direction: column;
 }
 
+/* Draft Controls */
+.draft-controls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.draft-controls-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
 .controls-card {
     --sl-panel-background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);

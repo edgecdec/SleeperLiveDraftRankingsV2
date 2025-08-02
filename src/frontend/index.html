@@ -116,8 +116,13 @@
                     <!-- Sidebar -->
                     <aside class="draft-sidebar">
                         <sl-card class="controls-card">
-                            <div slot="header">
+                            <!-- Draft Controls Header -->
+                            <div slot="header" class="draft-controls-header">
                                 <h3>Draft Controls</h3>
+                                <sl-button id="manual-refresh-btn" variant="neutral" size="small">
+                                    <sl-icon slot="prefix" name="refresh-cw"></sl-icon>
+                                    Refresh
+                                </sl-button>
                             </div>
                             
                             <!-- League Info -->

@@ -25,7 +25,8 @@ This document tracks features from the original Fantasy Football Draft Assistant
 - [ ] **Draft Grades** - Post-draft team analysis and grading
 
 ### 🔄 Real-Time Features
-- [ ] **Auto-Refresh Draft** - Automatic updates when new picks are made
+
+- [x] **Auto-Refresh Draft Picks** - [Description needed]- [ ] **Auto-Refresh Draft** - Automatic updates when new picks are made
 - [ ] **Live Draft Notifications** - Browser notifications for draft events
 - [ ] **Turn Indicators** - Show whose turn it is to pick
 - [ ] **Pick Timer** - Show remaining time for current pick
@@ -183,7 +184,7 @@ This document tracks features from the original Fantasy Football Draft Assistant
 
 ## 📊 Progress Tracking
 
-**Overall Progress**: 23/102 features completed (22.5%)
+**Overall Progress**: 24/102 features completed (23.5%)
 
 ### By Category:
 - **Core Draft Functionality**: 7/15 (46.7%) ✅

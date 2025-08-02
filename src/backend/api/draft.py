@@ -7,7 +7,8 @@ This module handles draft-related API endpoints including:
 - Available players calculation
 """
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
+import time
 from ..services.sleeper_api import SleeperAPI, SleeperAPIError
 
 draft_bp = Blueprint('draft', __name__)
@@ -235,5 +236,123 @@ def get_league_info(league_id):
     except Exception as e:
         return jsonify({
             'error': 'Internal server error',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+
+@draft_bp.route('/draft/<draft_id>/updates')
+def get_draft_updates(draft_id):
+    """
+    Get latest draft updates with timestamp for auto-refresh functionality
+    
+    Args:
+        draft_id: Sleeper draft ID
+    
+    Returns:
+        JSON response with draft updates and timestamp
+    """
+    try:
+        # Get current picks with timestamps
+        picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        
+        # Get last update timestamp (most recent pick time)
+        last_update = 0
+        if picks:
+            pick_times = [pick.get('picked_at', 0) for pick in picks if pick.get('picked_at')]
+            if pick_times:
+                last_update = max(pick_times)
+        
+        # Get draft info for additional context
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        
+        return jsonify({
+            'draft_id': draft_id,
+            'picks': picks,
+            'last_update': last_update,
+            'total_picks': len(picks),
+            'draft_status': draft_info.get('status', 'unknown') if draft_info else 'unknown',
+            'current_pick': draft_info.get('draft_order', {}).get('current_pick', 0) if draft_info else 0,
+            'status': 'success',
+            'timestamp': int(time.time())
+        })
+        
+    except SleeperAPIError as e:
+        return jsonify({
+            'error': f'Sleeper API error: {str(e)}',
+            'code': 'SLEEPER_API_ERROR'
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+
+@draft_bp.route('/draft/<draft_id>/refresh', methods=['POST'])
+def refresh_draft_data(draft_id):
+    """
+    Force refresh draft data and return updated information
+    
+    Args:
+        draft_id: Sleeper draft ID
+    
+    Returns:
+        JSON response with refreshed draft data
+    """
+    try:
+        # Get fresh draft data
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        if not draft_info:
+            return jsonify({
+                'error': 'Draft not found',
+                'code': 'DRAFT_NOT_FOUND'
+            }), 404
+        
+        # Get league info
+        league_id = draft_info.get('league_id')
+        league_info = SleeperAPI.get_league_info(league_id) if league_id else None
+        
+        # Get fresh picks
+        picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        
+        # Get available players with current draft state
+        rankings_manager = get_rankings_manager()
+        league_format = determine_league_format(league_info) if league_info else 'standard_standard'
+        
+        # Get unavailable players (drafted + rostered for dynasty)
+        unavailable_players, is_dynasty_league = SleeperAPI.get_all_unavailable_players(draft_id, league_id)
+        
+        # Get available players
+        available_players = rankings_manager.get_available_players(
+            drafted_players=unavailable_players,
+            league_format=league_format,
+            limit=50
+        )
+        
+        return jsonify({
+            'draft_id': draft_id,
+            'league_id': league_id,
+            'draft_info': draft_info,
+            'league_info': league_info,
+            'league_format': {
+                'format_string': league_format,
+                'is_dynasty': is_dynasty_league
+            },
+            'picks': picks,
+            'available_players': available_players,
+            'total_unavailable': len(unavailable_players),
+            'is_dynasty_league': is_dynasty_league,
+            'status': 'success',
+            'last_updated': int(time.time())
+        })
+        
+    except SleeperAPIError as e:
+        return jsonify({
+            'error': f'Sleeper API error: {str(e)}',
+            'code': 'SLEEPER_API_ERROR'
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
             'code': 'INTERNAL_ERROR'
         }), 500

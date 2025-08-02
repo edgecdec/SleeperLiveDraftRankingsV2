@@ -18,7 +18,9 @@ class EnhancedDraftAssistantApp {
             selectedLeague: null,
             selectedDraft: null,
             autoRefreshEnabled: false,
-            autoRefreshInterval: null
+            autoRefreshInterval: null,
+            lastUpdate: 0,
+            draftUpdates: null
         };
         
         // DOM elements
@@ -201,6 +203,16 @@ class EnhancedDraftAssistantApp {
             console.log('✅ Setting up auto-refresh-toggle listener');
             autoRefreshToggle.addEventListener('sl-change', (event) => {
                 this.handleAutoRefreshToggle(event.target.checked);
+            });
+        }
+        
+        // Manual refresh button
+        const manualRefreshBtn = document.getElementById('manual-refresh-btn');
+        if (manualRefreshBtn) {
+            console.log('✅ Setting up manual-refresh-btn listener');
+            manualRefreshBtn.addEventListener('click', () => {
+                console.log('🔄 Manual refresh clicked');
+                this.handleManualRefresh();
             });
         }
         
@@ -469,9 +481,89 @@ class EnhancedDraftAssistantApp {
     }
     
     /**
+     * Handle manual refresh button click
+     */
+    async handleManualRefresh() {
+        if (!this.state.selectedDraft?.draft_id) {
+            this.showNotification('No draft selected for refresh', 'warning');
+            return;
+        }
+        
+        try {
+            this.showLoading('Refreshing draft data...');
+            
+            // Use the refresh endpoint for manual refresh
+            const refreshedData = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/refresh`, {
+                method: 'POST'
+            });
+            
+            // Update the display with refreshed data
+            this.updateDraftInfo(refreshedData);
+            this.displayAvailablePlayers(refreshedData.available_players, refreshedData.is_dynasty_league);
+            
+            // Update best available if we have that data
+            if (refreshedData.best_available) {
+                this.displayBestAvailable(refreshedData.best_available);
+            }
+            
+            // Update stats
+            this.updateDraftStats(refreshedData);
+            
+            // Update last update timestamp
+            this.state.lastUpdate = refreshedData.last_updated || Date.now() / 1000;
+            
+            this.showNotification('Draft data refreshed successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Manual refresh failed:', error);
+            this.showNotification('Failed to refresh draft data: ' + error.message, 'danger');
+    /**
      * Load draft data
      */
     async loadDraftData() {
+        if (!this.state.selectedDraft?.draft_id) return;
+        
+        try {
+            // Show loading states
+            this.showLoadingState('available-players-loading', true);
+            this.showLoadingState('best-available-loading', true);
+            
+            // Load draft info
+            const draftInfo = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}`);
+            this.updateDraftInfo(draftInfo);
+            
+            // Load available players
+            const availableData = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/available-players?limit=50`);
+            this.displayAvailablePlayers(availableData.available_players, availableData.is_dynasty_league);
+            
+            // Load best available
+            const bestData = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/best-available?count=5`);
+            this.displayBestAvailable(bestData.best_available);
+            
+            // Update stats
+            this.updateDraftStats(availableData);
+            
+            // Initialize auto-refresh state if not already set
+            if (this.state.lastUpdate === 0) {
+                // Get initial draft updates to set baseline
+                try {
+                    const updates = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/updates`);
+                    this.state.lastUpdate = updates.last_update;
+                    this.state.draftUpdates = updates;
+                    console.log('📊 Initialized auto-refresh baseline:', updates);
+                } catch (error) {
+                    console.warn('Could not initialize auto-refresh baseline:', error);
+                    this.state.lastUpdate = Date.now() / 1000;
+                }
+            }
+            
+        } catch (error) {
+            this.showNotification('Failed to load draft data: ' + error.message, 'danger');
+        } finally {
+            this.showLoadingState('available-players-loading', false);
+            this.showLoadingState('best-available-loading', false);
+        }
+    }
         if (!this.state.selectedDraft?.draft_id) return;
         
         try {
@@ -699,18 +791,54 @@ class EnhancedDraftAssistantApp {
     }
     
     /**
-     * Start auto-refresh
+     * Start auto-refresh with draft updates checking
      */
     startAutoRefresh() {
         if (this.state.autoRefreshInterval) {
             clearInterval(this.state.autoRefreshInterval);
         }
         
-        this.state.autoRefreshInterval = setInterval(() => {
-            if (this.state.selectedDraft && this.state.currentSection === 'draft') {
-                this.loadDraftData();
+        console.log('🔄 Starting auto-refresh for draft updates...');
+        
+        this.state.autoRefreshInterval = setInterval(async () => {
+            if (!this.state.selectedDraft?.draft_id || this.state.currentSection !== 'draft') {
+                return;
             }
-        }, 30000); // Refresh every 30 seconds
+            
+            try {
+                // Check for draft updates first
+                const updates = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/updates`);
+                
+                // Compare with last known update
+                if (updates.last_update > this.state.lastUpdate) {
+                    console.log('🔥 New draft picks detected, refreshing data...');
+                    
+                    // Show notification about new picks
+                    const newPicks = updates.total_picks - (this.state.draftUpdates?.total_picks || 0);
+                    if (newPicks > 0) {
+                        this.showNotification(
+                            `${newPicks} new pick${newPicks > 1 ? 's' : ''} detected! Refreshing draft data...`,
+                            'primary',
+                            3000
+                        );
+                    }
+                    
+                    // Update state
+                    this.state.lastUpdate = updates.last_update;
+                    this.state.draftUpdates = updates;
+                    
+                    // Refresh the full draft data
+                    await this.loadDraftData();
+                } else {
+                    console.log('📊 No new draft updates detected');
+                }
+                
+            } catch (error) {
+                console.error('❌ Auto-refresh failed:', error);
+                // Don't show error notifications for auto-refresh failures
+                // to avoid spamming the user
+            }
+        }, 30000); // Check every 30 seconds
     }
     
     /**
