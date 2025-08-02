@@ -36,12 +36,12 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -88,7 +88,7 @@ jobs:
       shell: bash
 
     - name: Upload executable as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: FantasyFootballDraftAssistant-${{ matrix.artifact_name }}
         path: |
@@ -113,13 +113,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: ./artifacts
 
@@ -134,12 +136,12 @@ jobs:
 
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: build-${{ steps.date.outputs.date }}
-        release_name: Automated Build ${{ steps.date.outputs.date }}
+        name: Automated Build ${{ steps.date.outputs.date }}
         body: |
           🚀 **Automated Multi-Platform Build**
           
@@ -171,36 +173,10 @@ jobs:
           **Build Date**: ${{ steps.date.outputs.date }}
         draft: false
         prerelease: false
-
-    - name: Upload Windows Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/FantasyFootballDraftAssistant-windows-x64/FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe
-        asset_name: FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe
-        asset_content_type: application/octet-stream
-
-    - name: Upload macOS Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/FantasyFootballDraftAssistant-darwin-x64/FantasyFootballDraftAssistant-v2.0.0-darwin-x64
-        asset_name: FantasyFootballDraftAssistant-v2.0.0-darwin-x64
-        asset_content_type: application/octet-stream
-
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/FantasyFootballDraftAssistant-linux-x64/FantasyFootballDraftAssistant-v2.0.0-linux-x64
-        asset_name: FantasyFootballDraftAssistant-v2.0.0-linux-x64
-        asset_content_type: application/octet-stream
+        files: |
+          ./artifacts/FantasyFootballDraftAssistant-windows-x64/FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe
+          ./artifacts/FantasyFootballDraftAssistant-darwin-x64/FantasyFootballDraftAssistant-v2.0.0-darwin-x64
+          ./artifacts/FantasyFootballDraftAssistant-linux-x64/FantasyFootballDraftAssistant-v2.0.0-linux-x64
 
   notify-completion:
     name: Notify Build Completion
