@@ -1160,34 +1160,73 @@ class EnhancedDraftAssistantApp {
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎯 DOM Content Loaded - Initializing app...');
+    console.log('🔍 Checking for Shoelace components...');
+    
+    // Check if Shoelace is loaded
+    if (typeof customElements !== 'undefined') {
+        console.log('✅ Custom Elements API available');
+        
+        // Check specific Shoelace components
+        setTimeout(() => {
+            console.log('🔍 Checking Shoelace component definitions...');
+            console.log('sl-button defined:', customElements.get('sl-button') !== undefined);
+            console.log('sl-card defined:', customElements.get('sl-card') !== undefined);
+            console.log('sl-icon defined:', customElements.get('sl-icon') !== undefined);
+        }, 1000);
+    } else {
+        console.error('❌ Custom Elements API not available');
+    }
     
     // Add immediate debug event listeners to test button functionality
     const getStartedBtn = document.getElementById('get-started-btn');
     const testConnectionBtn = document.getElementById('test-connection-btn');
     
+    console.log('🔍 Button elements found:');
+    console.log('get-started-btn:', getStartedBtn);
+    console.log('test-connection-btn:', testConnectionBtn);
+    
     if (getStartedBtn) {
         console.log('✅ Found get-started-btn, adding click listener');
-        getStartedBtn.addEventListener('click', () => {
-            console.log('🔥 Get Started button clicked!');
+        
+        // Add multiple event listeners to test
+        getStartedBtn.addEventListener('click', (e) => {
+            console.log('🔥 Get Started button clicked! Event:', e);
             alert('Get Started button works! (Debug mode)');
         });
+        
+        // Also try with mousedown for immediate feedback
+        getStartedBtn.addEventListener('mousedown', () => {
+            console.log('🖱️ Get Started button mousedown detected');
+        });
+        
     } else {
         console.error('❌ get-started-btn not found');
     }
     
     if (testConnectionBtn) {
         console.log('✅ Found test-connection-btn, adding click listener');
-        testConnectionBtn.addEventListener('click', () => {
-            console.log('🔥 Test Connection button clicked!');
+        
+        testConnectionBtn.addEventListener('click', (e) => {
+            console.log('🔥 Test Connection button clicked! Event:', e);
             alert('Test Connection button works! (Debug mode)');
         });
+        
+        testConnectionBtn.addEventListener('mousedown', () => {
+            console.log('🖱️ Test Connection button mousedown detected');
+        });
+        
     } else {
         console.error('❌ test-connection-btn not found');
     }
     
-    // Initialize the main app
-    window.draftApp = new EnhancedDraftAssistantApp();
+    // Wait for Shoelace to load, then initialize the main app
+    setTimeout(() => {
+        console.log('🚀 Initializing main app after Shoelace load delay...');
+        try {
+            window.draftApp = new EnhancedDraftAssistantApp();
+            console.log('✅ Main app initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize main app:', error);
+        }
+    }, 2000);
 });
-
-// Export for potential module usage
-export default EnhancedDraftAssistantApp;
