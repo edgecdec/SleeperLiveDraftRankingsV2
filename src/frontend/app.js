@@ -1,14 +1,11 @@
 /**
- * Fantasy Football Draft Assistant V2 - Main Application
+ * Fantasy Football Draft Assistant V2 - Enhanced Application with Shoelace
  * 
- * This is the main JavaScript application that handles:
- * - API communication
- * - UI state management
- * - User interactions
- * - Navigation between sections
+ * This enhanced version uses Shoelace web components for a modern UI experience
+ * while maintaining the same functionality as the original application.
  */
 
-class DraftAssistantApp {
+class EnhancedDraftAssistantApp {
     constructor() {
         this.apiBase = '/api';
         this.state = {
@@ -19,892 +16,252 @@ class DraftAssistantApp {
             currentUser: null,
             userLeagues: [],
             selectedLeague: null,
-            selectedDraft: null
+            selectedDraft: null,
+            autoRefreshEnabled: false,
+            autoRefreshInterval: null
         };
         
         // DOM elements
         this.elements = {
             statusIndicator: document.getElementById('status-indicator'),
-            statusDot: document.querySelector('.status-dot'),
-            statusText: document.querySelector('.status-text'),
             welcomeSection: document.getElementById('welcome-section'),
+            userSetupSection: document.getElementById('user-setup-section'),
             draftSection: document.getElementById('draft-section'),
             loadingOverlay: document.getElementById('loading-overlay'),
             loadingText: document.getElementById('loading-text'),
-            versionInfo: document.getElementById('version-info')
+            loadingProgress: document.getElementById('loading-progress'),
+            versionInfo: document.getElementById('version-info'),
+            notificationContainer: document.getElementById('notification-container')
         };
         
-        // Buttons
-        this.buttons = {
-            getStarted: document.getElementById('get-started-btn'),
-            testConnection: document.getElementById('test-connection-btn'),
-            backToWelcome: document.getElementById('back-to-welcome-btn'),
-            apiInfo: document.getElementById('api-info-link')
-        };
+        // Initialize when Shoelace is ready
+        this.initializeWhenReady();
+    }
+    
+    /**
+     * Wait for Shoelace components to be ready, then initialize
+     */
+    async initializeWhenReady() {
+        try {
+            // Wait for key Shoelace components to be defined
+            await customElements.whenDefined('sl-button');
+            await customElements.whenDefined('sl-card');
+            await customElements.whenDefined('sl-input');
+            await customElements.whenDefined('sl-badge');
+            
+            console.log('🎨 Shoelace components loaded successfully');
+            this.setupEventListeners();
+            this.init();
+        } catch (error) {
+            console.error('❌ Error loading Shoelace components:', error);
+            this.showNotification('Failed to load UI components', 'danger');
+        }
     }
     
     /**
      * Initialize the application
      */
     async init() {
-        console.log('🚀 Initializing Fantasy Football Draft Assistant V2');
+        console.log('🚀 Initializing Enhanced Fantasy Football Draft Assistant V2');
         
-        this.setupEventListeners();
-        await this.checkConnection();
-        
-        console.log('✅ Application initialized successfully');
+        try {
+            // Test API connection
+            await this.testConnection();
+            this.updateConnectionStatus(true);
+            
+            // Load version info
+            await this.loadVersionInfo();
+            
+            console.log('✅ Application initialized successfully');
+        } catch (error) {
+            console.error('❌ Initialization failed:', error);
+            this.updateConnectionStatus(false);
+            this.showNotification('Failed to connect to API', 'danger');
+        }
     }
     
     /**
-     * Set up event listeners for UI interactions
+     * Set up event listeners for Shoelace components
      */
     setupEventListeners() {
         // Button event listeners
-        this.buttons.getStarted?.addEventListener('click', () => {
-            this.showUserSetup();
+        document.getElementById('get-started-btn')?.addEventListener('click', () => {
+            this.showSection('user-setup');
         });
         
-        this.buttons.testConnection?.addEventListener('click', () => {
-            this.testConnection();
+        document.getElementById('test-connection-btn')?.addEventListener('click', () => {
+            this.handleTestConnection();
         });
         
-        this.buttons.backToWelcome?.addEventListener('click', () => {
+        document.getElementById('back-to-welcome-btn')?.addEventListener('click', () => {
             this.showSection('welcome');
         });
         
-        this.buttons.apiInfo?.addEventListener('click', (e) => {
-            e.preventDefault();
+        document.getElementById('load-user-btn')?.addEventListener('click', () => {
+            this.handleLoadUser();
+        });
+        
+        // Input event listeners
+        const usernameInput = document.getElementById('username-input');
+        if (usernameInput) {
+            usernameInput.addEventListener('sl-input', (event) => {
+                const loadButton = document.getElementById('load-user-btn');
+                if (loadButton) {
+                    loadButton.disabled = !event.target.value.trim();
+                }
+            });
+            
+            usernameInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && event.target.value.trim()) {
+                    this.handleLoadUser();
+                }
+            });
+        }
+        
+        // Filter event listeners
+        document.getElementById('position-filter')?.addEventListener('sl-change', (event) => {
+            this.handlePositionFilter(event.target.value);
+        });
+        
+        document.getElementById('player-search')?.addEventListener('sl-input', (event) => {
+            this.handlePlayerSearch(event.target.value);
+        });
+        
+        // Auto-refresh toggle
+        document.getElementById('auto-refresh-toggle')?.addEventListener('sl-change', (event) => {
+            this.handleAutoRefreshToggle(event.target.checked);
+        });
+        
+        // Tab change listeners
+        const tabGroup = document.querySelector('sl-tab-group');
+        if (tabGroup) {
+            tabGroup.addEventListener('sl-tab-show', (event) => {
+                this.handleTabChange(event.detail.name);
+            });
+        }
+        
+        // Modal event listeners
+        document.getElementById('close-player-details')?.addEventListener('click', () => {
+            this.closePlayerDetailsModal();
+        });
+        
+        // API info link
+        document.getElementById('api-info-link')?.addEventListener('click', () => {
             this.showApiInfo();
         });
+    }
+    
+    /**
+     * Show a section and hide others
+     */
+    showSection(sectionName) {
+        const sections = ['welcome', 'user-setup', 'draft'];
         
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.hideLoading();
+        sections.forEach(section => {
+            const element = document.getElementById(`${section}-section`);
+            if (element) {
+                element.style.display = section === sectionName ? 'block' : 'none';
             }
         });
         
-        console.log('📝 Event listeners set up');
-    }
-    
-    /**
-     * Check connection to the backend API
-     */
-    async checkConnection() {
-        try {
-            this.updateStatus('connecting', 'Connecting...');
-            
-            const response = await fetch(`${this.apiBase}/health`);
-            const data = await response.json();
-            
-            if (response.ok && data.status === 'healthy') {
-                this.updateStatus('connected', 'Connected');
-                this.state.connected = true;
-                
-                // Update version info if available
-                if (data.version && this.elements.versionInfo) {
-                    this.elements.versionInfo.textContent = `v${data.version}`;
-                }
-                
-                console.log('✅ Backend connection successful', data);
-            } else {
-                throw new Error(`Health check failed: ${data.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('❌ Backend connection failed:', error);
-            this.updateStatus('error', 'Connection Failed');
-            this.state.connected = false;
-        }
-    }
-    
-    /**
-     * Test connection (manual trigger)
-     */
-    async testConnection() {
-        this.showLoading('Testing connection...');
+        this.state.currentSection = sectionName;
         
-        try {
-            await this.checkConnection();
-            
-            if (this.state.connected) {
-                this.showNotification('✅ Connection test successful!', 'success');
-            } else {
-                this.showNotification('❌ Connection test failed!', 'error');
-            }
-        } catch (error) {
-            this.showNotification('❌ Connection test failed!', 'error');
-        } finally {
-            this.hideLoading();
-        }
-    }
-    
-    /**
-     * Show user setup interface
-     */
-    async showUserSetup() {
-        if (!this.state.connected) {
-            this.showNotification('⚠️ Please check connection first', 'warning');
-            return;
-        }
-        
-        // Create user setup form
-        const userSetupHtml = `
-            <div class="user-setup-container">
-                <h2>🏈 Setup Your Draft Assistant</h2>
-                <p>Enter your Sleeper username to get started:</p>
-                
-                <form id="user-setup-form" class="user-setup-form">
-                    <div class="form-group">
-                        <label for="username-input">Sleeper Username:</label>
-                        <input 
-                            type="text" 
-                            id="username-input" 
-                            placeholder="Enter your Sleeper username"
-                            required
-                        >
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            Load My Leagues
-                        </button>
-                        <button type="button" id="cancel-setup-btn" class="btn btn-secondary">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-                
-                <div id="user-leagues-container" style="display: none;">
-                    <h3>Your Leagues</h3>
-                    <div id="leagues-list"></div>
-                </div>
-            </div>
-        `;
-        
-        // Update draft section content
-        this.elements.draftSection.innerHTML = userSetupHtml;
-        this.showSection('draft');
-        
-        // Set up form event listeners
-        const form = document.getElementById('user-setup-form');
-        const cancelBtn = document.getElementById('cancel-setup-btn');
-        
-        form?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleUserSetup();
-        });
-        
-        cancelBtn?.addEventListener('click', () => {
-            this.showSection('welcome');
-        });
-        
-        // Focus on username input
-        document.getElementById('username-input')?.focus();
-    }
-    
-    /**
-     * Handle user setup form submission
-     */
-    async handleUserSetup() {
-        const usernameInput = document.getElementById('username-input');
-        const username = usernameInput?.value.trim();
-        
-        if (!username) {
-            this.showNotification('⚠️ Please enter a username', 'warning');
-            return;
-        }
-        
-        this.showLoading('Loading user data...');
-        
-        try {
-            // Get user info
-            const userData = await this.apiRequest(`/user/${username}`);
-            this.state.currentUser = userData.user;
-            
-            // Get user leagues
-            this.updateLoadingText('Loading leagues...');
-            const leaguesData = await this.apiRequest(`/user/${username}/leagues`);
-            this.state.userLeagues = leaguesData.leagues;
-            
-            // Display leagues
-            this.displayUserLeagues();
-            
-            this.showNotification(`✅ Loaded ${leaguesData.total_leagues} leagues for ${userData.user.display_name}`, 'success');
-            
-        } catch (error) {
-            console.error('Failed to load user data:', error);
-            
-            if (error.message.includes('not found')) {
-                this.showNotification('❌ User not found. Please check your username.', 'error');
-            } else {
-                this.showNotification('❌ Failed to load user data. Please try again.', 'error');
-            }
-        } finally {
-            this.hideLoading();
-        }
-    }
-    
-    /**
-     * Display user leagues
-     */
-    displayUserLeagues() {
-        const container = document.getElementById('user-leagues-container');
-        const leaguesList = document.getElementById('leagues-list');
-        
-        if (!container || !leaguesList) return;
-        
-        if (this.state.userLeagues.length === 0) {
-            leaguesList.innerHTML = '<p>No leagues found for this user.</p>';
-        } else {
-            const leaguesHtml = this.state.userLeagues.map(league => `
-                <div class="league-card" data-league-id="${league.league_id}">
-                    <div class="league-info">
-                        <h4>${league.name}</h4>
-                        <p>Season: ${league.season} • Teams: ${league.total_rosters || 'N/A'}</p>
-                        <p>Status: ${league.status}</p>
-                    </div>
-                    <div class="league-actions">
-                        <button class="btn btn-primary select-league-btn" data-league-id="${league.league_id}">
-                            Select League
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-            
-            leaguesList.innerHTML = leaguesHtml;
-            
-            // Add event listeners for league selection
-            document.querySelectorAll('.select-league-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const leagueId = e.target.dataset.leagueId;
-                    this.selectLeague(leagueId);
-                });
-            });
-        }
-        
-        container.style.display = 'block';
-    }
-    
-    /**
-     * Select a league and load its drafts
-     */
-    async selectLeague(leagueId) {
-        this.showLoading('Loading league drafts...');
-        
-        try {
-            // Find the selected league
-            this.state.selectedLeague = this.state.userLeagues.find(l => l.league_id === leagueId);
-            
-            if (!this.state.selectedLeague) {
-                throw new Error('League not found');
-            }
-            
-            // Get league drafts
-            const draftsData = await this.apiRequest(`/user/${this.state.currentUser.username}/leagues/${leagueId}/drafts`);
-            
-            // Display draft selection
-            this.displayDraftSelection(draftsData.drafts);
-            
-        } catch (error) {
-            console.error('Failed to load league drafts:', error);
-            this.showNotification('❌ Failed to load league drafts', 'error');
-        } finally {
-            this.hideLoading();
-        }
-    }
-    
-    /**
-     * Display draft selection interface
-     */
-    displayDraftSelection(drafts) {
-        const draftSelectionHtml = `
-            <div class="draft-selection-container">
-                <h2>🏈 Select Draft</h2>
-                <p>League: ${this.state.selectedLeague.name}</p>
-                
-                ${drafts.length === 0 ? 
-                    '<p>No drafts found for this league.</p>' :
-                    `<div class="drafts-list">
-                        ${drafts.map(draft => `
-                            <div class="draft-card" data-draft-id="${draft.draft_id}">
-                                <div class="draft-info">
-                                    <h4>Draft ${draft.draft_id}</h4>
-                                    <p>Status: ${draft.status}</p>
-                                    <p>Type: ${draft.type}</p>
-                                    ${draft.start_time ? `<p>Started: ${new Date(draft.start_time).toLocaleString()}</p>` : ''}
-                                </div>
-                                <div class="draft-actions">
-                                    <button class="btn btn-primary select-draft-btn" data-draft-id="${draft.draft_id}">
-                                        Select Draft
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>`
-                }
-                
-                <div class="form-actions">
-                    <button type="button" id="back-to-leagues-btn" class="btn btn-secondary">
-                        ← Back to Leagues
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        this.elements.draftSection.innerHTML = draftSelectionHtml;
-        
-        // Add event listeners
-        document.getElementById('back-to-leagues-btn')?.addEventListener('click', () => {
-            this.showUserSetup();
-        });
-        
-        document.querySelectorAll('.select-draft-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const draftId = e.target.dataset.draftId;
-                this.selectDraft(draftId);
-            });
-        });
-    }
-    
-    /**
-     * Select a draft and load draft data
-     */
-    async selectDraft(draftId) {
-        this.showLoading('Loading draft data...');
-        
-        try {
-            // Get draft info
-            const draftData = await this.apiRequest(`/draft/${draftId}`);
-            this.state.selectedDraft = draftData;
-            
-            // Get draft picks
-            this.updateLoadingText('Loading draft picks...');
-            const picksData = await this.apiRequest(`/draft/${draftId}/picks`);
-            
-            // Display draft interface
-            this.displayDraftInterface(draftData, picksData);
-            
-            this.showNotification('✅ Draft loaded successfully!', 'success');
-            
-        } catch (error) {
-            console.error('Failed to load draft data:', error);
-            this.showNotification('❌ Failed to load draft data', 'error');
-        } finally {
-            this.hideLoading();
-        }
-    }
-    
-    /**
-     * Display the main draft interface
-     */
-    async displayDraftInterface(draftData, picksData) {
-        const draftInterfaceHtml = `
-            <div class="draft-interface-container">
-                <h2>🏈 Draft Assistant</h2>
-                
-                <div class="draft-header">
-                    <div class="draft-info">
-                        <h3>League: ${this.state.selectedLeague.name}</h3>
-                        <p>Draft ID: ${draftData.draft_id}</p>
-                        <p>Status: ${draftData.draft_info.status}</p>
-                        ${draftData.league_format ? 
-                            `<p>Format: ${draftData.league_format.scoring_format} ${draftData.league_format.league_type}</p>` : 
-                            ''
-                        }
-                    </div>
-                </div>
-                
-                <div class="draft-content">
-                    <div class="draft-picks-section">
-                        <h4>Draft Picks (${picksData.total_picks})</h4>
-                        <div class="picks-list" id="picks-list">
-                            ${this.renderDraftPicks(picksData.picks)}
-                        </div>
-                    </div>
-                    
-                    <div class="rankings-section">
-                        <div class="rankings-header">
-                            <h4>🏆 Player Rankings</h4>
-                            <div class="rankings-controls">
-                                <select id="position-filter" class="form-control">
-                                    <option value="">All Positions</option>
-                                    <option value="QB">QB</option>
-                                    <option value="RB">RB</option>
-                                    <option value="WR">WR</option>
-                                    <option value="TE">TE</option>
-                                    <option value="K">K</option>
-                                    <option value="DEF">DEF</option>
-                                </select>
-                                <button id="refresh-rankings-btn" class="btn btn-sm btn-secondary">
-                                    🔄 Refresh
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div id="dynasty-status" class="dynasty-status" style="display: none;">
-                            <div class="dynasty-badge">
-                                🏰 Dynasty League - Rostered players filtered
-                            </div>
-                        </div>
-                        
-                        <div class="rankings-tabs">
-                            <button class="tab-btn active" data-tab="available">Available Players</button>
-                            <button class="tab-btn" data-tab="best">Best Available</button>
-                        </div>
-                        
-                        <div class="rankings-content">
-                            <div id="available-players-tab" class="tab-content active">
-                                <div id="available-players-list" class="players-list">
-                                    <div class="loading-placeholder">Loading available players...</div>
-                                </div>
-                            </div>
-                            
-                            <div id="best-available-tab" class="tab-content">
-                                <div id="best-available-list" class="best-available-grid">
-                                    <div class="loading-placeholder">Loading best available players...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="draft-actions">
-                    <button type="button" id="back-to-drafts-btn" class="btn btn-secondary">
-                        ← Back to Drafts
-                    </button>
-                    <button type="button" id="refresh-draft-btn" class="btn btn-primary">
-                        🔄 Refresh Draft
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        this.elements.draftSection.innerHTML = draftInterfaceHtml;
-        
-        // Set up event listeners
-        this.setupDraftInterfaceListeners(draftData);
-        
-        // Load rankings data
-        await this.loadRankingsData(draftData.draft_id);
-    }
-    
-    /**
-     * Set up event listeners for draft interface
-     */
-    setupDraftInterfaceListeners(draftData) {
-        // Navigation buttons
-        document.getElementById('back-to-drafts-btn')?.addEventListener('click', () => {
-            this.selectLeague(this.state.selectedLeague.league_id);
-        });
-        
-        document.getElementById('refresh-draft-btn')?.addEventListener('click', () => {
-            this.selectDraft(draftData.draft_id);
-        });
-        
-        // Rankings controls
-        document.getElementById('position-filter')?.addEventListener('change', () => {
-            this.filterAvailablePlayers();
-        });
-        
-        document.getElementById('refresh-rankings-btn')?.addEventListener('click', () => {
-            this.loadRankingsData(draftData.draft_id);
-        });
-        
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.switchTab(e.target.dataset.tab);
-            });
-        });
-    }
-    
-    /**
-     * Load rankings data for the draft
-     */
-    async loadRankingsData(draftId) {
-        try {
-            // Check if rankings are available
-            const apiInfo = await this.apiRequest('/info');
-            if (!apiInfo.rankings_enabled) {
-                this.showRankingsUnavailable();
-                return;
-            }
-            
-            // Load available players
-            this.updateRankingsLoading('available', 'Loading available players...');
-            const availableData = await this.apiRequest(`/draft/${draftId}/available-players?limit=100`);
-            this.displayAvailablePlayers(
-                availableData.available_players, 
-                availableData.is_dynasty_league,
-                availableData.total_unavailable
-            );
-            
-            // Load best available by position
-            this.updateRankingsLoading('best', 'Loading best available players...');
-            const bestData = await this.apiRequest(`/draft/${draftId}/best-available?count=10`);
-            this.displayBestAvailable(bestData.best_available);
-            
-        } catch (error) {
-            console.error('Failed to load rankings data:', error);
-            this.showRankingsError(error.message);
-        }
-    }
-    
-    /**
-     * Display available players
-     */
-    displayAvailablePlayers(players, isDynasty = false, totalUnavailable = 0) {
-        const container = document.getElementById('available-players-list');
-        if (!container) return;
-        
-        // Show dynasty status if applicable
-        const dynastyStatus = document.getElementById('dynasty-status');
-        if (dynastyStatus) {
-            if (isDynasty) {
-                dynastyStatus.style.display = 'block';
-                dynastyStatus.innerHTML = `
-                    <div class="dynasty-badge">
-                        🏰 Dynasty League - ${totalUnavailable} players filtered (drafted + rostered)
-                    </div>
-                `;
-            } else {
-                dynastyStatus.style.display = 'none';
-            }
-        }
-        
-        if (!players || players.length === 0) {
-            container.innerHTML = '<div class="no-data">No available players found.</div>';
-            return;
-        }
-        
-        const playersHtml = players.map((player, index) => `
-            <div class="player-card" data-position="${player.position}">
-                <div class="player-rank">${player.rank || index + 1}</div>
-                <div class="player-info">
-                    <div class="player-name">${player.name}</div>
-                    <div class="player-details">
-                        <span class="player-position">${player.position}</span>
-                        <span class="player-team">${player.team || 'N/A'}</span>
-                        ${player.bye_week ? `<span class="player-bye">Bye: ${player.bye_week}</span>` : ''}
-                        ${player.injury_status ? `<span class="player-injury">${player.injury_status}</span>` : ''}
-                    </div>
-                </div>
-                <div class="player-tier">
-                    <span class="tier-badge tier-${player.tier || 1}">T${player.tier || 1}</span>
-                </div>
-            </div>
-        `).join('');
-        
-        container.innerHTML = playersHtml;
-    }
-    
-    /**
-     * Display best available players by position
-     */
-    displayBestAvailable(bestByPosition) {
-        const container = document.getElementById('best-available-list');
-        if (!container) return;
-        
-        if (!bestByPosition || Object.keys(bestByPosition).length === 0) {
-            container.innerHTML = '<div class="no-data">No best available data found.</div>';
-            return;
-        }
-        
-        const positionsHtml = Object.entries(bestByPosition).map(([position, players]) => `
-            <div class="position-group">
-                <h5 class="position-header">${position}</h5>
-                <div class="position-players">
-                    ${players.slice(0, 5).map((player, index) => `
-                        <div class="best-player-card">
-                            <div class="best-player-rank">${index + 1}</div>
-                            <div class="best-player-info">
-                                <div class="best-player-name">${player.name}</div>
-                                <div class="best-player-team">${player.team || 'N/A'}</div>
-                            </div>
-                            <div class="best-player-tier">T${player.tier || 1}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-        
-        container.innerHTML = positionsHtml;
-    }
-    
-    /**
-     * Filter available players by position
-     */
-    filterAvailablePlayers() {
-        const positionFilter = document.getElementById('position-filter')?.value;
-        const playerCards = document.querySelectorAll('.player-card');
-        
-        playerCards.forEach(card => {
-            const playerPosition = card.dataset.position;
-            if (!positionFilter || playerPosition === positionFilter) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-    
-    /**
-     * Switch between rankings tabs
-     */
-    switchTab(tabName) {
-        // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
-        
-        // Update tab content
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        document.getElementById(`${tabName}-${tabName === 'available' ? 'players' : 'available'}-tab`)?.classList.add('active');
-    }
-    
-    /**
-     * Render draft picks with better formatting and actual player names
-     */
-    renderDraftPicks(picks) {
-        if (!picks || picks.length === 0) {
-            return '<div class="no-data">No picks yet.</div>';
-        }
-        
-        const recentPicks = picks.slice(0, 20); // Show last 20 picks
-        
-        return recentPicks.map(pick => `
-            <div class="pick-item">
-                <div class="pick-number">${pick.pick_number || pick.pick_no || '?'}</div>
-                <div class="pick-info">
-                    <div class="pick-player">
-                        ${pick.name || `Player ${pick.player_id || 'Unknown'}`}
-                        ${pick.position ? `<span class="pick-position">${pick.position}</span>` : ''}
-                        ${pick.team && pick.team !== 'N/A' ? `<span class="pick-team">${pick.team}</span>` : ''}
-                    </div>
-                    <div class="pick-details">
-                        Round ${pick.round || '?'} • Pick ${pick.draft_slot || pick.pick_no || '?'}
-                        ${pick.is_keeper ? ' • <span class="keeper-badge">Keeper</span>' : ''}
-                    </div>
-                </div>
-                <div class="pick-time">
-                    ${pick.picked_at ? new Date(pick.picked_at).toLocaleTimeString() : ''}
-                </div>
-            </div>
-        `).join('') + (picks.length > 20 ? `<div class="more-picks">... and ${picks.length - 20} more picks</div>` : '');
-    }
-    
-    /**
-     * Update rankings loading state
-     */
-    updateRankingsLoading(section, message) {
-        const container = document.getElementById(`${section === 'available' ? 'available-players' : 'best-available'}-list`);
-        if (container) {
-            container.innerHTML = `<div class="loading-placeholder">${message}</div>`;
-        }
-    }
-    
-    /**
-     * Show rankings unavailable message
-     */
-    showRankingsUnavailable() {
-        const availableContainer = document.getElementById('available-players-list');
-        const bestContainer = document.getElementById('best-available-list');
-        
-        const message = `
-            <div class="rankings-unavailable">
-                <h4>⚠️ Rankings Unavailable</h4>
-                <p>Player rankings are not available in this version.</p>
-                <p>The draft assistant will still show draft picks and basic functionality.</p>
-            </div>
-        `;
-        
-        if (availableContainer) availableContainer.innerHTML = message;
-        if (bestContainer) bestContainer.innerHTML = message;
-    }
-    
-    /**
-     * Show rankings error message
-     */
-    showRankingsError(errorMessage) {
-        const availableContainer = document.getElementById('available-players-list');
-        const bestContainer = document.getElementById('best-available-list');
-        
-        const message = `
-            <div class="rankings-error">
-                <h4>❌ Rankings Error</h4>
-                <p>Failed to load player rankings: ${errorMessage}</p>
-                <button onclick="window.draftApp.loadRankingsData('${this.state.selectedDraft?.draft_id}')" class="btn btn-sm btn-primary">
-                    Try Again
-                </button>
-            </div>
-        `;
-        
-        if (availableContainer) availableContainer.innerHTML = message;
-        if (bestContainer) bestContainer.innerHTML = message;
-    }
-    
-    /**
-     * Update loading text
-     */
-    updateLoadingText(text) {
-        if (this.elements.loadingText) {
-            this.elements.loadingText.textContent = text;
+        // Load section-specific data
+        if (sectionName === 'draft' && this.state.selectedDraft) {
+            this.loadDraftData();
         }
     }
     
     /**
      * Update connection status indicator
      */
-    updateStatus(status, text) {
-        if (!this.elements.statusDot || !this.elements.statusText) return;
+    updateConnectionStatus(connected) {
+        const indicator = this.elements.statusIndicator;
+        if (!indicator) return;
         
-        // Remove existing status classes
-        this.elements.statusDot.classList.remove('connected', 'error');
+        this.state.connected = connected;
         
-        // Add new status class
-        if (status === 'connected') {
-            this.elements.statusDot.classList.add('connected');
-        } else if (status === 'error') {
-            this.elements.statusDot.classList.add('error');
+        if (connected) {
+            indicator.variant = 'success';
+            indicator.pulse = false;
+            indicator.innerHTML = '<sl-icon name="wifi"></sl-icon> Connected';
+        } else {
+            indicator.variant = 'danger';
+            indicator.pulse = true;
+            indicator.innerHTML = '<sl-icon name="wifi-off"></sl-icon> Disconnected';
         }
-        
-        // Update text
-        this.elements.statusText.textContent = text;
-    }
-    
-    /**
-     * Show a specific section and hide others
-     */
-    showSection(sectionName) {
-        console.log(`📄 Showing section: ${sectionName}`);
-        
-        // Hide all sections
-        this.elements.welcomeSection.style.display = 'none';
-        this.elements.draftSection.style.display = 'none';
-        
-        // Show requested section
-        switch (sectionName) {
-            case 'welcome':
-                this.elements.welcomeSection.style.display = 'block';
-                break;
-            case 'draft':
-                this.elements.draftSection.style.display = 'block';
-                break;
-            default:
-                console.warn(`Unknown section: ${sectionName}`);
-                this.elements.welcomeSection.style.display = 'block';
-        }
-        
-        this.state.currentSection = sectionName;
     }
     
     /**
      * Show loading overlay
      */
-    showLoading(message = 'Loading...') {
-        if (this.elements.loadingOverlay && this.elements.loadingText) {
-            this.elements.loadingText.textContent = message;
-            this.elements.loadingOverlay.style.display = 'flex';
-            this.state.loading = true;
+    showLoading(message = 'Loading...', showProgress = false) {
+        const overlay = this.elements.loadingOverlay;
+        const text = this.elements.loadingText;
+        const progress = this.elements.loadingProgress;
+        
+        if (overlay) overlay.style.display = 'flex';
+        if (text) text.textContent = message;
+        if (progress) {
+            progress.style.display = showProgress ? 'block' : 'none';
+            if (showProgress) progress.indeterminate = true;
         }
+        
+        this.state.loading = true;
     }
     
     /**
      * Hide loading overlay
      */
     hideLoading() {
-        if (this.elements.loadingOverlay) {
-            this.elements.loadingOverlay.style.display = 'none';
-            this.state.loading = false;
-        }
+        const overlay = this.elements.loadingOverlay;
+        if (overlay) overlay.style.display = 'none';
+        
+        this.state.loading = false;
     }
     
     /**
-     * Show API information
+     * Show notification using Shoelace alert
      */
-    async showApiInfo() {
-        try {
-            this.showLoading('Fetching API info...');
-            
-            const response = await fetch(`${this.apiBase}/info`);
-            const data = await response.json();
-            
-            if (response.ok) {
-                const info = JSON.stringify(data, null, 2);
-                alert(`API Information:\n\n${info}`);
-            } else {
-                throw new Error(data.error || 'Failed to fetch API info');
+    showNotification(message, variant = 'primary', duration = 5000) {
+        const container = this.elements.notificationContainer;
+        if (!container) return;
+        
+        const alert = document.createElement('sl-alert');
+        alert.variant = variant;
+        alert.closable = true;
+        alert.duration = duration;
+        
+        // Add appropriate icon
+        const iconName = this.getIconForVariant(variant);
+        alert.innerHTML = `
+            <sl-icon slot="icon" name="${iconName}"></sl-icon>
+            ${message}
+        `;
+        
+        container.appendChild(alert);
+        alert.show();
+        
+        // Auto-remove after duration
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
             }
-        } catch (error) {
-            console.error('Failed to fetch API info:', error);
-            alert(`Failed to fetch API info: ${error.message}`);
-        } finally {
-            this.hideLoading();
-        }
+        }, duration);
     }
     
     /**
-     * Show a temporary notification
+     * Get appropriate icon for alert variant
      */
-    showNotification(message, type = 'info', duration = 3000) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        
-        // Style the notification
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            padding: '12px 20px',
-            borderRadius: '6px',
-            color: 'white',
-            fontWeight: '500',
-            zIndex: '1001',
-            opacity: '0',
-            transform: 'translateX(100%)',
-            transition: 'all 0.3s ease',
-            maxWidth: '400px'
-        });
-        
-        // Set background color based on type
-        switch (type) {
-            case 'success':
-                notification.style.backgroundColor = '#10b981';
-                break;
-            case 'error':
-                notification.style.backgroundColor = '#ef4444';
-                break;
-            case 'warning':
-                notification.style.backgroundColor = '#f59e0b';
-                break;
-            default:
-                notification.style.backgroundColor = '#2563eb';
-        }
-        
-        // Add to DOM
-        document.body.appendChild(notification);
-        
-        // Animate in
-        setTimeout(() => {
-            notification.style.opacity = '1';
-            notification.style.transform = 'translateX(0)';
-        }, 10);
-        
-        // Remove after duration
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }, duration);
+    getIconForVariant(variant) {
+        const icons = {
+            primary: 'info-circle',
+            success: 'check-circle',
+            neutral: 'info-circle',
+            warning: 'exclamation-triangle',
+            danger: 'exclamation-octagon'
+        };
+        return icons[variant] || 'info-circle';
     }
     
     /**
@@ -920,13 +277,11 @@ class DraftAssistantApp {
                 ...options
             });
             
-            const data = await response.json();
-            
             if (!response.ok) {
-                throw new Error(data.error || `HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            return data;
+            return await response.json();
         } catch (error) {
             console.error(`API request failed: ${endpoint}`, error);
             throw error;
@@ -934,48 +289,447 @@ class DraftAssistantApp {
     }
     
     /**
-     * Get current application state
+     * Test API connection
      */
-    getState() {
-        return { ...this.state };
+    async testConnection() {
+        try {
+            const response = await this.apiRequest('/health');
+            this.state.apiInfo = response;
+            return response;
+        } catch (error) {
+            throw new Error('Failed to connect to API');
+        }
+    }
+    
+    /**
+     * Handle test connection button click
+     */
+    async handleTestConnection() {
+        const button = document.getElementById('test-connection-btn');
+        if (button) button.loading = true;
+        
+        try {
+            await this.testConnection();
+            this.updateConnectionStatus(true);
+            this.showNotification('Connection successful!', 'success');
+        } catch (error) {
+            this.updateConnectionStatus(false);
+            this.showNotification('Connection failed: ' + error.message, 'danger');
+        } finally {
+            if (button) button.loading = false;
+        }
+    }
+    
+    /**
+     * Handle load user button click
+     */
+    async handleLoadUser() {
+        const usernameInput = document.getElementById('username-input');
+        const loadButton = document.getElementById('load-user-btn');
+        
+        if (!usernameInput?.value?.trim()) {
+            this.showNotification('Please enter a username', 'warning');
+            return;
+        }
+        
+        const username = usernameInput.value.trim();
+        
+        if (loadButton) loadButton.loading = true;
+        
+        try {
+            // Load user data
+            const userData = await this.apiRequest(`/user/${username}`);
+            this.state.currentUser = userData.user;
+            
+            // Load user leagues
+            const leaguesData = await this.apiRequest(`/user/${username}/leagues`);
+            this.state.userLeagues = leaguesData.leagues;
+            
+            this.showNotification(`Loaded ${leaguesData.leagues.length} leagues for ${username}`, 'success');
+            
+            // For demo purposes, auto-select first league with draft
+            const leagueWithDraft = leaguesData.leagues.find(league => league.draft_id);
+            if (leagueWithDraft) {
+                this.state.selectedLeague = leagueWithDraft;
+                this.state.selectedDraft = { draft_id: leagueWithDraft.draft_id };
+                this.showSection('draft');
+            } else {
+                this.showNotification('No active drafts found', 'warning');
+            }
+            
+        } catch (error) {
+            this.showNotification('Failed to load user data: ' + error.message, 'danger');
+        } finally {
+            if (loadButton) loadButton.loading = false;
+        }
+    }
+    
+    /**
+     * Load draft data
+     */
+    async loadDraftData() {
+        if (!this.state.selectedDraft?.draft_id) return;
+        
+        try {
+            // Show loading states
+            this.showLoadingState('available-players-loading', true);
+            this.showLoadingState('best-available-loading', true);
+            
+            // Load draft info
+            const draftInfo = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}`);
+            this.updateDraftInfo(draftInfo);
+            
+            // Load available players
+            const availableData = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/available-players?limit=50`);
+            this.displayAvailablePlayers(availableData.available_players, availableData.is_dynasty_league);
+            
+            // Load best available
+            const bestData = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/best-available?count=5`);
+            this.displayBestAvailable(bestData.best_available);
+            
+            // Update stats
+            this.updateDraftStats(availableData);
+            
+        } catch (error) {
+            this.showNotification('Failed to load draft data: ' + error.message, 'danger');
+        } finally {
+            this.showLoadingState('available-players-loading', false);
+            this.showLoadingState('best-available-loading', false);
+        }
+    }
+    
+    /**
+     * Show/hide loading state for a section
+     */
+    showLoadingState(elementId, show) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.style.display = show ? 'flex' : 'none';
+        }
+    }
+    
+    /**
+     * Update draft info display
+     */
+    updateDraftInfo(draftInfo) {
+        // Update league format badge
+        const formatBadge = document.getElementById('league-format-badge');
+        if (formatBadge && draftInfo.league_format) {
+            const format = draftInfo.league_format.format_string || 'Unknown Format';
+            formatBadge.textContent = format.replace('_', ' ').toUpperCase();
+        }
+        
+        // Update dynasty badge
+        const dynastyBadge = document.getElementById('dynasty-badge');
+        if (dynastyBadge) {
+            dynastyBadge.style.display = draftInfo.is_dynasty_league ? 'inline-flex' : 'none';
+        }
+    }
+    
+    /**
+     * Display available players
+     */
+    displayAvailablePlayers(players, isDynasty = false) {
+        const container = document.getElementById('available-players-list');
+        if (!container) return;
+        
+        if (!players || players.length === 0) {
+            container.innerHTML = `
+                <sl-alert variant="neutral" open>
+                    <sl-icon slot="icon" name="info-circle"></sl-icon>
+                    No available players found.
+                </sl-alert>
+            `;
+            return;
+        }
+        
+        const playersHtml = players.map(player => this.createPlayerCard(player)).join('');
+        container.innerHTML = playersHtml;
+        
+        // Add click listeners to player cards
+        container.querySelectorAll('.player-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const playerId = card.dataset.playerId;
+                const player = players.find(p => p.player_id === playerId);
+                if (player) {
+                    this.showPlayerDetails(player);
+                }
+            });
+        });
+    }
+    
+    /**
+     * Create a player card HTML
+     */
+    createPlayerCard(player) {
+        const positionClass = `position-${player.position?.toLowerCase() || 'unknown'}`;
+        
+        return `
+            <sl-card class="player-card" data-player-id="${player.player_id || ''}">
+                <div slot="header" class="player-header">
+                    <strong>${player.name || 'Unknown Player'}</strong>
+                    <sl-badge variant="neutral" class="${positionClass}">
+                        ${player.position || 'N/A'}
+                    </sl-badge>
+                    <sl-badge variant="neutral">${player.team || 'N/A'}</sl-badge>
+                </div>
+                
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Rank</span>
+                        <span class="stat-value">${player.rank || 'N/A'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tier</span>
+                        <span class="stat-value">${player.tier || 'N/A'}</span>
+                    </div>
+                    ${player.bye_week ? `
+                        <div class="stat-item">
+                            <span class="stat-label">Bye</span>
+                            <span class="stat-value">${player.bye_week}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div slot="footer">
+                    <sl-button-group>
+                        <sl-button variant="primary" size="small">
+                            <sl-icon slot="prefix" name="plus"></sl-icon>
+                            Queue
+                        </sl-button>
+                        <sl-button variant="neutral" size="small">
+                            <sl-icon slot="prefix" name="info-circle"></sl-icon>
+                            Details
+                        </sl-button>
+                    </sl-button-group>
+                </div>
+            </sl-card>
+        `;
+    }
+    
+    /**
+     * Display best available players by position
+     */
+    displayBestAvailable(bestAvailable) {
+        const container = document.getElementById('best-available-content');
+        if (!container) return;
+        
+        if (!bestAvailable || Object.keys(bestAvailable).length === 0) {
+            container.innerHTML = `
+                <sl-alert variant="neutral" open>
+                    <sl-icon slot="icon" name="info-circle"></sl-icon>
+                    No best available data found.
+                </sl-alert>
+            `;
+            return;
+        }
+        
+        const sectionsHtml = Object.entries(bestAvailable).map(([position, players]) => {
+            const positionClass = `position-${position.toLowerCase()}`;
+            const playersHtml = players.map(player => this.createPlayerCard(player)).join('');
+            
+            return `
+                <div class="position-section">
+                    <h3 class="${positionClass}">
+                        <sl-icon name="star-fill"></sl-icon>
+                        Best Available ${position}
+                    </h3>
+                    <div class="position-players">
+                        ${playersHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        container.innerHTML = sectionsHtml;
+    }
+    
+    /**
+     * Update draft statistics
+     */
+    updateDraftStats(data) {
+        const totalPicksBadge = document.getElementById('total-picks-badge');
+        const availablePlayersBadge = document.getElementById('available-players-badge');
+        
+        if (totalPicksBadge) {
+            totalPicksBadge.textContent = data.total_unavailable || '0';
+        }
+        
+        if (availablePlayersBadge) {
+            availablePlayersBadge.textContent = data.available_players?.length || '0';
+        }
+    }
+    
+    /**
+     * Handle position filter change
+     */
+    handlePositionFilter(position) {
+        console.log('Position filter changed:', position);
+        // Reload data with position filter
+        if (this.state.selectedDraft) {
+            this.loadDraftData();
+        }
+    }
+    
+    /**
+     * Handle player search
+     */
+    handlePlayerSearch(searchTerm) {
+        console.log('Player search:', searchTerm);
+        // Implement search functionality
+    }
+    
+    /**
+     * Handle auto-refresh toggle
+     */
+    handleAutoRefreshToggle(enabled) {
+        this.state.autoRefreshEnabled = enabled;
+        
+        if (enabled) {
+            this.startAutoRefresh();
+            this.showNotification('Auto-refresh enabled', 'success');
+        } else {
+            this.stopAutoRefresh();
+            this.showNotification('Auto-refresh disabled', 'neutral');
+        }
+    }
+    
+    /**
+     * Start auto-refresh
+     */
+    startAutoRefresh() {
+        if (this.state.autoRefreshInterval) {
+            clearInterval(this.state.autoRefreshInterval);
+        }
+        
+        this.state.autoRefreshInterval = setInterval(() => {
+            if (this.state.selectedDraft && this.state.currentSection === 'draft') {
+                this.loadDraftData();
+            }
+        }, 30000); // Refresh every 30 seconds
+    }
+    
+    /**
+     * Stop auto-refresh
+     */
+    stopAutoRefresh() {
+        if (this.state.autoRefreshInterval) {
+            clearInterval(this.state.autoRefreshInterval);
+            this.state.autoRefreshInterval = null;
+        }
+    }
+    
+    /**
+     * Handle tab change
+     */
+    handleTabChange(tabName) {
+        console.log('Tab changed to:', tabName);
+        
+        // Load tab-specific data if needed
+        switch (tabName) {
+            case 'available-players':
+                // Already loaded
+                break;
+            case 'best-available':
+                // Already loaded
+                break;
+            case 'draft-board':
+                // TODO: Implement draft board
+                break;
+            case 'my-queue':
+                // TODO: Implement queue
+                break;
+        }
+    }
+    
+    /**
+     * Show player details modal
+     */
+    showPlayerDetails(player) {
+        const modal = document.getElementById('player-details-modal');
+        const content = document.getElementById('player-details-content');
+        
+        if (!modal || !content) return;
+        
+        // Create detailed player info
+        const detailsHtml = `
+            <div class="player-details">
+                <div class="player-header">
+                    <h3>${player.name}</h3>
+                    <div class="player-badges">
+                        <sl-badge variant="primary" class="position-${player.position?.toLowerCase()}">${player.position}</sl-badge>
+                        <sl-badge variant="neutral">${player.team}</sl-badge>
+                    </div>
+                </div>
+                
+                <div class="player-stats-detailed">
+                    <div class="stat-row">
+                        <span class="stat-label">Overall Rank:</span>
+                        <span class="stat-value">${player.rank || 'N/A'}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Tier:</span>
+                        <span class="stat-value">${player.tier || 'N/A'}</span>
+                    </div>
+                    ${player.bye_week ? `
+                        <div class="stat-row">
+                            <span class="stat-label">Bye Week:</span>
+                            <span class="stat-value">${player.bye_week}</span>
+                        </div>
+                    ` : ''}
+                    ${player.years_exp ? `
+                        <div class="stat-row">
+                            <span class="stat-label">Experience:</span>
+                            <span class="stat-value">${player.years_exp} years</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        content.innerHTML = detailsHtml;
+        modal.show();
+    }
+    
+    /**
+     * Close player details modal
+     */
+    closePlayerDetailsModal() {
+        const modal = document.getElementById('player-details-modal');
+        if (modal) modal.hide();
+    }
+    
+    /**
+     * Show API info
+     */
+    showApiInfo() {
+        if (this.state.apiInfo) {
+            const info = JSON.stringify(this.state.apiInfo, null, 2);
+            this.showNotification(`API Info: ${info}`, 'neutral', 10000);
+        } else {
+            this.showNotification('No API info available', 'warning');
+        }
+    }
+    
+    /**
+     * Load version info
+     */
+    async loadVersionInfo() {
+        try {
+            const versionElement = this.elements.versionInfo;
+            if (versionElement) {
+                versionElement.textContent = 'v2.0.0-enhanced';
+            }
+        } catch (error) {
+            console.error('Failed to load version info:', error);
+        }
     }
 }
 
-// Initialize the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        window.draftApp = new DraftAssistantApp();
-        await window.draftApp.init();
-    } catch (error) {
-        console.error('Failed to initialize application:', error);
-        
-        // Show error message to user
-        const errorDiv = document.createElement('div');
-        errorDiv.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: #fee2e2;
-                border: 1px solid #fecaca;
-                color: #991b1b;
-                padding: 20px;
-                border-radius: 8px;
-                max-width: 400px;
-                text-align: center;
-                z-index: 1000;
-            ">
-                <h3>⚠️ Application Error</h3>
-                <p>Failed to initialize the application.</p>
-                <p style="font-size: 0.9em; margin-top: 10px;">
-                    Please refresh the page or check the console for details.
-                </p>
-            </div>
-        `;
-        document.body.appendChild(errorDiv);
-    }
+// Initialize the application when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.draftApp = new EnhancedDraftAssistantApp();
 });
 
-// Export for potential use in other modules
-export { DraftAssistantApp };
+// Export for potential module usage
+export default EnhancedDraftAssistantApp;
