@@ -1,5 +1,97 @@
 # AI Quick Reference Card - Fantasy Football Draft Assistant V2
 
+## 🎨 UI Development - ALWAYS Use Shoelace Components
+
+### **CRITICAL: Our project uses Shoelace web components for professional UI**
+```html
+<!-- ❌ NEVER use basic HTML elements -->
+<button class="btn">Click me</button>
+<div class="card">Content</div>
+<input type="text" placeholder="Search">
+
+<!-- ✅ ALWAYS use Shoelace components -->
+<sl-button variant="primary">Click me</sl-button>
+<sl-card>Content</sl-card>
+<sl-input placeholder="Search" clearable></sl-input>
+```
+
+### **Essential Shoelace Components:**
+```html
+<!-- Buttons -->
+<sl-button variant="primary|neutral|success|warning|danger" size="small|medium|large">
+    <sl-icon slot="prefix" name="icon-name"></sl-icon>
+    Button Text
+</sl-button>
+
+<!-- Cards -->
+<sl-card class="custom-class">
+    <div slot="header">Header Content</div>
+    Body Content
+    <div slot="footer">Footer Content</div>
+</sl-card>
+
+<!-- Form Inputs -->
+<sl-input label="Label" placeholder="Placeholder" clearable></sl-input>
+<sl-select label="Select" clearable>
+    <sl-option value="option1">Option 1</sl-option>
+</sl-select>
+
+<!-- Notifications -->
+<sl-alert variant="success|warning|danger|neutral" open closable>
+    <sl-icon slot="icon" name="check-circle"></sl-icon>
+    Message text
+</sl-alert>
+
+<!-- Loading States -->
+<sl-spinner style="font-size: 3rem;"></sl-spinner>
+<sl-progress-bar value="75" label="Loading..."></sl-progress-bar>
+
+<!-- Badges -->
+<sl-badge variant="primary|neutral|success|warning|danger">Badge Text</sl-badge>
+
+<!-- Modals -->
+<sl-dialog label="Dialog Title">
+    Content
+    <div slot="footer">
+        <sl-button variant="neutral">Cancel</sl-button>
+        <sl-button variant="primary">Confirm</sl-button>
+    </div>
+</sl-dialog>
+```
+
+### **Player Card Template (Always Use This):**
+```html
+<sl-card class="player-card" data-player-id="${player.player_id}">
+    <div slot="header" class="player-header">
+        <strong>${player.name}</strong>
+        <sl-badge variant="primary" class="position-${player.position.toLowerCase()}">
+            ${player.position}
+        </sl-badge>
+        <sl-badge variant="neutral">${player.team}</sl-badge>
+    </div>
+    
+    <div class="player-stats">
+        <div class="stat-item">
+            <span class="stat-label">Rank</span>
+            <span class="stat-value">${player.rank}</span>
+        </div>
+    </div>
+    
+    <div slot="footer">
+        <sl-button-group>
+            <sl-button variant="primary" size="small">
+                <sl-icon slot="prefix" name="plus"></sl-icon>
+                Queue
+            </sl-button>
+            <sl-button variant="neutral" size="small">
+                <sl-icon slot="prefix" name="info-circle"></sl-icon>
+                Details
+            </sl-button>
+        </sl-button-group>
+    </div>
+</sl-card>
+```
+
 ## 🐛 User Bug Reports & Feature Requests
 
 ### **When User Reports a Bug:**
@@ -95,19 +187,36 @@ def endpoint_function(param):
         return jsonify({'error': str(e)}, 500
 ```
 
-### **Frontend Method Pattern:**
+### **Frontend Method Pattern (Always Use Shoelace):**
 ```javascript
 async methodName(param) {
     try {
         this.showLoading('Loading...');
         const data = await this.apiRequest(`/api/endpoint/${param}`);
         this.displayResults(data);
+        
+        // Use Shoelace notification system
         this.showNotification('Success!', 'success');
     } catch (error) {
-        this.showNotification('Error occurred', 'error');
+        // Use Shoelace notification system
+        this.showNotification('Error occurred', 'danger');
     } finally {
         this.hideLoading();
     }
+}
+
+// CRITICAL: Always use Shoelace notification system
+showNotification(message, variant = 'primary') {
+    const alert = document.createElement('sl-alert');
+    alert.variant = variant; // primary, success, neutral, warning, danger
+    alert.closable = true;
+    alert.innerHTML = `
+        <sl-icon slot="icon" name="info-circle"></sl-icon>
+        ${message}
+    `;
+    document.body.appendChild(alert);
+    alert.show();
+    setTimeout(() => alert.remove(), 5000);
 }
 ```
 
@@ -138,6 +247,7 @@ players = rankings_manager.get_available_players(
 - Use existing `SleeperAPI` class for all Sleeper calls
 - Use `SimpleRankingsManager` for player rankings
 - Handle dynasty leagues with `get_all_unavailable_players()`
+- **ALWAYS use Shoelace components for ALL UI elements**
 - Follow existing UI patterns in `app.js`
 - Test with both redraft and dynasty leagues
 - Update progress: `python3 scripts/track_progress.py complete "Feature"`
@@ -145,6 +255,7 @@ players = rankings_manager.get_available_players(
 ### **❌ Never Do:**
 - Break existing functionality
 - Bypass dynasty league filtering
+- **Use basic HTML elements instead of Shoelace components**
 - Create new API patterns without following existing ones
 - Skip error handling
 - Forget to update progress tracking
@@ -209,27 +320,45 @@ this.state = {
 this.updateState({newProperty: value});
 ```
 
-### **UI Component Pattern:**
+### **UI Component Pattern (Always Use Shoelace):**
 ```javascript
 displayComponentName(data) {
     const container = document.getElementById('container-id');
     if (!data?.length) {
-        container.innerHTML = '<div class="no-data">No data available.</div>';
+        container.innerHTML = `
+            <sl-alert variant="neutral" open>
+                <sl-icon slot="icon" name="info-circle"></sl-icon>
+                No data available.
+            </sl-alert>
+        `;
         return;
     }
     
     const html = data.map(item => `
-        <div class="item-card" data-id="${item.id}">
-            <div class="item-name">${item.name}</div>
-        </div>
+        <sl-card class="item-card" data-id="${item.id}">
+            <div slot="header">
+                <strong>${item.name}</strong>
+                <sl-badge variant="primary">${item.type}</sl-badge>
+            </div>
+            <div class="item-details">${item.details}</div>
+            <div slot="footer">
+                <sl-button-group>
+                    <sl-button variant="primary" size="small">
+                        <sl-icon slot="prefix" name="plus"></sl-icon>
+                        Add
+                    </sl-button>
+                </sl-button-group>
+            </div>
+        </sl-card>
     `).join('');
     
     container.innerHTML = html;
     
-    // Add event listeners
-    container.querySelectorAll('.item-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            this.handleItemClick(e.target.dataset.id);
+    // Add Shoelace event listeners
+    container.querySelectorAll('sl-button').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const itemId = e.target.closest('.item-card').dataset.id;
+            this.handleItemClick(itemId);
         });
     });
 }
@@ -246,9 +375,13 @@ displayComponentName(data) {
 ## 📚 Key Reference Files
 
 - `AI_DEVELOPMENT_GUIDE.md` - Complete implementation guide
+- `UI_IMPROVEMENT_GUIDE.md` - **Shoelace component library guide**
 - `MISSING_FEATURES.md` - All features to implement
 - `ROADMAP.md` - Sprint planning and priorities
 - `src/frontend/app.js` - Frontend patterns
+- `src/frontend/index_enhanced.html` - **Enhanced HTML with Shoelace**
+- `src/frontend/style_enhanced.css` - **Enhanced CSS with theming**
+- `src/frontend/app_enhanced.js` - **Enhanced JS with Shoelace integration**
 - `src/backend/services/sleeper_api.py` - API patterns
 - `src/backend/rankings/SimpleRankingsManager.py` - Rankings patterns
 

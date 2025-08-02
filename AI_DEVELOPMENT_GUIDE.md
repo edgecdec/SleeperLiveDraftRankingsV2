@@ -365,9 +365,13 @@ def endpoint_function(param):
 ```javascript
 // File structure to follow:
 src/frontend/
-├── index.html     # Main HTML structure
-├── app.js         # Main application class
-└── style.css      # All styling
+├── index.html     # Main HTML structure with Shoelace components
+├── app.js         # Main application class with Shoelace integration
+└── style.css      # Custom styling with Shoelace theming
+
+// CRITICAL: Always use Shoelace components for UI elements
+// Our project uses Shoelace web components for professional UI
+// Reference: UI_IMPROVEMENT_GUIDE.md for complete component library
 
 // Method pattern in DraftAssistantApp class:
 async methodName(param) {
@@ -381,11 +385,21 @@ async methodName(param) {
         
     } catch (error) {
         console.error('Error:', error);
-        this.showNotification('Error occurred', 'error');
+        this.showNotification('Error occurred', 'danger');
     } finally {
         this.hideLoading();
     }
 }
+
+// ALWAYS use Shoelace components instead of basic HTML:
+// ❌ DON'T USE: <button class="btn">Click me</button>
+// ✅ USE: <sl-button variant="primary">Click me</sl-button>
+
+// ❌ DON'T USE: <div class="card">Content</div>
+// ✅ USE: <sl-card>Content</sl-card>
+
+// ❌ DON'T USE: <input type="text" placeholder="Search">
+// ✅ USE: <sl-input placeholder="Search" clearable></sl-input>
 ```
 
 #### **C. Integration Points**
@@ -445,34 +459,70 @@ class DraftAssistantApp {
 
 #### **B. User Interface Components**
 ```javascript
-// Follow existing UI patterns
+// CRITICAL: Always use Shoelace components for all UI elements
+// Our project uses Shoelace web components for professional appearance
+// Never use basic HTML elements - always use Shoelace equivalents
+
+// Follow existing UI patterns with Shoelace components
 displayComponentName(data) {
     const container = document.getElementById('container-id');
     if (!container) return;
     
     if (!data || data.length === 0) {
-        container.innerHTML = '<div class="no-data">No data available.</div>';
+        container.innerHTML = `
+            <sl-alert variant="neutral" open>
+                <sl-icon slot="icon" name="info-circle"></sl-icon>
+                No data available.
+            </sl-alert>
+        `;
         return;
     }
     
     const html = data.map(item => `
-        <div class="item-card" data-id="${item.id}">
-            <div class="item-info">
-                <div class="item-name">${item.name}</div>
-                <div class="item-details">${item.details}</div>
+        <sl-card class="item-card" data-id="${item.id}">
+            <div slot="header" class="item-header">
+                <strong>${item.name}</strong>
+                <sl-badge variant="primary">${item.type}</sl-badge>
             </div>
-        </div>
+            <div class="item-details">${item.details}</div>
+            <div slot="footer">
+                <sl-button-group>
+                    <sl-button variant="primary" size="small">
+                        <sl-icon slot="prefix" name="plus"></sl-icon>
+                        Add
+                    </sl-button>
+                    <sl-button variant="neutral" size="small">
+                        <sl-icon slot="prefix" name="info-circle"></sl-icon>
+                        Details
+                    </sl-button>
+                </sl-button-group>
+            </div>
+        </sl-card>
     `).join('');
     
     container.innerHTML = html;
     
-    // Add event listeners
-    container.querySelectorAll('.item-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            this.handleItemClick(e.target.dataset.id);
+    // Add event listeners for Shoelace components
+    container.querySelectorAll('sl-button').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const action = e.target.textContent.trim();
+            const itemId = e.target.closest('.item-card').dataset.id;
+            this.handleItemAction(action, itemId);
         });
     });
 }
+
+// SHOELACE COMPONENT REFERENCE:
+// Buttons: <sl-button variant="primary|neutral|success|warning|danger" size="small|medium|large">
+// Cards: <sl-card> with slots: header, footer
+// Inputs: <sl-input placeholder="..." clearable>
+// Selects: <sl-select> with <sl-option> children
+// Badges: <sl-badge variant="primary|neutral|success|warning|danger">
+// Alerts: <sl-alert variant="primary|success|neutral|warning|danger" open closable>
+// Icons: <sl-icon name="icon-name"> (use Lucide icon names)
+// Loading: <sl-spinner> and <sl-progress-bar>
+// Modals: <sl-dialog label="Title">
+// Tabs: <sl-tab-group> with <sl-tab> and <sl-tab-panel>
 ```
 
 #### **C. Data Storage and Caching**
@@ -658,29 +708,73 @@ class DraftAssistantApp {
 
 ### **4. Error Handling Pattern**
 ```javascript
-// Consistent error handling across the application
+// Consistent error handling across the application with Shoelace notifications
 async handleApiCall(apiCall, errorMessage = 'Operation failed') {
     try {
         this.showLoading();
         const result = await apiCall();
+        
+        // Use Shoelace notification system
         this.showNotification('Success!', 'success');
         return result;
     } catch (error) {
         console.error('API call failed:', error);
         
-        // Show user-friendly error
+        // Show user-friendly error with Shoelace alert
         if (error.message.includes('not found')) {
             this.showNotification('Data not found', 'warning');
         } else if (error.message.includes('network')) {
-            this.showNotification('Network error - please try again', 'error');
+            this.showNotification('Network error - please try again', 'danger');
         } else {
-            this.showNotification(errorMessage, 'error');
+            this.showNotification(errorMessage, 'danger');
         }
         
         throw error;
     } finally {
         this.hideLoading();
     }
+}
+
+// CRITICAL: Always use Shoelace notification system
+showNotification(message, variant = 'primary', duration = 5000) {
+    const container = document.getElementById('notification-container') || document.body;
+    
+    const alert = document.createElement('sl-alert');
+    alert.variant = variant; // primary, success, neutral, warning, danger
+    alert.closable = true;
+    alert.duration = duration;
+    
+    // Add appropriate icon based on variant
+    const iconName = {
+        primary: 'info-circle',
+        success: 'check-circle',
+        neutral: 'info-circle', 
+        warning: 'exclamation-triangle',
+        danger: 'exclamation-octagon'
+    }[variant] || 'info-circle';
+    
+    alert.innerHTML = `
+        <sl-icon slot="icon" name="${iconName}"></sl-icon>
+        ${message}
+    `;
+    
+    container.appendChild(alert);
+    alert.show();
+    
+    // Auto-remove after duration
+    setTimeout(() => alert.remove(), duration);
+}
+
+// CRITICAL: Always use Shoelace loading states
+showLoading(message = 'Loading...') {
+    const overlay = document.getElementById('loading-overlay');
+    const text = document.getElementById('loading-text');
+    
+    if (overlay) overlay.style.display = 'flex';
+    if (text) text.textContent = message;
+    
+    // Use Shoelace spinner in loading overlay:
+    // <sl-spinner style="font-size: 3rem;"></sl-spinner>
 }
 ```
 
