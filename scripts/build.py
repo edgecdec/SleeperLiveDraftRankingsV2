@@ -82,13 +82,16 @@ def create_pyinstaller_spec(debug=False, icon=None):
         if not debug:
             console_setting = "False"
     
+    # Fix Windows path issues by using forward slashes and raw strings
+    project_root_str = str(project_root).replace('\\', '/')
+    
     spec_content = f'''# -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
 
 a = Analysis(
     ['main.py'],
-    pathex=['{project_root}'],
+    pathex=[r'{project_root_str}'],
     binaries=[],
     datas=[
         ('src/frontend', 'frontend'),
