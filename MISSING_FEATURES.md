@@ -106,6 +106,25 @@ This document tracks features from the original Fantasy Football Draft Assistant
 - [ ] **GDPR Compliance** - European privacy compliance
 - [ ] **Rate Limiting** - Prevent API abuse
 
+
+
+## 💡 Feature Requests (User Suggested)
+
+### 💡 High Priority Requests
+- [ ] **Player Comparison Tool** - [Description needed]
+  - **Suggested by**: User on 2025-08-02
+  - **Use case**: [Why user wants this]
+  - **Priority**: [High/Medium/Low]
+  - **Complexity**: [Simple/Medium/Complex]
+
+## 🐛 Bug Fixes (User Reported)
+
+### 🐛 Critical Bugs
+- [ ] **Fix: Dynasty players showing as available in redraft leagues** - [Description needed]
+  - **Reported by**: User on 2025-08-02
+  - **Severity**: [High/Medium/Low]
+  - **Status**: Reported
+
 ## ✅ Completed Features
 
 ### 🏈 Core Draft Functionality
@@ -163,7 +182,7 @@ This document tracks features from the original Fantasy Football Draft Assistant
 
 ## 📊 Progress Tracking
 
-**Overall Progress**: 22/100 features completed (22.0%)
+**Overall Progress**: 22/102 features completed (21.6%)
 
 ### By Category:
 - **Core Draft Functionality**: 7/15 (46.7%) ✅

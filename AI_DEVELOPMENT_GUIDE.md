@@ -16,6 +16,276 @@ This comprehensive guide provides instructions for AI assistants to correctly it
 - **Key Files**: `PlayerRankings.py`, `BestAvailable.py`, `RankingsUtil.py`, `Constants.py`
 - **Functionality**: Command-line tool with CSV rankings and Sleeper API
 
+## 🐛 Bug Reports and Feature Suggestions
+
+### **When User Reports a Bug**
+
+#### **A. Immediate Response Process**
+1. **Acknowledge the bug** with empathy and professionalism
+2. **Gather details** about the issue (steps to reproduce, environment, etc.)
+3. **Attempt to reproduce** the bug if possible
+4. **Provide workaround** if available
+5. **Add to tracking system** immediately
+
+#### **B. Bug Documentation Template**
+```bash
+# Add bug to tracking system
+python3 scripts/track_progress.py add "Fix: [Bug Description]" "🐛 Bug Fixes"
+
+# Example:
+python3 scripts/track_progress.py add "Fix: Dynasty players showing as available in redraft leagues" "🐛 Bug Fixes"
+```
+
+#### **C. Bug Report Format in MISSING_FEATURES.md**
+```markdown
+### 🐛 Bug Fixes
+- [ ] **Fix: [Bug Description]** - [Detailed description of the issue]
+  - **Reported by**: User on [Date]
+  - **Severity**: High/Medium/Low
+  - **Steps to reproduce**: [Steps]
+  - **Expected behavior**: [What should happen]
+  - **Actual behavior**: [What actually happens]
+  - **Workaround**: [If available]
+```
+
+#### **D. Bug Priority Classification**
+- **🔥 Critical (Fix Immediately)**: App crashes, data loss, security issues
+- **⚠️ High (Fix in Current Sprint)**: Core functionality broken, user can't complete main tasks
+- **📋 Medium (Fix in Next Sprint)**: Feature partially broken, workaround available
+- **📝 Low (Fix When Convenient)**: Minor UI issues, edge cases
+
+### **When User Suggests a Feature**
+
+#### **A. Feature Suggestion Response Process**
+1. **Thank the user** for the suggestion
+2. **Ask clarifying questions** to understand the use case
+3. **Explain current status** (if similar feature exists or is planned)
+4. **Add to feature list** with proper categorization
+5. **Provide timeline estimate** if possible
+
+#### **B. Feature Addition Template**
+```bash
+# Add feature suggestion to tracking system
+python3 scripts/track_progress.py add "[Feature Name]" "[Category]"
+
+# Example:
+python3 scripts/track_progress.py add "Player Comparison Tool" "🎯 User Experience Enhancements"
+```
+
+#### **C. Feature Suggestion Format in MISSING_FEATURES.md**
+```markdown
+- [ ] **[Feature Name]** - [Description of the feature]
+  - **Suggested by**: User on [Date]
+  - **Use case**: [Why the user wants this feature]
+  - **Priority**: High/Medium/Low (based on user impact and complexity)
+  - **Complexity**: Simple/Medium/Complex
+  - **Dependencies**: [Other features this depends on]
+  - **Similar to**: [Reference to original project if applicable]
+```
+
+#### **D. Feature Priority Assessment**
+**High Priority Criteria:**
+- Requested by multiple users
+- Addresses core draft functionality
+- Easy to implement with existing infrastructure
+- High user impact
+
+**Medium Priority Criteria:**
+- Nice-to-have enhancement
+- Moderate implementation complexity
+- Improves user experience
+- Fits with current roadmap
+
+**Low Priority Criteria:**
+- Edge case or niche use case
+- High implementation complexity
+- Low user impact
+- Requires significant infrastructure changes
+
+### **User Communication Templates**
+
+#### **A. Bug Report Response**
+```
+Thank you for reporting this issue! I understand how frustrating this must be.
+
+🐛 **Bug Confirmed**: [Brief description]
+
+**What I'm doing about it:**
+✅ Added to our bug tracking system
+✅ [Immediate action taken, if any]
+✅ [Workaround provided, if available]
+
+**Timeline**: [Expected fix timeline based on severity]
+
+I'll keep you updated on the progress. In the meantime, [workaround or alternative approach if available].
+```
+
+#### **B. Feature Suggestion Response**
+```
+Great suggestion! This would definitely improve the draft experience.
+
+💡 **Feature Request**: [Brief description]
+
+**What I'm doing about it:**
+✅ Added to our feature roadmap
+✅ Categorized as [Priority Level] priority
+✅ [Any immediate thoughts on implementation]
+
+**Timeline**: [Rough estimate based on priority and current sprint]
+
+This fits well with our goal of [relevant goal from roadmap]. I'll make sure it's considered for [relevant sprint/timeframe].
+```
+
+### **Tracking System Integration**
+
+#### **A. Update MISSING_FEATURES.md Structure**
+Add new sections for user-reported items:
+
+```markdown
+## 🐛 Bug Fixes (User Reported)
+[Bugs reported by users that need fixing]
+
+## 💡 Feature Requests (User Suggested)  
+[Features suggested by users that aren't in original project]
+
+## 🔄 Enhancements (User Requested)
+[Improvements to existing features suggested by users]
+```
+
+#### **B. Progress Tracking Updates**
+```bash
+# Generate report including user-reported items
+python3 scripts/track_progress.py report
+
+# The report should now include:
+# - Original features from the project
+# - User-reported bugs
+# - User-suggested features
+# - Total progress across all categories
+```
+
+#### **C. Sprint Planning Integration**
+When planning sprints, consider:
+1. **Critical bugs** (always fix first)
+2. **High-priority user requests** (balance with planned features)
+3. **Original project features** (maintain progress toward 100%)
+4. **Technical debt** (keep system maintainable)
+
+### **Implementation Workflow for User-Reported Items**
+
+#### **A. Bug Fix Workflow**
+```bash
+# 1. Reproduce the bug
+python main.py --port 5000
+# [Test the reported scenario]
+
+# 2. Identify root cause
+# [Debug and analyze the issue]
+
+# 3. Implement fix following existing patterns
+# [Fix the bug using established code patterns]
+
+# 4. Test the fix
+# [Verify bug is fixed and no regressions introduced]
+
+# 5. Update progress
+python3 scripts/track_progress.py complete "Fix: [Bug Description]"
+
+# 6. Commit with proper message
+git commit -m "Fix: [Bug Description] - user reported issue
+
+🐛 Bug Fix:
+✅ [What was broken]
+✅ [How it was fixed]
+✅ [Testing completed]
+
+🧪 Verification:
+✅ [Steps to verify fix]
+✅ [Regression testing completed]
+
+Resolves user-reported issue: [Brief description]"
+```
+
+#### **B. Feature Implementation Workflow**
+```bash
+# 1. Analyze feature request
+# [Understand requirements and use case]
+
+# 2. Design implementation approach
+# [Plan backend/frontend changes needed]
+
+# 3. Check for conflicts with existing features
+# [Ensure no breaking changes]
+
+# 4. Implement following established patterns
+# [Use existing code patterns and guidelines]
+
+# 5. Test thoroughly
+# [Test happy path, edge cases, integration]
+
+# 6. Update progress
+python3 scripts/track_progress.py complete "[Feature Name]"
+
+# 7. Commit with proper message
+git commit -m "Implement [Feature Name] - user requested feature
+
+🚀 User-Requested Feature:
+✅ [What the feature does]
+✅ [How it was implemented]
+✅ [Integration points]
+
+🎯 User Impact:
+✅ [How this helps users]
+✅ [Use cases addressed]
+
+Implements user suggestion: [Brief description]"
+```
+
+### **Quality Assurance for User-Reported Items**
+
+#### **A. Bug Fix Quality Gates**
+- [ ] Bug is reproducible before fix
+- [ ] Fix addresses root cause, not just symptoms
+- [ ] No regressions introduced
+- [ ] Edge cases considered
+- [ ] User can verify fix works
+
+#### **B. Feature Request Quality Gates**
+- [ ] Feature matches user's described use case
+- [ ] Integrates well with existing functionality
+- [ ] Follows established UI/UX patterns
+- [ ] Performance impact acceptable
+- [ ] Mobile responsive (if UI feature)
+
+### **Communication and Follow-up**
+
+#### **A. Progress Updates**
+Keep users informed about their reports:
+```
+📊 **Update on your [bug report/feature request]:**
+
+**Status**: [In Progress/Testing/Completed]
+**Progress**: [What's been done]
+**Next Steps**: [What's coming next]
+**Timeline**: [Updated estimate if changed]
+
+[Any additional context or questions]
+```
+
+#### **B. Completion Notification**
+```
+🎉 **Great news!** Your [bug report/feature request] has been implemented!
+
+**What's New:**
+✅ [Description of fix/feature]
+✅ [How to access/use it]
+✅ [Any important notes]
+
+**Available In**: [Version/build where it's available]
+
+Thank you for helping make the Fantasy Football Draft Assistant better! Keep the feedback coming! 🏈
+```
+
 ## 📋 Development Workflow
 
 ### **1. Before Starting Any Feature**

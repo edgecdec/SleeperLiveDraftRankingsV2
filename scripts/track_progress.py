@@ -88,21 +88,80 @@ def add_new_feature(feature_name, category="🚧 Missing Core Features"):
     
     content = missing_features_path.read_text()
     
-    # Find the category section
-    category_pattern = f'### {re.escape(category)}'
-    if not re.search(category_pattern, content):
-        print(f"❌ Category '{category}' not found")
-        return False
+    # Handle special categories for user reports
+    if category == "🐛 Bug Fixes":
+        category_header = "## 🐛 Bug Fixes (User Reported)"
+        if category_header not in content:
+            # Add the section if it doesn't exist
+            insertion_point = content.find("## ✅ Completed Features")
+            if insertion_point == -1:
+                insertion_point = len(content)
+            
+            new_section = f"\n{category_header}\n\n### 🐛 Critical Bugs\n- [ ] **{feature_name}** - [Description needed]\n  - **Reported by**: User on {datetime.now().strftime('%Y-%m-%d')}\n  - **Severity**: [High/Medium/Low]\n  - **Status**: Reported\n\n"
+            content = content[:insertion_point] + new_section + content[insertion_point:]
+        else:
+            # Add to existing section
+            section_start = content.find(category_header)
+            next_section = content.find("\n## ", section_start + 1)
+            if next_section == -1:
+                next_section = len(content)
+            
+            new_item = f"- [ ] **{feature_name}** - [Description needed]\n  - **Reported by**: User on {datetime.now().strftime('%Y-%m-%d')}\n  - **Severity**: [High/Medium/Low]\n  - **Status**: Reported\n"
+            
+            # Insert after the category header
+            insert_pos = content.find('\n', section_start) + 1
+            content = content[:insert_pos] + new_item + content[insert_pos:]
     
-    # Add the new feature
-    new_feature = f'- [ ] **{feature_name}** - [Description needed]'
+    elif category == "💡 Feature Requests":
+        category_header = "## 💡 Feature Requests (User Suggested)"
+        if category_header not in content:
+            # Add the section if it doesn't exist
+            insertion_point = content.find("## 🐛 Bug Fixes (User Reported)")
+            if insertion_point == -1:
+                insertion_point = content.find("## ✅ Completed Features")
+            if insertion_point == -1:
+                insertion_point = len(content)
+            
+            new_section = f"\n{category_header}\n\n### 💡 High Priority Requests\n- [ ] **{feature_name}** - [Description needed]\n  - **Suggested by**: User on {datetime.now().strftime('%Y-%m-%d')}\n  - **Use case**: [Why user wants this]\n  - **Priority**: [High/Medium/Low]\n  - **Complexity**: [Simple/Medium/Complex]\n\n"
+            content = content[:insertion_point] + new_section + content[insertion_point:]
+        else:
+            # Add to existing section
+            section_start = content.find(category_header)
+            next_section = content.find("\n## ", section_start + 1)
+            if next_section == -1:
+                next_section = len(content)
+            
+            new_item = f"- [ ] **{feature_name}** - [Description needed]\n  - **Suggested by**: User on {datetime.now().strftime('%Y-%m-%d')}\n  - **Use case**: [Why user wants this]\n  - **Priority**: [High/Medium/Low]\n  - **Complexity**: [Simple/Medium/Complex]\n"
+            
+            # Insert after the category header
+            insert_pos = content.find('\n', section_start) + 1
+            content = content[:insert_pos] + new_item + content[insert_pos:]
     
-    # Insert after the category header
-    insertion_point = content.find(f'### {category}') + len(f'### {category}') + 1
-    content = content[:insertion_point] + f'\n{new_feature}' + content[insertion_point:]
+    else:
+        # Handle regular categories
+        category_pattern = f'### {re.escape(category)}'
+        if not re.search(category_pattern, content):
+            print(f"❌ Category '{category}' not found")
+            print("Available categories:")
+            print("  - 🐛 Bug Fixes")
+            print("  - 💡 Feature Requests") 
+            print("  - 🚧 Missing Core Features")
+            print("  - 📊 Rankings System Enhancements")
+            print("  - 🏈 Advanced Draft Features")
+            print("  - 🔄 Real-Time Features")
+            print("  - 📈 Analytics and Insights")
+            print("  - 🎯 User Experience Enhancements")
+            return False
+        
+        # Add the new feature
+        new_feature = f'- [ ] **{feature_name}** - [Description needed]'
+        
+        # Insert after the category header
+        insertion_point = content.find(f'### {category}') + len(f'### {category}') + 1
+        content = content[:insertion_point] + f'\n{new_feature}' + content[insertion_point:]
     
     missing_features_path.write_text(content)
-    print(f"➕ Added new feature '{feature_name}' to {category}")
+    print(f"➕ Added new item '{feature_name}' to {category}")
     return True
 
 def generate_progress_report():
@@ -151,6 +210,15 @@ def main():
         print("  python scripts/track_progress.py report")
         print("  python scripts/track_progress.py complete 'Feature Name'")
         print("  python scripts/track_progress.py add 'New Feature Name' 'Category'")
+        print("")
+        print("Special categories for user reports:")
+        print("  python scripts/track_progress.py add 'Fix: Bug description' '🐛 Bug Fixes'")
+        print("  python scripts/track_progress.py add 'Feature Name' '💡 Feature Requests'")
+        print("")
+        print("Examples:")
+        print("  python scripts/track_progress.py add 'Fix: Dynasty players showing in redraft' '🐛 Bug Fixes'")
+        print("  python scripts/track_progress.py add 'Player Comparison Tool' '💡 Feature Requests'")
+        print("  python scripts/track_progress.py complete 'Auto-Refresh Draft'")
         return
     
     command = sys.argv[1].lower()
@@ -174,6 +242,7 @@ def main():
     else:
         print("Invalid command or missing arguments!")
         print("Use 'report', 'complete <feature>', or 'add <feature> [category]'")
+        print("Special categories: '🐛 Bug Fixes', '💡 Feature Requests'")
 
 if __name__ == '__main__':
     main()

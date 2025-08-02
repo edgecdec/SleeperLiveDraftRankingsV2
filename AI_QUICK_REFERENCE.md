@@ -1,5 +1,54 @@
 # AI Quick Reference Card - Fantasy Football Draft Assistant V2
 
+## 🐛 User Bug Reports & Feature Requests
+
+### **When User Reports a Bug:**
+```bash
+# 1. Acknowledge and gather details
+# 2. Add to tracking system immediately
+python3 scripts/track_progress.py add "Fix: [Bug Description]" "🐛 Bug Fixes"
+
+# 3. Prioritize by severity:
+# 🔥 Critical: Fix immediately (crashes, data loss)
+# ⚠️ High: Fix in current sprint (core functionality broken)
+# 📋 Medium: Fix in next sprint (workaround available)
+# 📝 Low: Fix when convenient (minor issues)
+```
+
+### **When User Suggests Feature:**
+```bash
+# 1. Thank user and ask clarifying questions
+# 2. Add to feature list with proper category
+python3 scripts/track_progress.py add "[Feature Name]" "[Category]"
+
+# 3. Assess priority:
+# High: Multiple users want it, easy to implement, high impact
+# Medium: Nice enhancement, moderate complexity
+# Low: Niche use case, high complexity, low impact
+```
+
+### **Response Templates:**
+
+**Bug Report Response:**
+```
+Thank you for reporting this! 
+
+🐛 **Bug Confirmed**: [Description]
+✅ Added to tracking system
+✅ [Workaround if available]
+**Timeline**: [Based on severity]
+```
+
+**Feature Request Response:**
+```
+Great suggestion!
+
+💡 **Feature Request**: [Description]  
+✅ Added to roadmap as [Priority] priority
+✅ [Implementation thoughts]
+**Timeline**: [Rough estimate]
+```
+
 ## 🚀 Before Starting Any Feature
 
 ```bash
