@@ -32,13 +32,13 @@ def clean_build_dirs():
         dir_path = project_root / dir_name
         if dir_path.exists():
             shutil.rmtree(dir_path)
-            print(f"🧹 Cleaned {dir_path}")
+            print(f"Cleaned {dir_path}")
     
     # Also clean .pyc files
     for pyc_file in project_root.rglob('*.pyc'):
         pyc_file.unlink()
     
-    print("✅ Build directories cleaned")
+    print("Build directories cleaned")
 
 
 def get_executable_name():
@@ -162,7 +162,7 @@ exe = EXE(
     with open(spec_path, 'w') as f:
         f.write(spec_content)
     
-    print(f"📄 Created PyInstaller spec: {spec_path}")
+    print(f"Created PyInstaller spec: {spec_path}")
     return spec_path
 
 
@@ -184,7 +184,7 @@ def build_executable(debug=False, icon=None, clean=True):
         str(spec_path)
     ]
     
-    print(f"🔨 Building executable for {platform.system()} {platform.machine()}...")
+    print(f"Building executable for {platform.system()} {platform.machine()}...")
     print(f"   Command: {' '.join(cmd)}")
     print(f"   Working directory: {project_root}")
     
@@ -196,16 +196,16 @@ def build_executable(debug=False, icon=None, clean=True):
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode != 0:
-            print("❌ Build failed!")
+            print("Build failed!")
             print("STDOUT:", result.stdout)
             print("STDERR:", result.stderr)
             return False
         
-        print("✅ Build successful!")
+        print("Build successful!")
         return True
         
     except FileNotFoundError:
-        print("❌ PyInstaller not found! Please install it:")
+        print("PyInstaller not found! Please install it:")
         print("   pip install pyinstaller")
         return False
     
@@ -219,12 +219,12 @@ def optimize_executable():
     exe_path = project_root / 'dist' / get_executable_name()
     
     if not exe_path.exists():
-        print("❌ Executable not found for optimization")
+        print("Executable not found for optimization")
         return False
     
     # Get file size
     size_mb = exe_path.stat().st_size / (1024 * 1024)
-    print(f"📊 Executable size: {size_mb:.1f} MB")
+    print(f"Executable size: {size_mb:.1f} MB")
     
     # Try UPX compression if available
     try:
@@ -234,12 +234,12 @@ def optimize_executable():
         if result.returncode == 0:
             new_size_mb = exe_path.stat().st_size / (1024 * 1024)
             compression_ratio = (1 - new_size_mb / size_mb) * 100
-            print(f"🗜️  UPX compressed: {new_size_mb:.1f} MB ({compression_ratio:.1f}% reduction)")
+            print(f"UPX compressed: {new_size_mb:.1f} MB ({compression_ratio:.1f}% reduction)")
         else:
-            print("⚠️  UPX compression failed (this is optional)")
+            print("UPX compression failed (this is optional)")
             
     except FileNotFoundError:
-        print("ℹ️  UPX not available (optional compression tool)")
+        print("UPX not available (optional compression tool)")
     
     return True
 
@@ -251,7 +251,7 @@ def create_platform_release():
     exe_path = dist_path / get_executable_name()
     
     if not exe_path.exists():
-        print("❌ Executable not found for release creation")
+        print("Executable not found for release creation")
         return False
     
     # Create platform-specific name
@@ -269,7 +269,7 @@ def create_platform_release():
     # Copy executable with platform-specific name
     shutil.copy2(exe_path, release_path)
     
-    print(f"📦 Created platform release: {release_name}")
+    print(f"Created platform release: {release_name}")
     return release_path
 
 
@@ -279,10 +279,10 @@ def test_executable():
     exe_path = project_root / 'dist' / get_executable_name()
     
     if not exe_path.exists():
-        print("❌ Executable not found for testing")
+        print("Executable not found for testing")
         return False
     
-    print("🧪 Testing executable...")
+    print("Testing executable...")
     
     # Make executable on Unix systems
     if platform.system() != "Windows":
@@ -295,18 +295,18 @@ def test_executable():
                               capture_output=True, text=True, timeout=10)
         
         if result.returncode == 0:
-            print("✅ Executable test passed")
+            print("Executable test passed")
             return True
         else:
-            print("⚠️  Executable test had issues (this might be normal)")
+            print("Executable test had issues (this might be normal)")
             print("   Try running it manually to verify it works")
             return True
             
     except subprocess.TimeoutExpired:
-        print("⚠️  Executable test timed out (this might be normal)")
+        print("Executable test timed out (this might be normal)")
         return True
     except Exception as e:
-        print(f"❌ Executable test failed: {e}")
+        print(f"Executable test failed: {e}")
         return False
 
 
@@ -355,7 +355,7 @@ def create_release_info():
         f.write("  - Responsive web interface\n")
         f.write("  - Real-time draft data\n")
     
-    print(f"📋 Created release info: {info_path}")
+    print(f"Created release info: {info_path}")
 
 
 def main():
@@ -375,10 +375,10 @@ def main():
     
     args = parser.parse_args()
     
-    print("🏈 Fantasy Football Draft Assistant V2 - Build Script")
+    print("Fantasy Football Draft Assistant V2 - Build Script")
     print("=" * 60)
-    print(f"🖥️  Building for: {platform.system()} {platform.machine()}")
-    print(f"📦 Platform suffix: {get_platform_suffix()}")
+    print(f"Building for: {platform.system()} {platform.machine()}")
+    print(f"Platform suffix: {get_platform_suffix()}")
     
     # Build executable
     success = build_executable(
@@ -388,7 +388,7 @@ def main():
     )
     
     if not success:
-        print("❌ Build failed!")
+        print("Build failed!")
         sys.exit(1)
     
     # Optimize
@@ -406,7 +406,7 @@ def main():
     if args.release:
         create_platform_release()
     
-    print("\n🎉 Build completed successfully!")
+    print("\nBuild completed successfully!")
     print(f"   Executable: dist/{get_executable_name()}")
     print(f"   Platform: {get_platform_suffix()}")
     print("   Ready for distribution!")
