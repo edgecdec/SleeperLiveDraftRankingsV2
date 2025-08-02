@@ -65,7 +65,7 @@ class EnhancedDraftAssistantApp {
         console.log('🚀 Initializing Enhanced Fantasy Football Draft Assistant V2');
         
         try {
-            // Test API connection
+            // Test API connection with timeout
             await this.testConnection();
             this.updateConnectionStatus(true);
             
@@ -76,7 +76,16 @@ class EnhancedDraftAssistantApp {
         } catch (error) {
             console.error('❌ Initialization failed:', error);
             this.updateConnectionStatus(false);
-            this.showNotification('Failed to connect to API', 'danger');
+            
+            // Show user-friendly error message
+            this.showNotification(
+                'Backend server not running. Click "Test Connection" to retry or start the server.', 
+                'warning',
+                10000
+            );
+            
+            // Still load version info even if API fails
+            await this.loadVersionInfo();
         }
     }
     
@@ -265,17 +274,24 @@ class EnhancedDraftAssistantApp {
     }
     
     /**
-     * Make API request with error handling
+     * Make API request with error handling and timeout
      */
     async apiRequest(endpoint, options = {}) {
         try {
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
             const response = await fetch(`${this.apiBase}${endpoint}`, {
                 headers: {
                     'Content-Type': 'application/json',
                     ...options.headers
                 },
+                signal: controller.signal,
                 ...options
             });
+            
+            clearTimeout(timeoutId);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -283,6 +299,10 @@ class EnhancedDraftAssistantApp {
             
             return await response.json();
         } catch (error) {
+            if (error.name === 'AbortError') {
+                console.error(`API request timeout: ${endpoint}`);
+                throw new Error('Request timed out - server may not be running');
+            }
             console.error(`API request failed: ${endpoint}`, error);
             throw error;
         }
@@ -311,10 +331,20 @@ class EnhancedDraftAssistantApp {
         try {
             await this.testConnection();
             this.updateConnectionStatus(true);
-            this.showNotification('Connection successful!', 'success');
+            this.showNotification('✅ Connection successful! Backend is running.', 'success');
         } catch (error) {
             this.updateConnectionStatus(false);
-            this.showNotification('Connection failed: ' + error.message, 'danger');
+            
+            let errorMessage = 'Connection failed: ';
+            if (error.message.includes('timeout')) {
+                errorMessage += 'Server not responding (timeout). Make sure the backend is running on port 5000.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage += 'Cannot reach server. Start the backend with: python main.py --port 5000';
+            } else {
+                errorMessage += error.message;
+            }
+            
+            this.showNotification(errorMessage, 'danger', 15000);
         } finally {
             if (button) button.loading = false;
         }
