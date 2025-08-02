@@ -44,7 +44,7 @@ A single executable fantasy football draft assistant with embedded web server an
 
 ### Quick Build
 ```bash
-git clone https://github.com/YOUR_USERNAME/SleeperLiveDraftRankingsV2.git
+git clone https://github.com/edgecdec/SleeperLiveDraftRankingsV2.git
 cd SleeperLiveDraftRankingsV2
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate

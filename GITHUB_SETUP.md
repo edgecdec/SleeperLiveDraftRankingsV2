@@ -19,7 +19,7 @@ This document provides instructions for setting up the GitHub repository for Fan
 
 ```bash
 # Add GitHub remote (replace with your actual repository URL)
-git remote add origin https://github.com/YOUR_USERNAME/SleeperLiveDraftRankingsV2.git
+git remote add origin https://github.com/edgecdec/SleeperLiveDraftRankingsV2.git
 
 # Push initial commit and tag
 git push -u origin main
@@ -82,7 +82,7 @@ See [BUILD_GUIDE.md](docs/BUILD_GUIDE.md) for detailed build instructions.
 
 ```bash
 # Quick build
-git clone https://github.com/YOUR_USERNAME/SleeperLiveDraftRankingsV2.git
+git clone https://github.com/edgecdec/SleeperLiveDraftRankingsV2.git
 cd SleeperLiveDraftRankingsV2
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
