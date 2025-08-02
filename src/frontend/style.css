@@ -744,6 +744,33 @@ body {
     }
 }
 
+/* Dynasty League Status */
+.dynasty-status {
+    padding: 10px 20px;
+    background: #f0f9ff;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dynasty-badge {
+    background: #1e40af;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* Player injury status */
+.player-injury {
+    background: #fed7d7;
+    color: #c53030;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
 /* Enhanced pick styling */
 .pick-position {
     background: #e2e8f0;

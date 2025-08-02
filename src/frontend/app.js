@@ -441,6 +441,12 @@ class DraftAssistantApp {
                             </div>
                         </div>
                         
+                        <div id="dynasty-status" class="dynasty-status" style="display: none;">
+                            <div class="dynasty-badge">
+                                🏰 Dynasty League - Rostered players filtered
+                            </div>
+                        </div>
+                        
                         <div class="rankings-tabs">
                             <button class="tab-btn active" data-tab="available">Available Players</button>
                             <button class="tab-btn" data-tab="best">Best Available</button>
@@ -527,7 +533,11 @@ class DraftAssistantApp {
             // Load available players
             this.updateRankingsLoading('available', 'Loading available players...');
             const availableData = await this.apiRequest(`/draft/${draftId}/available-players?limit=100`);
-            this.displayAvailablePlayers(availableData.available_players);
+            this.displayAvailablePlayers(
+                availableData.available_players, 
+                availableData.is_dynasty_league,
+                availableData.total_unavailable
+            );
             
             // Load best available by position
             this.updateRankingsLoading('best', 'Loading best available players...');
@@ -543,9 +553,24 @@ class DraftAssistantApp {
     /**
      * Display available players
      */
-    displayAvailablePlayers(players) {
+    displayAvailablePlayers(players, isDynasty = false, totalUnavailable = 0) {
         const container = document.getElementById('available-players-list');
         if (!container) return;
+        
+        // Show dynasty status if applicable
+        const dynastyStatus = document.getElementById('dynasty-status');
+        if (dynastyStatus) {
+            if (isDynasty) {
+                dynastyStatus.style.display = 'block';
+                dynastyStatus.innerHTML = `
+                    <div class="dynasty-badge">
+                        🏰 Dynasty League - ${totalUnavailable} players filtered (drafted + rostered)
+                    </div>
+                `;
+            } else {
+                dynastyStatus.style.display = 'none';
+            }
+        }
         
         if (!players || players.length === 0) {
             container.innerHTML = '<div class="no-data">No available players found.</div>';
@@ -561,6 +586,7 @@ class DraftAssistantApp {
                         <span class="player-position">${player.position}</span>
                         <span class="player-team">${player.team || 'N/A'}</span>
                         ${player.bye_week ? `<span class="player-bye">Bye: ${player.bye_week}</span>` : ''}
+                        ${player.injury_status ? `<span class="player-injury">${player.injury_status}</span>` : ''}
                     </div>
                 </div>
                 <div class="player-tier">

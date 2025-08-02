@@ -363,3 +363,94 @@ class SleeperAPI:
         except Exception as e:
             print(f"⚠️ Error in dynasty/keeper detection: {e}")
             return False  # Default to redraft on error
+    
+    @staticmethod
+    def get_rostered_players(league_id: str) -> List[str]:
+        """
+        Get all rostered player IDs in a league (for dynasty/keeper filtering)
+        
+        Args:
+            league_id: Sleeper league ID
+            
+        Returns:
+            List of player IDs that are currently rostered
+        """
+        try:
+            rosters = SleeperAPI.get_league_rosters(league_id)
+            rostered_players = set()
+            
+            for roster in rosters:
+                # Add players from main roster
+                players = roster.get('players', [])
+                if players:
+                    rostered_players.update(players)
+                
+                # Add players from taxi squad (dynasty feature)
+                taxi = roster.get('taxi', [])
+                if taxi:
+                    rostered_players.update(taxi)
+                
+                # Add players from IR
+                reserve = roster.get('reserve', [])
+                if reserve:
+                    rostered_players.update(reserve)
+            
+            print(f"🏰 Found {len(rostered_players)} rostered players in league {league_id}")
+            return list(rostered_players)
+            
+        except Exception as e:
+            print(f"⚠️ Error getting rostered players: {e}")
+            return []
+    
+    @staticmethod
+    def get_all_unavailable_players(draft_id: str, league_id: str = None) -> Tuple[List[str], bool]:
+        """
+        Get all unavailable players (drafted + rostered for dynasty)
+        
+        Args:
+            draft_id: Sleeper draft ID
+            league_id: Optional league ID (will be fetched from draft if not provided)
+            
+        Returns:
+            Tuple of (unavailable_player_ids, is_dynasty_league)
+        """
+        try:
+            unavailable_players = set()
+            
+            # Get drafted players
+            drafted_players = SleeperAPI.get_drafted_players_with_names(draft_id)
+            for player in drafted_players:
+                if player.get('player_id'):
+                    unavailable_players.add(player['player_id'])
+            
+            # Get league info if not provided
+            if not league_id:
+                draft_info = SleeperAPI.get_draft_info(draft_id)
+                league_id = draft_info.get('league_id') if draft_info else None
+            
+            is_dynasty = False
+            if league_id:
+                # Check if dynasty/keeper league
+                league_info = SleeperAPI.get_league_info(league_id)
+                if league_info:
+                    is_dynasty = SleeperAPI.is_dynasty_or_keeper_league(league_info)
+                    
+                    if is_dynasty:
+                        print(f"🏰 Dynasty/Keeper league detected - filtering rostered players")
+                        rostered_players = SleeperAPI.get_rostered_players(league_id)
+                        unavailable_players.update(rostered_players)
+                    else:
+                        print(f"🏈 Redraft league detected - only filtering drafted players")
+            
+            print(f"📊 Total unavailable players: {len(unavailable_players)} (drafted + rostered)")
+            return list(unavailable_players), is_dynasty
+            
+        except Exception as e:
+            print(f"⚠️ Error getting unavailable players: {e}")
+            # Fallback to just drafted players
+            try:
+                drafted_players = SleeperAPI.get_drafted_players_with_names(draft_id)
+                drafted_ids = [p.get('player_id') for p in drafted_players if p.get('player_id')]
+                return drafted_ids, False
+            except:
+                return [], False

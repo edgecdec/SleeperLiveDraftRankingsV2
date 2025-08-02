@@ -26,7 +26,7 @@ def init_rankings_routes(rm_instance):
 @rankings_bp.route('/draft/<draft_id>/available-players')
 def get_available_players(draft_id):
     """
-    Get available players for a specific draft
+    Get available players for a specific draft (filters rostered players in dynasty)
     
     Args:
         draft_id: Sleeper draft ID
@@ -59,8 +59,6 @@ def get_available_players(draft_id):
                 'code': 'DRAFT_NOT_FOUND'
             }), 404
         
-        draft_picks = SleeperAPI.get_draft_picks(draft_id)
-        
         # Get league info for format detection
         league_id = draft_info.get('league_id')
         league_format = None
@@ -77,16 +75,21 @@ def get_available_players(draft_id):
         if format_override:
             league_format = format_override
         
-        # Get drafted player IDs
-        drafted_player_ids = set()
-        for pick in draft_picks:
-            if pick.get('player_id'):
-                drafted_player_ids.add(pick['player_id'])
+        # Get all unavailable players (drafted + rostered for dynasty)
+        try:
+            unavailable_player_ids, is_dynasty = SleeperAPI.get_all_unavailable_players(draft_id, league_id)
+            print(f"🚫 Filtering {len(unavailable_player_ids)} unavailable players (dynasty: {is_dynasty})")
+        except Exception as e:
+            print(f"⚠️ Error getting unavailable players: {e}, using fallback")
+            # Fallback to just draft picks
+            draft_picks = SleeperAPI.get_draft_picks(draft_id)
+            unavailable_player_ids = [pick.get('player_id') for pick in draft_picks if pick.get('player_id')]
+            is_dynasty = False
         
         # Get available players from rankings
         try:
             available_players = rankings_manager.get_available_players(
-                drafted_players=list(drafted_player_ids),
+                drafted_players=unavailable_player_ids,
                 league_format=league_format,
                 position_filter=position_filter,
                 limit=limit
@@ -95,13 +98,14 @@ def get_available_players(draft_id):
             # Fallback to basic player list if rankings fail
             print(f"⚠️ Rankings error: {e}, using fallback")
             available_players = _get_fallback_available_players(
-                drafted_player_ids, position_filter, limit
+                unavailable_player_ids, position_filter, limit
             )
         
         return jsonify({
             'draft_id': draft_id,
             'league_format': league_format,
-            'total_drafted': len(drafted_player_ids),
+            'is_dynasty_league': is_dynasty,
+            'total_unavailable': len(unavailable_player_ids),
             'available_players': available_players,
             'filters': {
                 'position': position_filter,
@@ -165,8 +169,6 @@ def get_best_available(draft_id):
                 'code': 'DRAFT_NOT_FOUND'
             }), 404
         
-        draft_picks = SleeperAPI.get_draft_picks(draft_id)
-        
         # Get league format
         league_id = draft_info.get('league_id')
         league_format = None
@@ -182,16 +184,21 @@ def get_best_available(draft_id):
         if format_override:
             league_format = format_override
         
-        # Get drafted player IDs
-        drafted_player_ids = set()
-        for pick in draft_picks:
-            if pick.get('player_id'):
-                drafted_player_ids.add(pick['player_id'])
+        # Get all unavailable players (drafted + rostered for dynasty)
+        try:
+            unavailable_player_ids, is_dynasty = SleeperAPI.get_all_unavailable_players(draft_id, league_id)
+            print(f"🚫 Filtering {len(unavailable_player_ids)} unavailable players (dynasty: {is_dynasty})")
+        except Exception as e:
+            print(f"⚠️ Error getting unavailable players: {e}, using fallback")
+            # Fallback to just draft picks
+            draft_picks = SleeperAPI.get_draft_picks(draft_id)
+            unavailable_player_ids = [pick.get('player_id') for pick in draft_picks if pick.get('player_id')]
+            is_dynasty = False
         
         # Get best available by position using simplified manager
         try:
             best_by_position = rankings_manager.get_best_available_by_position(
-                drafted_players=list(drafted_player_ids),
+                drafted_players=unavailable_player_ids,
                 league_format=league_format,
                 positions=[pos.strip().upper() for pos in positions],
                 count=count
@@ -204,7 +211,7 @@ def get_best_available(draft_id):
                 position = position.strip().upper()
                 try:
                     best_players = rankings_manager.get_available_players(
-                        drafted_players=list(drafted_player_ids),
+                        drafted_players=unavailable_player_ids,
                         league_format=league_format,
                         position_filter=position,
                         limit=count
@@ -217,8 +224,9 @@ def get_best_available(draft_id):
         return jsonify({
             'draft_id': draft_id,
             'league_format': league_format,
+            'is_dynasty_league': is_dynasty,
             'best_available': best_by_position,
-            'total_drafted': len(drafted_player_ids),
+            'total_unavailable': len(unavailable_player_ids),
             'status': 'success'
         })
         
