@@ -12,6 +12,7 @@ jobs:
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15  # Global timeout for entire job
     strategy:
       matrix:
         include:
@@ -34,11 +35,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      timeout-minutes: 2
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.9'
+      timeout-minutes: 3
 
     - name: Cache pip dependencies
       uses: actions/cache@v4
@@ -47,45 +50,147 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
+      timeout-minutes: 2
+
+    - name: Debug - Show environment info
+      run: |
+        echo "=== Environment Debug Info ==="
+        echo "OS: ${{ matrix.platform }}"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Python version:"
+        python --version
+        echo "Python location:"
+        which python || where python
+        echo "Pip version:"
+        pip --version
+        echo "Current directory:"
+        pwd || cd
+        echo "Directory contents:"
+        ls -la || dir
+        echo "Requirements file:"
+        cat requirements.txt || type requirements.txt
+        echo "============================="
+      shell: bash
+      timeout-minutes: 1
 
     - name: Install dependencies
       run: |
+        echo "Installing Python dependencies..."
         python -m pip install --upgrade pip
+        echo "Pip upgraded successfully"
         pip install -r requirements.txt
+        echo "Dependencies installed successfully"
+      timeout-minutes: 5
+
+    - name: Debug - Verify installation
+      run: |
+        echo "=== Installation Verification ==="
+        echo "Installed packages:"
+        pip list
+        echo "PyInstaller version:"
+        pyinstaller --version
+        echo "Project structure:"
+        ls -la src/ || dir src\
+        echo "Main.py exists:"
+        ls -la main.py || dir main.py
+        echo "============================="
+      shell: bash
+      timeout-minutes: 1
 
     - name: Make build script executable (Unix)
       if: matrix.platform != 'windows'
       run: chmod +x ${{ matrix.build_script }}
+      timeout-minutes: 1
 
-    - name: Build executable (Windows)
+    - name: Build executable (Windows) - with timeout and debugging
       if: matrix.platform == 'windows'
       run: |
-        echo "Building Windows executable..."
-        python scripts/build.py --release
+        echo "Starting Windows build process..."
+        echo "Using simplified CI build script for better reliability"
+        echo "Build command: python scripts/build_ci.py"
+        echo "Timeout: 8 minutes"
+        
+        # Use the simplified CI build script
+        python scripts/build_ci.py
+        
+        echo "Windows build completed"
       shell: cmd
+      timeout-minutes: 10
 
-    - name: Build executable (Unix)
+    - name: Build executable (Unix) - with timeout
       if: matrix.platform != 'windows'
       run: |
-        echo "Building ${{ matrix.platform }} executable..."
-        python scripts/build.py --release
+        echo "Starting ${{ matrix.platform }} build process..."
+        echo "Using simplified CI build script for better reliability"
+        echo "Build command: python scripts/build_ci.py"
+        echo "Timeout: 8 minutes"
+        
+        # Use the simplified CI build script
+        python scripts/build_ci.py
+        
+        echo "${{ matrix.platform }} build completed"
+      timeout-minutes: 10
+
+    - name: Debug - Post-build verification
+      if: always()
+      run: |
+        echo "=== Post-Build Debug Info ==="
+        echo "Dist directory contents:"
+        ls -la dist/ || dir dist\ || echo "No dist directory found"
+        echo "Build directory contents:"
+        ls -la build/ || dir build\ || echo "No build directory found"
+        echo "Spec files:"
+        ls -la *.spec || dir *.spec || echo "No spec files found"
+        echo "============================="
+      shell: bash
+      timeout-minutes: 1
 
     - name: Verify executable exists
       run: |
         echo "Checking for executable..."
-        ls -la dist/ || dir dist\
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          if [ -f "dist/FantasyFootballDraftAssistant.exe" ]; then
+            echo "✓ Windows executable found"
+            ls -la dist/FantasyFootballDraftAssistant.exe
+          else
+            echo "✗ Windows executable NOT found"
+            exit 1
+          fi
+        else
+          if [ -f "dist/FantasyFootballDraftAssistant" ]; then
+            echo "✓ Unix executable found"
+            ls -la dist/FantasyFootballDraftAssistant
+          else
+            echo "✗ Unix executable NOT found"
+            exit 1
+          fi
+        fi
       shell: bash
+      timeout-minutes: 1
 
     - name: Rename executable with version and platform
       run: |
         cd dist
         if [ "${{ matrix.platform }}" = "windows" ]; then
-          mv FantasyFootballDraftAssistant.exe FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}.exe || echo "Windows rename failed"
+          if [ -f "FantasyFootballDraftAssistant.exe" ]; then
+            mv FantasyFootballDraftAssistant.exe FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}.exe
+            echo "✓ Windows executable renamed"
+          else
+            echo "✗ Windows executable not found for renaming"
+            exit 1
+          fi
         else
-          mv FantasyFootballDraftAssistant FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }} || echo "Unix rename failed"
+          if [ -f "FantasyFootballDraftAssistant" ]; then
+            mv FantasyFootballDraftAssistant FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}
+            echo "✓ Unix executable renamed"
+          else
+            echo "✗ Unix executable not found for renaming"
+            exit 1
+          fi
         fi
         ls -la || dir
       shell: bash
+      timeout-minutes: 1
 
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v4
@@ -95,23 +200,26 @@ jobs:
           dist/FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}*
           dist/release_info_${{ matrix.artifact_name }}.txt
         retention-days: 30
+      timeout-minutes: 2
 
     - name: Test executable (basic smoke test)
       run: |
         cd dist
-        echo "Testing executable..."
+        echo "Testing executable with 30-second timeout..."
         if [ "${{ matrix.platform }}" = "windows" ]; then
-          timeout 10 ./FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}.exe --help || echo "Windows test completed"
+          timeout 30 ./FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}.exe --help || echo "Windows test completed (timeout expected)"
         else
-          timeout 10 ./FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }} --help || echo "Unix test completed"
+          timeout 30 ./FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }} --help || echo "Unix test completed (timeout expected)"
         fi
       shell: bash
       continue-on-error: true
+      timeout-minutes: 1
 
   create-release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
@@ -119,16 +227,19 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      timeout-minutes: 2
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         path: ./artifacts
+      timeout-minutes: 5
 
     - name: Display artifact structure
       run: |
         echo "Artifact structure:"
         find ./artifacts -type f -name "*" | head -20
+      timeout-minutes: 1
 
     - name: Get current date
       id: date
@@ -177,11 +288,13 @@ jobs:
           ./artifacts/FantasyFootballDraftAssistant-windows-x64/FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe
           ./artifacts/FantasyFootballDraftAssistant-darwin-x64/FantasyFootballDraftAssistant-v2.0.0-darwin-x64
           ./artifacts/FantasyFootballDraftAssistant-linux-x64/FantasyFootballDraftAssistant-v2.0.0-linux-x64
+      timeout-minutes: 5
 
   notify-completion:
     name: Notify Build Completion
     needs: [build, create-release]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: always()
     
     steps:
@@ -200,4 +313,10 @@ jobs:
           echo "🎉 New release created with executables for all platforms!"
         else
           echo "❌ Some builds failed. Check the logs above."
+          echo "Common issues:"
+          echo "- PyInstaller hanging (timeout after 8 minutes)"
+          echo "- Missing dependencies"
+          echo "- File permission issues"
+          echo "- Unicode encoding problems"
         fi
+      timeout-minutes: 1
