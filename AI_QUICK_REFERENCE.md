@@ -92,6 +92,36 @@
 </sl-card>
 ```
 
+## 🧹 File Cleanup (CRITICAL)
+
+### **Always Clean Up After Development:**
+```bash
+# MANDATORY: Remove temporary files after feature completion
+rm src/frontend/*_enhanced.*     # Enhanced versions after integration
+rm src/frontend/*_backup.*       # Backup files after verification  
+rm src/frontend/*_temp.*         # Temporary files
+rm src/frontend/*_old.*          # Old versions
+
+# CRITICAL: Verify file references after cleanup
+grep -r "enhanced\|temp\|old" src/frontend/*.html
+# Update any broken references found
+```
+
+### **Pre-Commit Checklist:**
+- [ ] No temporary files committed (`*_temp.*`, `*_enhanced.*`, `*_old.*`)
+- [ ] All file references in HTML/CSS/JS are correct
+- [ ] Application starts without 404 errors in console
+- [ ] All functionality tested and working
+
+### **Common Cleanup Mistake:**
+```bash
+# ❌ DON'T: Leave references to deleted files
+<link rel="stylesheet" href="style_enhanced.css">  # File deleted!
+
+# ✅ DO: Update references to final files  
+<link rel="stylesheet" href="style.css">           # Correct reference
+```
+
 ## 🐛 User Bug Reports & Feature Requests
 
 ### **When User Reports a Bug:**

@@ -286,6 +286,273 @@ Keep users informed about their reports:
 Thank you for helping make the Fantasy Football Draft Assistant better! Keep the feedback coming! 🏈
 ```
 
+### **6. File Cleanup and Management**
+
+#### **A. Always Clean Up Temporary Files**
+```bash
+# After completing any feature implementation, clean up temporary files
+# This prevents broken references and confusion
+
+# Example cleanup workflow:
+# 1. Identify all files created during development
+# 2. Remove temporary, backup, or duplicate files
+# 3. Update any references to point to final files
+# 4. Verify all links and imports are correct
+
+# Common cleanup commands:
+rm src/frontend/*_enhanced.html    # Remove enhanced versions after integration
+rm src/frontend/*_backup.js        # Remove backup files after verification
+rm src/frontend/*_temp.*           # Remove any temporary files
+rm src/frontend/*_old.*            # Remove old versions after migration
+```
+
+#### **B. File Reference Verification Checklist**
+```bash
+# CRITICAL: Always verify file references after cleanup
+# Check these common reference points:
+
+# 1. HTML file references
+grep -r "\.css" src/frontend/*.html
+grep -r "\.js" src/frontend/*.html
+
+# 2. JavaScript imports
+grep -r "import.*from" src/frontend/*.js
+grep -r "require(" src/frontend/*.js
+
+# 3. CSS imports
+grep -r "@import" src/frontend/*.css
+grep -r "url(" src/frontend/*.css
+
+# 4. Python imports
+grep -r "from.*import" src/backend/**/*.py
+grep -r "import.*" src/backend/**/*.py
+```
+
+#### **C. Cleanup Workflow Template**
+```bash
+# Use this template for every feature implementation:
+
+# 1. BEFORE starting work - document current files
+ls -la src/frontend/ > files_before.txt
+
+# 2. DURING development - track new files created
+# Keep a mental note of temporary files, backups, enhanced versions
+
+# 3. AFTER completing work - identify cleanup needed
+ls -la src/frontend/ > files_after.txt
+diff files_before.txt files_after.txt
+
+# 4. CLEANUP - remove unnecessary files
+rm src/frontend/*_enhanced.*     # Enhanced versions after integration
+rm src/frontend/*_backup.*       # Backup files after verification
+rm src/frontend/*_temp.*         # Temporary files
+rm src/frontend/*_old.*          # Old versions
+rm files_before.txt files_after.txt  # Cleanup tracking files
+
+# 5. VERIFY - ensure all references work
+# Test the application to ensure no broken links
+# Check browser console for 404 errors
+# Verify all functionality still works
+```
+
+#### **D. Common File Cleanup Scenarios**
+
+**Scenario 1: UI Enhancement/Refactoring**
+```bash
+# When replacing UI files (like our Shoelace integration):
+
+# 1. Create enhanced versions
+cp index.html index_enhanced.html
+cp style.css style_enhanced.css
+cp app.js app_enhanced.js
+
+# 2. Develop and test enhanced versions
+# ... development work ...
+
+# 3. Replace original files with enhanced versions
+cp index_enhanced.html index.html
+cp style_enhanced.css style.css
+cp app_enhanced.js app.js
+
+# 4. CRITICAL: Update any references in HTML
+sed -i 's/style_enhanced.css/style.css/g' src/frontend/index.html
+sed -i 's/app_enhanced.js/app.js/g' src/frontend/index.html
+
+# 5. Clean up enhanced files
+rm src/frontend/*_enhanced.*
+
+# 6. Keep backups temporarily for rollback
+mv index.html index_original_backup.html  # Keep for safety
+```
+
+**Scenario 2: API Endpoint Changes**
+```bash
+# When refactoring API endpoints:
+
+# 1. Create new endpoint files
+cp api/old_endpoint.py api/new_endpoint.py
+
+# 2. Update imports and references
+grep -r "old_endpoint" src/backend/
+# Update all references to use new_endpoint
+
+# 3. Remove old endpoint file
+rm api/old_endpoint.py
+
+# 4. Update route registrations
+grep -r "old_endpoint" src/backend/app.py
+# Remove old route registrations
+```
+
+**Scenario 3: Configuration File Updates**
+```bash
+# When updating configuration:
+
+# 1. Backup current config
+cp config.py config_backup.py
+
+# 2. Make changes to config.py
+# ... configuration updates ...
+
+# 3. Test thoroughly
+# ... testing ...
+
+# 4. Remove backup after verification
+rm config_backup.py
+```
+
+#### **E. Automated Cleanup Script**
+```bash
+# Create a cleanup script for common scenarios
+cat > scripts/cleanup_dev_files.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Development File Cleanup Script
+
+Removes common temporary and backup files created during development.
+Run this after completing any feature to clean up the workspace.
+"""
+
+import os
+import glob
+from pathlib import Path
+
+def cleanup_frontend_files():
+    """Clean up frontend temporary files"""
+    patterns = [
+        'src/frontend/*_enhanced.*',
+        'src/frontend/*_temp.*',
+        'src/frontend/*_old.*',
+        'src/frontend/*.tmp',
+    ]
+    
+    for pattern in patterns:
+        for file_path in glob.glob(pattern):
+            print(f"Removing: {file_path}")
+            os.remove(file_path)
+
+def cleanup_backend_files():
+    """Clean up backend temporary files"""
+    patterns = [
+        'src/backend/**/*_temp.py',
+        'src/backend/**/*_old.py',
+        'src/backend/**/*.tmp',
+    ]
+    
+    for pattern in patterns:
+        for file_path in glob.glob(pattern, recursive=True):
+            print(f"Removing: {file_path}")
+            os.remove(file_path)
+
+def verify_references():
+    """Verify no broken references exist"""
+    print("Checking for broken references...")
+    
+    # Check HTML references
+    html_files = glob.glob('src/frontend/*.html')
+    for html_file in html_files:
+        with open(html_file, 'r') as f:
+            content = f.read()
+            # Check for common broken reference patterns
+            if '_enhanced.' in content:
+                print(f"WARNING: {html_file} contains '_enhanced.' references")
+            if '_temp.' in content:
+                print(f"WARNING: {html_file} contains '_temp.' references")
+
+if __name__ == '__main__':
+    print("🧹 Cleaning up development files...")
+    cleanup_frontend_files()
+    cleanup_backend_files()
+    verify_references()
+    print("✅ Cleanup complete!")
+EOF
+
+chmod +x scripts/cleanup_dev_files.py
+```
+
+#### **F. Pre-Commit Cleanup Checklist**
+
+**MANDATORY: Before every commit, verify:**
+- [ ] No temporary files committed (`*_temp.*`, `*_old.*`, `*_enhanced.*`)
+- [ ] All file references in HTML/CSS/JS are correct
+- [ ] No broken imports in Python files
+- [ ] Application starts without 404 errors in browser console
+- [ ] All functionality tested and working
+- [ ] Backup files moved to safe location or documented
+
+#### **G. File Naming Conventions**
+
+**Use these conventions to make cleanup easier:**
+```bash
+# Temporary files (ALWAYS clean up)
+filename_temp.ext       # Temporary working file
+filename_old.ext        # Old version being replaced
+filename_backup.ext     # Backup for safety
+filename_enhanced.ext   # Enhanced version during development
+
+# Permanent files (keep these)
+filename.ext           # Final production file
+filename_original.ext  # Original for reference (if needed)
+filename_v1.ext        # Versioned file (if multiple versions needed)
+```
+
+#### **H. Common Cleanup Mistakes to Avoid**
+
+**❌ DON'T:**
+- Leave `*_enhanced.*` files after integration
+- Commit temporary or backup files
+- Update file contents without updating references
+- Remove files without checking for dependencies
+- Skip testing after cleanup
+
+**✅ DO:**
+- Always test after cleanup
+- Update all references when renaming files
+- Keep one backup until feature is verified working
+- Document any intentional temporary files
+- Use consistent naming conventions
+
+#### **I. Emergency Rollback Procedure**
+
+**If cleanup breaks something:**
+```bash
+# 1. Check git status for recent changes
+git status
+git log --oneline -5
+
+# 2. Restore from git if files were committed
+git checkout HEAD~1 -- src/frontend/filename.ext
+
+# 3. Restore from backup files if available
+cp src/frontend/filename_original_backup.ext src/frontend/filename.ext
+
+# 4. Identify and fix the broken reference
+grep -r "broken_filename" src/
+# Update the reference to correct filename
+
+# 5. Test thoroughly before proceeding
+```
+
 ## 📋 Development Workflow
 
 ### **1. Before Starting Any Feature**
