@@ -866,12 +866,145 @@ class EnhancedDraftAssistantApp {
                 // Already loaded
                 break;
             case 'draft-board':
-                // TODO: Implement draft board
+                this.loadDraftBoard();
                 break;
             case 'my-queue':
                 // TODO: Implement queue
                 break;
         }
+    }
+    
+    /**
+     * Load and display draft board
+     */
+    async loadDraftBoard() {
+        if (!this.state.selectedDraft?.draft_id) return;
+        
+        const container = document.getElementById('draft-board-content');
+        if (!container) return;
+        
+        try {
+            // Show loading state
+            container.innerHTML = `
+                <div class="loading-state">
+                    <sl-spinner style="font-size: 3rem;"></sl-spinner>
+                    <p>Loading draft board...</p>
+                </div>
+            `;
+            
+            // Load draft board data
+            const boardData = await this.apiRequest(`/draft/${this.state.selectedDraft.draft_id}/board`);
+            this.displayDraftBoard(boardData.draft_board);
+            
+        } catch (error) {
+            console.error('Failed to load draft board:', error);
+            container.innerHTML = `
+                <sl-alert variant="danger" open>
+                    <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
+                    Failed to load draft board: ${error.message}
+                </sl-alert>
+            `;
+        }
+    }
+    
+    /**
+     * Display draft board with Shoelace components
+     */
+    displayDraftBoard(draftBoard) {
+        const container = document.getElementById('draft-board-content');
+        if (!container) return;
+        
+        const { teams, rounds, total_teams, draft_type, picks_made, total_picks } = draftBoard;
+        
+        // Create draft board header
+        const headerHtml = `
+            <div class="draft-board-header">
+                <sl-card class="board-info-card">
+                    <div slot="header">
+                        <h3>Draft Board</h3>
+                        <div class="board-stats">
+                            <sl-badge variant="primary">${picks_made}/${total_picks} picks</sl-badge>
+                            <sl-badge variant="neutral">${draft_type} draft</sl-badge>
+                            <sl-badge variant="neutral">${total_teams} teams</sl-badge>
+                        </div>
+                    </div>
+                </sl-card>
+            </div>
+        `;
+        
+        // Create round headers
+        const roundHeaders = Array.from({length: rounds}, (_, i) => 
+            `<div class="round-header">R${i + 1}</div>`
+        ).join('');
+        
+        // Create team rows
+        const teamRows = teams.map(team => {
+            const teamHeader = `
+                <div class="team-header">
+                    <strong>${team.team_name}</strong>
+                </div>
+            `;
+            
+            const teamPicks = team.picks.map(pick => {
+                if (pick.player) {
+                    const positionClass = `position-${pick.player.position.toLowerCase()}`;
+                    return `
+                        <sl-card class="pick-card filled-pick">
+                            <div class="pick-content">
+                                <div class="pick-number">${pick.pick_number}</div>
+                                <div class="player-info">
+                                    <div class="player-name">${pick.player.name}</div>
+                                    <div class="player-details">
+                                        <sl-badge variant="neutral" class="${positionClass}">
+                                            ${pick.player.position}
+                                        </sl-badge>
+                                        <span class="player-team">${pick.player.team}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </sl-card>
+                    `;
+                } else {
+                    return `
+                        <sl-card class="pick-card empty-pick">
+                            <div class="pick-content">
+                                <div class="pick-placeholder">
+                                    <sl-icon name="clock"></sl-icon>
+                                    <span>Round ${pick.round}</span>
+                                </div>
+                            </div>
+                        </sl-card>
+                    `;
+                }
+            }).join('');
+            
+            return `
+                <div class="team-row">
+                    ${teamHeader}
+                    <div class="team-picks">
+                        ${teamPicks}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // Combine everything
+        const boardHtml = `
+            ${headerHtml}
+            <div class="draft-board-grid">
+                <div class="board-headers">
+                    <div class="team-column-header">Teams</div>
+                    <div class="rounds-headers">
+                        ${roundHeaders}
+                    </div>
+                </div>
+                <div class="board-content">
+                    ${teamRows}
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = boardHtml;
     }
     
     /**

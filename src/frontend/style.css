@@ -628,3 +628,179 @@ sl-select:focus-visible {
         border: 1px solid #ccc;
     }
 }
+
+/* Draft Board Styles */
+.draft-board-header {
+    margin-bottom: 1.5rem;
+}
+
+.board-info-card .board-stats {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.draft-board-grid {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.board-headers {
+    display: flex;
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.team-column-header {
+    width: 150px;
+    padding: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+}
+
+.rounds-headers {
+    display: flex;
+    flex: 1;
+    overflow-x: auto;
+}
+
+.round-header {
+    min-width: 120px;
+    padding: 1rem 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    color: #475569;
+    border-right: 1px solid #e2e8f0;
+}
+
+.board-content {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.team-row {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.team-row:hover {
+    background: #f8fafc;
+}
+
+.team-header {
+    width: 150px;
+    padding: 0.75rem 1rem;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    background: white;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.team-picks {
+    display: flex;
+    flex: 1;
+    overflow-x: auto;
+}
+
+.pick-card {
+    min-width: 120px;
+    margin: 0.25rem;
+    border-radius: 6px;
+}
+
+.pick-card.filled-pick {
+    background: #f0f9ff;
+    border: 1px solid #0ea5e9;
+}
+
+.pick-card.empty-pick {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+}
+
+.pick-content {
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.pick-number {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.player-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.player-details {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.player-team {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.pick-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    color: #94a3b8;
+    font-size: 0.75rem;
+}
+
+.pick-placeholder sl-icon {
+    font-size: 1.25rem;
+}
+
+/* Mobile responsiveness for draft board */
+@media (max-width: 768px) {
+    .team-column-header,
+    .team-header {
+        width: 100px;
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .round-header {
+        min-width: 100px;
+        padding: 0.75rem 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    .pick-card {
+        min-width: 100px;
+    }
+    
+    .player-name {
+        font-size: 0.75rem;
+    }
+    
+    .board-content {
+        max-height: 500px;
+    }
+}

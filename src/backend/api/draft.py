@@ -356,3 +356,131 @@ def refresh_draft_data(draft_id):
             'error': str(e),
             'code': 'INTERNAL_ERROR'
         }), 500
+
+
+@draft_bp.route('/draft/<draft_id>/board')
+def get_draft_board(draft_id):
+    """
+    Get draft board data organized by team and round for visual draft board
+    
+    Args:
+        draft_id: Sleeper draft ID
+    
+    Returns:
+        JSON response with draft board data organized by teams and rounds
+    """
+    try:
+        # Get draft info for team and round structure
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        if not draft_info:
+            return jsonify({
+                'error': 'Draft not found',
+                'code': 'DRAFT_NOT_FOUND'
+            }), 404
+        
+        # Get league info for team names
+        league_id = draft_info.get('league_id')
+        league_info = SleeperAPI.get_league_info(league_id) if league_id else None
+        
+        # Get all draft picks
+        picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        
+        # Get draft settings
+        total_teams = draft_info.get('settings', {}).get('teams', 12)
+        total_rounds = draft_info.get('settings', {}).get('rounds', 16)
+        draft_type = draft_info.get('type', 'snake')  # snake or linear
+        
+        # Create team mapping from league info
+        team_names = {}
+        if league_info and 'users' in league_info:
+            for user in league_info['users']:
+                user_id = user.get('user_id')
+                display_name = user.get('display_name', user.get('username', f'Team {user_id}'))
+                team_names[user_id] = display_name
+        
+        # Initialize draft board structure
+        draft_board = {
+            'teams': [],
+            'rounds': total_rounds,
+            'total_teams': total_teams,
+            'draft_type': draft_type,
+            'picks_made': len(picks),
+            'total_picks': total_teams * total_rounds
+        }
+        
+        # Create team structure
+        for team_index in range(total_teams):
+            team_id = f"team_{team_index + 1}"
+            team_data = {
+                'team_id': team_id,
+                'team_index': team_index,
+                'team_name': f'Team {team_index + 1}',
+                'picks': []
+            }
+            
+            # Initialize empty picks for all rounds
+            for round_num in range(1, total_rounds + 1):
+                team_data['picks'].append({
+                    'round': round_num,
+                    'pick_number': None,
+                    'player': None,
+                    'picked_at': None
+                })
+            
+            draft_board['teams'].append(team_data)
+        
+        # Fill in actual picks
+        for pick in picks:
+            pick_number = pick.get('pick_no', 0)
+            round_number = pick.get('round', 0)
+            
+            if pick_number > 0 and round_number > 0:
+                # Calculate team index based on draft type and pick number
+                if draft_type == 'snake':
+                    # Snake draft: alternating direction each round
+                    if round_number % 2 == 1:  # Odd rounds: 1, 2, 3, ...
+                        team_index = (pick_number - 1) % total_teams
+                    else:  # Even rounds: ..., 3, 2, 1
+                        team_index = total_teams - 1 - ((pick_number - 1) % total_teams)
+                else:  # Linear draft
+                    team_index = (pick_number - 1) % total_teams
+                
+                # Ensure team_index is valid
+                if 0 <= team_index < len(draft_board['teams']):
+                    # Update team name if we have user info
+                    drafted_by = pick.get('drafted_by')
+                    if drafted_by and drafted_by in team_names:
+                        draft_board['teams'][team_index]['team_name'] = team_names[drafted_by]
+                        draft_board['teams'][team_index]['user_id'] = drafted_by
+                    
+                    # Add pick to the appropriate round
+                    if 1 <= round_number <= total_rounds:
+                        draft_board['teams'][team_index]['picks'][round_number - 1] = {
+                            'round': round_number,
+                            'pick_number': pick_number,
+                            'player': {
+                                'player_id': pick.get('player_id'),
+                                'name': pick.get('player_name', 'Unknown Player'),
+                                'position': pick.get('position', 'N/A'),
+                                'team': pick.get('team', 'N/A')
+                            },
+                            'picked_at': pick.get('picked_at')
+                        }
+        
+        return jsonify({
+            'draft_id': draft_id,
+            'league_id': league_id,
+            'draft_board': draft_board,
+            'status': 'success'
+        })
+        
+    except SleeperAPIError as e:
+        return jsonify({
+            'error': f'Sleeper API error: {str(e)}',
+            'code': 'SLEEPER_API_ERROR'
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'code': 'INTERNAL_ERROR'
+        }), 500
