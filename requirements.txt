@@ -1,0 +1,18 @@
+# Core dependencies
+flask>=2.3.0
+requests>=2.31.0
+flask-cors>=4.0.0
+
+# Build dependencies
+pyinstaller>=5.13.0
+
+# Development dependencies
+pytest>=7.4.0
+pytest-flask>=1.2.0
+
+# Optional compression
+# upx (external binary, not pip installable)
+
+# Data processing (if needed)
+# pandas>=2.0.0
+# numpy>=1.24.0
