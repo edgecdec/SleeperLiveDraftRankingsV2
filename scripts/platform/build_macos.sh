@@ -1,22 +1,20 @@
 #!/bin/bash
 
-# Fantasy Football Draft Assistant V2 - Linux Build Script
-# This script builds the application for Linux systems
+# Fantasy Football Draft Assistant V2 - macOS Build Script
+# This script builds the application for macOS (Darwin) systems
 
 set -e  # Exit on any error
 
-echo "🐧 Building Linux executable..."
+echo "🍎 Building macOS executable..."
 echo "🏈 Fantasy Football Draft Assistant V2 - Build Script"
 echo "============================================================"
-echo "🖥️  Building for: Linux x64"
-echo "📦 Platform suffix: linux-x64"
+echo "🖥️  Building for: macOS (Darwin)"
+echo "📦 Platform suffix: darwin-x64"
 
 # Check if Python is available
 if ! command -v python3 &> /dev/null; then
     echo "❌ Python 3 is not installed or not in PATH"
     echo "   Please install Python 3.9+ and try again"
-    echo "   Ubuntu/Debian: sudo apt-get install python3 python3-pip python3-venv"
-    echo "   CentOS/RHEL: sudo yum install python3 python3-pip"
     exit 1
 fi
 
@@ -53,7 +51,7 @@ rm -rf build/ dist/ *.spec
 echo "✅ Build directories cleaned"
 
 # Run the build
-echo "🔨 Building executable for Linux..."
+echo "🔨 Building executable for macOS..."
 echo "   Command: python scripts/build.py --release"
 echo "   Working directory: $(pwd)"
 
@@ -69,30 +67,25 @@ if python scripts/build.py --release; then
         echo "📊 File size: $file_size"
         
         # Create release-named version
-        cp dist/FantasyFootballDraftAssistant "dist/FantasyFootballDraftAssistant-v2.0.0-linux-x64"
-        echo "✅ Created release version: FantasyFootballDraftAssistant-v2.0.0-linux-x64"
+        cp dist/FantasyFootballDraftAssistant "dist/FantasyFootballDraftAssistant-v2.0.0-darwin-x64"
+        echo "✅ Created release version: FantasyFootballDraftAssistant-v2.0.0-darwin-x64"
         
         # Create build info file
-        cat > "dist/release_info_linux-x64.txt" << EOF
-Fantasy Football Draft Assistant V2 - Linux Build
+        cat > "dist/release_info_darwin-x64.txt" << EOF
+Fantasy Football Draft Assistant V2 - macOS Build
 ==================================================
 Build Date: $(date)
-Platform: Linux x64
+Platform: macOS (Darwin x64)
 Python Version: $(python --version)
 File Size: $file_size
-Executable: FantasyFootballDraftAssistant-v2.0.0-linux-x64
-Distribution: $(lsb_release -d 2>/dev/null | cut -f2 || echo "Unknown Linux")
+Executable: FantasyFootballDraftAssistant-v2.0.0-darwin-x64
 
 Installation Instructions:
 1. Download the executable
-2. Open terminal and navigate to the download folder
-3. Make executable: chmod +x FantasyFootballDraftAssistant-v2.0.0-linux-x64
-4. Run: ./FantasyFootballDraftAssistant-v2.0.0-linux-x64
+2. Open Terminal and navigate to the download folder
+3. Make executable: chmod +x FantasyFootballDraftAssistant-v2.0.0-darwin-x64
+4. Run: ./FantasyFootballDraftAssistant-v2.0.0-darwin-x64
 5. Open your browser to the displayed URL
-
-System Requirements:
-- Linux x64 (Ubuntu 18.04+, CentOS 7+, or equivalent)
-- No additional dependencies required
 
 Features:
 - Real-time Sleeper API integration
@@ -102,7 +95,7 @@ Features:
 - Modern web interface
 EOF
         
-        echo "✅ Build info created: release_info_linux-x64.txt"
+        echo "✅ Build info created: release_info_darwin-x64.txt"
         
         # Test the executable (basic check)
         echo "🧪 Testing executable..."
@@ -113,11 +106,11 @@ EOF
         fi
         
         echo ""
-        echo "🎉 Linux build completed successfully!"
+        echo "🎉 macOS build completed successfully!"
         echo "📁 Output files:"
         echo "   • dist/FantasyFootballDraftAssistant"
-        echo "   • dist/FantasyFootballDraftAssistant-v2.0.0-linux-x64"
-        echo "   • dist/release_info_linux-x64.txt"
+        echo "   • dist/FantasyFootballDraftAssistant-v2.0.0-darwin-x64"
+        echo "   • dist/release_info_darwin-x64.txt"
         echo ""
         echo "🚀 Ready for distribution!"
         
@@ -134,4 +127,4 @@ else
     exit 1
 fi
 
-echo "🏁 Linux build script completed"
+echo "🏁 macOS build script completed"

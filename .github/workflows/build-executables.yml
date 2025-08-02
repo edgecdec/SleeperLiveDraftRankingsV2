@@ -1,0 +1,227 @@
+name: Build Multi-Platform Executables
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            executable_name: FantasyFootballDraftAssistant.exe
+            build_script: scripts/platform/build_windows.bat
+            artifact_name: windows-x64
+          - os: macos-latest
+            platform: macos
+            executable_name: FantasyFootballDraftAssistant
+            build_script: scripts/platform/build_macos.sh
+            artifact_name: darwin-x64
+          - os: ubuntu-latest
+            platform: linux
+            executable_name: FantasyFootballDraftAssistant
+            build_script: scripts/platform/build_linux.sh
+            artifact_name: linux-x64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Make build script executable (Unix)
+      if: matrix.platform != 'windows'
+      run: chmod +x ${{ matrix.build_script }}
+
+    - name: Build executable (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        echo "Building Windows executable..."
+        python scripts/build.py --release
+      shell: cmd
+
+    - name: Build executable (Unix)
+      if: matrix.platform != 'windows'
+      run: |
+        echo "Building ${{ matrix.platform }} executable..."
+        python scripts/build.py --release
+
+    - name: Verify executable exists
+      run: |
+        echo "Checking for executable..."
+        ls -la dist/ || dir dist\
+      shell: bash
+
+    - name: Rename executable with version and platform
+      run: |
+        cd dist
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          mv FantasyFootballDraftAssistant.exe FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}.exe || echo "Windows rename failed"
+        else
+          mv FantasyFootballDraftAssistant FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }} || echo "Unix rename failed"
+        fi
+        ls -la || dir
+      shell: bash
+
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: FantasyFootballDraftAssistant-${{ matrix.artifact_name }}
+        path: |
+          dist/FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}*
+          dist/release_info_${{ matrix.artifact_name }}.txt
+        retention-days: 30
+
+    - name: Test executable (basic smoke test)
+      run: |
+        cd dist
+        echo "Testing executable..."
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          timeout 10 ./FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }}.exe --help || echo "Windows test completed"
+        else
+          timeout 10 ./FantasyFootballDraftAssistant-v2.0.0-${{ matrix.artifact_name }} --help || echo "Unix test completed"
+        fi
+      shell: bash
+      continue-on-error: true
+
+  create-release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: ./artifacts
+
+    - name: Display artifact structure
+      run: |
+        echo "Artifact structure:"
+        find ./artifacts -type f -name "*" | head -20
+
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: build-${{ steps.date.outputs.date }}
+        release_name: Automated Build ${{ steps.date.outputs.date }}
+        body: |
+          🚀 **Automated Multi-Platform Build**
+          
+          This release was automatically generated from the latest main branch commit.
+          
+          ## 📦 Available Downloads
+          
+          - **Windows (x64)**: `FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe`
+          - **macOS (x64)**: `FantasyFootballDraftAssistant-v2.0.0-darwin-x64`
+          - **Linux (x64)**: `FantasyFootballDraftAssistant-v2.0.0-linux-x64`
+          
+          ## 🏈 Features
+          
+          - Real-time Sleeper API integration
+          - Player rankings with 548+ players
+          - Dynasty league support (filters rostered players)
+          - 6 different league formats
+          - Modern web interface
+          - Single executable - no installation required
+          
+          ## 🚀 Quick Start
+          
+          1. Download the executable for your platform
+          2. Run the executable
+          3. Open your browser to the displayed URL
+          4. Enter your Sleeper username and start drafting!
+          
+          **Commit**: ${{ github.sha }}
+          **Build Date**: ${{ steps.date.outputs.date }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/FantasyFootballDraftAssistant-windows-x64/FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe
+        asset_name: FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/FantasyFootballDraftAssistant-darwin-x64/FantasyFootballDraftAssistant-v2.0.0-darwin-x64
+        asset_name: FantasyFootballDraftAssistant-v2.0.0-darwin-x64
+        asset_content_type: application/octet-stream
+
+    - name: Upload Linux Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/FantasyFootballDraftAssistant-linux-x64/FantasyFootballDraftAssistant-v2.0.0-linux-x64
+        asset_name: FantasyFootballDraftAssistant-v2.0.0-linux-x64
+        asset_content_type: application/octet-stream
+
+  notify-completion:
+    name: Notify Build Completion
+    needs: [build, create-release]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Build Status Summary
+      run: |
+        echo "🏗️ Build Summary:"
+        echo "================"
+        echo "Build Status: ${{ needs.build.result }}"
+        echo "Release Status: ${{ needs.create-release.result }}"
+        echo "Trigger: ${{ github.event_name }}"
+        echo "Branch: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+        
+        if [ "${{ needs.build.result }}" = "success" ] && [ "${{ needs.create-release.result }}" = "success" ]; then
+          echo "✅ All builds completed successfully!"
+          echo "🎉 New release created with executables for all platforms!"
+        else
+          echo "❌ Some builds failed. Check the logs above."
+        fi
