@@ -42,19 +42,43 @@ class EnhancedDraftAssistantApp {
      * Wait for Shoelace components to be ready, then initialize
      */
     async initializeWhenReady() {
+        console.log('🎨 Waiting for Shoelace components to load...');
+        
         try {
             // Wait for key Shoelace components to be defined
+            console.log('⏳ Waiting for sl-button...');
             await customElements.whenDefined('sl-button');
-            await customElements.whenDefined('sl-card');
-            await customElements.whenDefined('sl-input');
-            await customElements.whenDefined('sl-badge');
+            console.log('✅ sl-button ready');
             
-            console.log('🎨 Shoelace components loaded successfully');
-            this.setupEventListeners();
-            this.init();
+            console.log('⏳ Waiting for sl-card...');
+            await customElements.whenDefined('sl-card');
+            console.log('✅ sl-card ready');
+            
+            console.log('⏳ Waiting for sl-input...');
+            await customElements.whenDefined('sl-input');
+            console.log('✅ sl-input ready');
+            
+            console.log('⏳ Waiting for sl-badge...');
+            await customElements.whenDefined('sl-badge');
+            console.log('✅ sl-badge ready');
+            
+            console.log('🎨 All Shoelace components loaded successfully');
+            
+            // Add a small delay to ensure components are fully rendered
+            setTimeout(() => {
+                this.setupEventListeners();
+                this.init();
+            }, 500);
+            
         } catch (error) {
             console.error('❌ Error loading Shoelace components:', error);
             this.showNotification('Failed to load UI components', 'danger');
+            
+            // Try to setup event listeners anyway
+            setTimeout(() => {
+                this.setupEventListeners();
+                this.init();
+            }, 1000);
         }
     }
     
@@ -93,26 +117,53 @@ class EnhancedDraftAssistantApp {
      * Set up event listeners for Shoelace components
      */
     setupEventListeners() {
+        console.log('🔧 Setting up event listeners...');
+        
         // Button event listeners
-        document.getElementById('get-started-btn')?.addEventListener('click', () => {
-            this.showSection('user-setup');
-        });
+        const getStartedBtn = document.getElementById('get-started-btn');
+        if (getStartedBtn) {
+            console.log('✅ Setting up get-started-btn listener');
+            getStartedBtn.addEventListener('click', () => {
+                console.log('🚀 Get Started clicked - showing user setup');
+                this.showSection('user-setup');
+            });
+        } else {
+            console.error('❌ get-started-btn not found');
+        }
         
-        document.getElementById('test-connection-btn')?.addEventListener('click', () => {
-            this.handleTestConnection();
-        });
+        const testConnectionBtn = document.getElementById('test-connection-btn');
+        if (testConnectionBtn) {
+            console.log('✅ Setting up test-connection-btn listener');
+            testConnectionBtn.addEventListener('click', () => {
+                console.log('🔌 Test Connection clicked');
+                this.handleTestConnection();
+            });
+        } else {
+            console.error('❌ test-connection-btn not found');
+        }
         
-        document.getElementById('back-to-welcome-btn')?.addEventListener('click', () => {
-            this.showSection('welcome');
-        });
+        const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
+        if (backToWelcomeBtn) {
+            console.log('✅ Setting up back-to-welcome-btn listener');
+            backToWelcomeBtn.addEventListener('click', () => {
+                console.log('⬅️ Back to welcome clicked');
+                this.showSection('welcome');
+            });
+        }
         
-        document.getElementById('load-user-btn')?.addEventListener('click', () => {
-            this.handleLoadUser();
-        });
+        const loadUserBtn = document.getElementById('load-user-btn');
+        if (loadUserBtn) {
+            console.log('✅ Setting up load-user-btn listener');
+            loadUserBtn.addEventListener('click', () => {
+                console.log('👤 Load user clicked');
+                this.handleLoadUser();
+            });
+        }
         
         // Input event listeners
         const usernameInput = document.getElementById('username-input');
         if (usernameInput) {
+            console.log('✅ Setting up username-input listeners');
             usernameInput.addEventListener('sl-input', (event) => {
                 const loadButton = document.getElementById('load-user-btn');
                 if (loadButton) {
@@ -128,36 +179,59 @@ class EnhancedDraftAssistantApp {
         }
         
         // Filter event listeners
-        document.getElementById('position-filter')?.addEventListener('sl-change', (event) => {
-            this.handlePositionFilter(event.target.value);
-        });
+        const positionFilter = document.getElementById('position-filter');
+        if (positionFilter) {
+            console.log('✅ Setting up position-filter listener');
+            positionFilter.addEventListener('sl-change', (event) => {
+                this.handlePositionFilter(event.target.value);
+            });
+        }
         
-        document.getElementById('player-search')?.addEventListener('sl-input', (event) => {
-            this.handlePlayerSearch(event.target.value);
-        });
+        const playerSearch = document.getElementById('player-search');
+        if (playerSearch) {
+            console.log('✅ Setting up player-search listener');
+            playerSearch.addEventListener('sl-input', (event) => {
+                this.handlePlayerSearch(event.target.value);
+            });
+        }
         
         // Auto-refresh toggle
-        document.getElementById('auto-refresh-toggle')?.addEventListener('sl-change', (event) => {
-            this.handleAutoRefreshToggle(event.target.checked);
-        });
+        const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+        if (autoRefreshToggle) {
+            console.log('✅ Setting up auto-refresh-toggle listener');
+            autoRefreshToggle.addEventListener('sl-change', (event) => {
+                this.handleAutoRefreshToggle(event.target.checked);
+            });
+        }
         
         // Tab change listeners
         const tabGroup = document.querySelector('sl-tab-group');
         if (tabGroup) {
+            console.log('✅ Setting up tab-group listener');
             tabGroup.addEventListener('sl-tab-show', (event) => {
                 this.handleTabChange(event.detail.name);
             });
         }
         
         // Modal event listeners
-        document.getElementById('close-player-details')?.addEventListener('click', () => {
-            this.closePlayerDetailsModal();
-        });
+        const closePlayerDetails = document.getElementById('close-player-details');
+        if (closePlayerDetails) {
+            console.log('✅ Setting up close-player-details listener');
+            closePlayerDetails.addEventListener('click', () => {
+                this.closePlayerDetailsModal();
+            });
+        }
         
         // API info link
-        document.getElementById('api-info-link')?.addEventListener('click', () => {
-            this.showApiInfo();
-        });
+        const apiInfoLink = document.getElementById('api-info-link');
+        if (apiInfoLink) {
+            console.log('✅ Setting up api-info-link listener');
+            apiInfoLink.addEventListener('click', () => {
+                this.showApiInfo();
+            });
+        }
+        
+        console.log('🎯 Event listeners setup complete');
     }
     
     /**
@@ -758,6 +832,33 @@ class EnhancedDraftAssistantApp {
 
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎯 DOM Content Loaded - Initializing app...');
+    
+    // Add immediate debug event listeners to test button functionality
+    const getStartedBtn = document.getElementById('get-started-btn');
+    const testConnectionBtn = document.getElementById('test-connection-btn');
+    
+    if (getStartedBtn) {
+        console.log('✅ Found get-started-btn, adding click listener');
+        getStartedBtn.addEventListener('click', () => {
+            console.log('🔥 Get Started button clicked!');
+            alert('Get Started button works! (Debug mode)');
+        });
+    } else {
+        console.error('❌ get-started-btn not found');
+    }
+    
+    if (testConnectionBtn) {
+        console.log('✅ Found test-connection-btn, adding click listener');
+        testConnectionBtn.addEventListener('click', () => {
+            console.log('🔥 Test Connection button clicked!');
+            alert('Test Connection button works! (Debug mode)');
+        });
+    } else {
+        console.error('❌ test-connection-btn not found');
+    }
+    
+    // Initialize the main app
     window.draftApp = new EnhancedDraftAssistantApp();
 });
 
