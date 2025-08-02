@@ -27,9 +27,10 @@ This document tracks features from the original Fantasy Football Draft Assistant
 
 ### 🔄 Real-Time Features
 
+- [x] **Turn Indicators** - [Description needed]
 - [x] **Auto-Refresh Draft Picks** - [Description needed]- [ ] **Auto-Refresh Draft** - Automatic updates when new picks are made
 - [ ] **Live Draft Notifications** - Browser notifications for draft events
-- [ ] **Turn Indicators** - Show whose turn it is to pick
+- [x] **Turn Indicators** - Show whose turn it is to pick
 - [ ] **Pick Timer** - Show remaining time for current pick
 - [ ] **Draft Chat Integration** - Show draft chat messages
 - [ ] **Multiple Draft Monitoring** - Track multiple drafts simultaneously
@@ -185,7 +186,7 @@ This document tracks features from the original Fantasy Football Draft Assistant
 
 ## 📊 Progress Tracking
 
-**Overall Progress**: 25/102 features completed (24.5%)
+**Overall Progress**: 27/103 features completed (26.2%)
 
 ### By Category:
 - **Core Draft Functionality**: 7/15 (46.7%) ✅

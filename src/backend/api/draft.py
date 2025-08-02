@@ -467,6 +467,39 @@ def get_draft_board(draft_id):
                             'picked_at': pick.get('picked_at')
                         }
         
+        # Calculate current pick information
+        current_pick_info = {
+            'current_pick': len(picks) + 1,
+            'current_round': ((len(picks)) // total_teams) + 1,
+            'current_drafter': None,
+            'current_drafter_name': None,
+            'picks_remaining': (total_teams * total_rounds) - len(picks),
+            'draft_complete': len(picks) >= (total_teams * total_rounds)
+        }
+        
+        # Calculate who's turn it is based on draft type
+        if not current_pick_info['draft_complete']:
+            current_pick_num = current_pick_info['current_pick']
+            current_round = current_pick_info['current_round']
+            
+            if draft_type == 'snake':
+                # Snake draft logic
+                if current_round % 2 == 1:  # Odd rounds: 1, 2, 3, ...
+                    current_team_index = (current_pick_num - 1) % total_teams
+                else:  # Even rounds: ..., 3, 2, 1
+                    current_team_index = total_teams - 1 - ((current_pick_num - 1) % total_teams)
+            else:  # Linear draft
+                current_team_index = (current_pick_num - 1) % total_teams
+            
+            # Get current drafter info
+            if 0 <= current_team_index < len(draft_board['teams']):
+                current_team = draft_board['teams'][current_team_index]
+                current_pick_info['current_drafter'] = current_team.get('user_id')
+                current_pick_info['current_drafter_name'] = current_team['team_name']
+        
+        # Add current pick info to draft board
+        draft_board['current_pick_info'] = current_pick_info
+        
         return jsonify({
             'draft_id': draft_id,
             'league_id': league_id,

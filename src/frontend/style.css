@@ -804,3 +804,129 @@ sl-select:focus-visible {
         max-height: 500px;
     }
 }
+/* Turn Indicator Styles */
+.turn-indicator-card {
+    margin-bottom: 1rem;
+    border-left: 4px solid #3b82f6;
+}
+
+.turn-indicator-card.active-pick {
+    border-left-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+}
+
+.turn-indicator-card.draft-complete {
+    border-left-color: #6366f1;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.turn-indicator {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.turn-indicator sl-icon {
+    font-size: 1.5rem;
+    color: #3b82f6;
+}
+
+.turn-indicator-card.active-pick sl-icon {
+    color: #10b981;
+}
+
+.turn-indicator-card.draft-complete sl-icon {
+    color: #6366f1;
+}
+
+.pulsing-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.turn-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.turn-info strong {
+    font-size: 1.125rem;
+    color: #1e293b;
+}
+
+.turn-info span {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.pick-stats {
+    margin-top: 0.5rem;
+}
+
+/* Current Drafter Highlighting */
+.current-drafter-row {
+    background: linear-gradient(90deg, #f0fdf4 0%, transparent 100%);
+    border-left: 3px solid #10b981;
+}
+
+.team-header.current-drafter {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border-left: 3px solid #10b981;
+    font-weight: 700;
+}
+
+.current-pick-icon {
+    color: #10b981;
+    font-size: 1rem;
+    margin-left: 0.5rem;
+    animation: pulse 2s infinite;
+}
+
+/* Next Pick Highlighting */
+.pick-card.next-pick {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #f59e0b;
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+    0% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.5); }
+    100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.8); }
+}
+
+.next-pick-icon {
+    color: #f59e0b;
+    font-size: 1.25rem;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(3px); }
+}
+
+/* Mobile responsiveness for turn indicators */
+@media (max-width: 768px) {
+    .turn-indicator {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+    
+    .turn-indicator sl-icon {
+        font-size: 1.25rem;
+    }
+    
+    .turn-info strong {
+        font-size: 1rem;
+    }
+    
+    .turn-info span {
+        font-size: 0.8rem;
+    }
+}
