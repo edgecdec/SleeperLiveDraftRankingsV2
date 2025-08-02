@@ -1,0 +1,14 @@
+Collecting pandas
+  Downloading pandas-2.3.1-cp39-cp39-macosx_10_9_x86_64.whl (11.6 MB)
+Collecting numpy
+  Downloading numpy-2.0.2-cp39-cp39-macosx_14_0_x86_64.whl (6.9 MB)
+Collecting tzdata>=2022.7
+  Downloading tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+Collecting pytz>=2020.1
+  Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+Collecting python-dateutil>=2.8.2
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Collecting six>=1.5
+  Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Installing collected packages: six, tzdata, pytz, python-dateutil, numpy, pandas
+Successfully installed numpy-2.0.2 pandas-2.3.1 python-dateutil-2.9.0.post0 pytz-2025.2 six-1.17.0 tzdata-2025.2

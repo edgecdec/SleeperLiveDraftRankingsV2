@@ -21,6 +21,16 @@ from .config import init_paths
 from .api.user import user_bp
 from .api.draft import draft_bp
 
+# Try to import rankings (optional)
+try:
+    from .api.rankings import rankings_bp, init_rankings_routes
+    RANKINGS_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Rankings system not available: {e}")
+    RANKINGS_AVAILABLE = False
+    rankings_bp = None
+    init_rankings_routes = None
+
 
 def get_static_path() -> str:
     """
@@ -62,6 +72,8 @@ def create_app(debug: bool = False) -> Flask:
     Returns:
         Configured Flask application
     """
+    global RANKINGS_AVAILABLE
+    
     app = Flask(__name__)
     
     # Configuration
@@ -72,6 +84,20 @@ def create_app(debug: bool = False) -> Flask:
     base_path = get_base_path()
     init_paths(base_path)
     
+    # Initialize rankings manager (optional)
+    if RANKINGS_AVAILABLE:
+        try:
+            from .rankings.SimpleRankingsManager import SimpleRankingsManager
+            rankings_manager = SimpleRankingsManager()
+            init_rankings_routes(rankings_manager)
+            print("🏈 Rankings system initialized successfully")
+        except Exception as e:
+            print(f"⚠️ Rankings system initialization failed: {e}")
+            print("   Draft assistant will work with limited functionality")
+            RANKINGS_AVAILABLE = False
+    else:
+        print("⚠️ Rankings system not available - running with basic functionality")
+    
     # Enable CORS for local development
     CORS(app, origins=['http://localhost:*', 'http://127.0.0.1:*'])
     
@@ -81,6 +107,12 @@ def create_app(debug: bool = False) -> Flask:
     # Register API blueprints
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(draft_bp, url_prefix='/api')
+    
+    if RANKINGS_AVAILABLE and rankings_bp:
+        app.register_blueprint(rankings_bp, url_prefix='/api')
+        print("🏈 Rankings API endpoints registered")
+    else:
+        print("⚠️ Rankings API endpoints not available")
     
     # Serve main HTML file
     @app.route('/')
@@ -120,19 +152,31 @@ def create_app(debug: bool = False) -> Flask:
     @app.route('/api/info')
     def api_info():
         """API information endpoint"""
+        endpoints = {
+            'health': '/api/health',
+            'info': '/api/info',
+            'user': '/api/user/<username>',
+            'user_leagues': '/api/user/<username>/leagues',
+            'league_drafts': '/api/user/<username>/leagues/<league_id>/drafts',
+            'draft_info': '/api/draft/<draft_id>',
+            'draft_picks': '/api/draft/<draft_id>/picks',
+            'league_info': '/api/league/<league_id>'
+        }
+        
+        # Add rankings endpoints if available
+        if RANKINGS_AVAILABLE:
+            endpoints.update({
+                'available_players': '/api/draft/<draft_id>/available-players',
+                'best_available': '/api/draft/<draft_id>/best-available',
+                'rankings_formats': '/api/rankings/formats',
+                'rankings_status': '/api/rankings/status'
+            })
+        
         return jsonify({
             'name': 'Fantasy Football Draft Assistant API',
             'version': '2.0.0',
-            'endpoints': {
-                'health': '/api/health',
-                'info': '/api/info',
-                'user': '/api/user/<username>',
-                'user_leagues': '/api/user/<username>/leagues',
-                'league_drafts': '/api/user/<username>/leagues/<league_id>/drafts',
-                'draft_info': '/api/draft/<draft_id>',
-                'draft_picks': '/api/draft/<draft_id>/picks',
-                'league_info': '/api/league/<league_id>'
-            }
+            'rankings_enabled': RANKINGS_AVAILABLE,
+            'endpoints': endpoints
         })
     
     # Error handlers

@@ -13,6 +13,6 @@ pytest-flask>=1.2.0
 # Optional compression
 # upx (external binary, not pip installable)
 
-# Data processing (if needed)
-# pandas>=2.0.0
-# numpy>=1.24.0
+# Data processing (required for rankings)
+pandas>=2.0.0
+numpy>=1.24.0

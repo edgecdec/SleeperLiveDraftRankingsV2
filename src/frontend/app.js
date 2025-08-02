@@ -397,7 +397,7 @@ class DraftAssistantApp {
     /**
      * Display the main draft interface
      */
-    displayDraftInterface(draftData, picksData) {
+    async displayDraftInterface(draftData, picksData) {
         const draftInterfaceHtml = `
             <div class="draft-interface-container">
                 <h2>🏈 Draft Assistant</h2>
@@ -417,21 +417,48 @@ class DraftAssistantApp {
                 <div class="draft-content">
                     <div class="draft-picks-section">
                         <h4>Draft Picks (${picksData.total_picks})</h4>
-                        <div class="picks-list">
-                            ${picksData.picks.slice(0, 10).map(pick => `
-                                <div class="pick-item">
-                                    <span class="pick-number">${pick.pick_no}</span>
-                                    <span class="pick-player">Player ID: ${pick.player_id || 'TBD'}</span>
-                                    <span class="pick-round">Round ${pick.round}</span>
-                                </div>
-                            `).join('')}
-                            ${picksData.picks.length > 10 ? `<p>... and ${picksData.picks.length - 10} more picks</p>` : ''}
+                        <div class="picks-list" id="picks-list">
+                            ${this.renderDraftPicks(picksData.picks)}
                         </div>
                     </div>
                     
-                    <div class="available-players-section">
-                        <h4>Available Players</h4>
-                        <p>Player rankings and filtering will be implemented here.</p>
+                    <div class="rankings-section">
+                        <div class="rankings-header">
+                            <h4>🏆 Player Rankings</h4>
+                            <div class="rankings-controls">
+                                <select id="position-filter" class="form-control">
+                                    <option value="">All Positions</option>
+                                    <option value="QB">QB</option>
+                                    <option value="RB">RB</option>
+                                    <option value="WR">WR</option>
+                                    <option value="TE">TE</option>
+                                    <option value="K">K</option>
+                                    <option value="DEF">DEF</option>
+                                </select>
+                                <button id="refresh-rankings-btn" class="btn btn-sm btn-secondary">
+                                    🔄 Refresh
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="rankings-tabs">
+                            <button class="tab-btn active" data-tab="available">Available Players</button>
+                            <button class="tab-btn" data-tab="best">Best Available</button>
+                        </div>
+                        
+                        <div class="rankings-content">
+                            <div id="available-players-tab" class="tab-content active">
+                                <div id="available-players-list" class="players-list">
+                                    <div class="loading-placeholder">Loading available players...</div>
+                                </div>
+                            </div>
+                            
+                            <div id="best-available-tab" class="tab-content">
+                                <div id="best-available-list" class="best-available-grid">
+                                    <div class="loading-placeholder">Loading best available players...</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -448,7 +475,18 @@ class DraftAssistantApp {
         
         this.elements.draftSection.innerHTML = draftInterfaceHtml;
         
-        // Add event listeners
+        // Set up event listeners
+        this.setupDraftInterfaceListeners(draftData);
+        
+        // Load rankings data
+        await this.loadRankingsData(draftData.draft_id);
+    }
+    
+    /**
+     * Set up event listeners for draft interface
+     */
+    setupDraftInterfaceListeners(draftData) {
+        // Navigation buttons
         document.getElementById('back-to-drafts-btn')?.addEventListener('click', () => {
             this.selectLeague(this.state.selectedLeague.league_id);
         });
@@ -456,6 +494,223 @@ class DraftAssistantApp {
         document.getElementById('refresh-draft-btn')?.addEventListener('click', () => {
             this.selectDraft(draftData.draft_id);
         });
+        
+        // Rankings controls
+        document.getElementById('position-filter')?.addEventListener('change', () => {
+            this.filterAvailablePlayers();
+        });
+        
+        document.getElementById('refresh-rankings-btn')?.addEventListener('click', () => {
+            this.loadRankingsData(draftData.draft_id);
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.switchTab(e.target.dataset.tab);
+            });
+        });
+    }
+    
+    /**
+     * Load rankings data for the draft
+     */
+    async loadRankingsData(draftId) {
+        try {
+            // Check if rankings are available
+            const apiInfo = await this.apiRequest('/info');
+            if (!apiInfo.rankings_enabled) {
+                this.showRankingsUnavailable();
+                return;
+            }
+            
+            // Load available players
+            this.updateRankingsLoading('available', 'Loading available players...');
+            const availableData = await this.apiRequest(`/draft/${draftId}/available-players?limit=100`);
+            this.displayAvailablePlayers(availableData.available_players);
+            
+            // Load best available by position
+            this.updateRankingsLoading('best', 'Loading best available players...');
+            const bestData = await this.apiRequest(`/draft/${draftId}/best-available?count=10`);
+            this.displayBestAvailable(bestData.best_available);
+            
+        } catch (error) {
+            console.error('Failed to load rankings data:', error);
+            this.showRankingsError(error.message);
+        }
+    }
+    
+    /**
+     * Display available players
+     */
+    displayAvailablePlayers(players) {
+        const container = document.getElementById('available-players-list');
+        if (!container) return;
+        
+        if (!players || players.length === 0) {
+            container.innerHTML = '<div class="no-data">No available players found.</div>';
+            return;
+        }
+        
+        const playersHtml = players.map((player, index) => `
+            <div class="player-card" data-position="${player.position}">
+                <div class="player-rank">${player.rank || index + 1}</div>
+                <div class="player-info">
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-details">
+                        <span class="player-position">${player.position}</span>
+                        <span class="player-team">${player.team || 'N/A'}</span>
+                        ${player.bye_week ? `<span class="player-bye">Bye: ${player.bye_week}</span>` : ''}
+                    </div>
+                </div>
+                <div class="player-tier">
+                    <span class="tier-badge tier-${player.tier || 1}">T${player.tier || 1}</span>
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = playersHtml;
+    }
+    
+    /**
+     * Display best available players by position
+     */
+    displayBestAvailable(bestByPosition) {
+        const container = document.getElementById('best-available-list');
+        if (!container) return;
+        
+        if (!bestByPosition || Object.keys(bestByPosition).length === 0) {
+            container.innerHTML = '<div class="no-data">No best available data found.</div>';
+            return;
+        }
+        
+        const positionsHtml = Object.entries(bestByPosition).map(([position, players]) => `
+            <div class="position-group">
+                <h5 class="position-header">${position}</h5>
+                <div class="position-players">
+                    ${players.slice(0, 5).map((player, index) => `
+                        <div class="best-player-card">
+                            <div class="best-player-rank">${index + 1}</div>
+                            <div class="best-player-info">
+                                <div class="best-player-name">${player.name}</div>
+                                <div class="best-player-team">${player.team || 'N/A'}</div>
+                            </div>
+                            <div class="best-player-tier">T${player.tier || 1}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = positionsHtml;
+    }
+    
+    /**
+     * Filter available players by position
+     */
+    filterAvailablePlayers() {
+        const positionFilter = document.getElementById('position-filter')?.value;
+        const playerCards = document.querySelectorAll('.player-card');
+        
+        playerCards.forEach(card => {
+            const playerPosition = card.dataset.position;
+            if (!positionFilter || playerPosition === positionFilter) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    /**
+     * Switch between rankings tabs
+     */
+    switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+        
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(`${tabName}-${tabName === 'available' ? 'players' : 'available'}-tab`)?.classList.add('active');
+    }
+    
+    /**
+     * Render draft picks with better formatting
+     */
+    renderDraftPicks(picks) {
+        if (!picks || picks.length === 0) {
+            return '<div class="no-data">No picks yet.</div>';
+        }
+        
+        const recentPicks = picks.slice(0, 20); // Show last 20 picks
+        
+        return recentPicks.map(pick => `
+            <div class="pick-item">
+                <div class="pick-number">${pick.pick_no}</div>
+                <div class="pick-info">
+                    <div class="pick-player">${pick.player_id ? `Player: ${pick.player_id}` : 'TBD'}</div>
+                    <div class="pick-details">Round ${pick.round} • Pick ${pick.draft_slot}</div>
+                </div>
+                <div class="pick-time">
+                    ${pick.picked_at ? new Date(pick.picked_at).toLocaleTimeString() : ''}
+                </div>
+            </div>
+        `).join('') + (picks.length > 20 ? `<div class="more-picks">... and ${picks.length - 20} more picks</div>` : '');
+    }
+    
+    /**
+     * Update rankings loading state
+     */
+    updateRankingsLoading(section, message) {
+        const container = document.getElementById(`${section === 'available' ? 'available-players' : 'best-available'}-list`);
+        if (container) {
+            container.innerHTML = `<div class="loading-placeholder">${message}</div>`;
+        }
+    }
+    
+    /**
+     * Show rankings unavailable message
+     */
+    showRankingsUnavailable() {
+        const availableContainer = document.getElementById('available-players-list');
+        const bestContainer = document.getElementById('best-available-list');
+        
+        const message = `
+            <div class="rankings-unavailable">
+                <h4>⚠️ Rankings Unavailable</h4>
+                <p>Player rankings are not available in this version.</p>
+                <p>The draft assistant will still show draft picks and basic functionality.</p>
+            </div>
+        `;
+        
+        if (availableContainer) availableContainer.innerHTML = message;
+        if (bestContainer) bestContainer.innerHTML = message;
+    }
+    
+    /**
+     * Show rankings error message
+     */
+    showRankingsError(errorMessage) {
+        const availableContainer = document.getElementById('available-players-list');
+        const bestContainer = document.getElementById('best-available-list');
+        
+        const message = `
+            <div class="rankings-error">
+                <h4>❌ Rankings Error</h4>
+                <p>Failed to load player rankings: ${errorMessage}</p>
+                <button onclick="window.draftApp.loadRankingsData('${this.state.selectedDraft?.draft_id}')" class="btn btn-sm btn-primary">
+                    Try Again
+                </button>
+            </div>
+        `;
+        
+        if (availableContainer) availableContainer.innerHTML = message;
+        if (bestContainer) bestContainer.innerHTML = message;
     }
     
     /**
