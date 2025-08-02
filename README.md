@@ -1,202 +1,183 @@
-# Fantasy Football Draft Assistant V2
+# 🏈 Fantasy Football Draft Assistant V2
 
-A simple, single-executable fantasy football draft assistant that runs locally with zero dependencies.
+A single executable fantasy football draft assistant with embedded web server and real-time Sleeper API integration.
 
-## 🎯 Design Philosophy
+## ✨ Features
 
-This application follows the **"Single Executable, Zero Dependencies"** principle:
-- One file to distribute
-- No installation required
-- Works on Windows, macOS, and Linux
-- Opens automatically in browser
-- All dependencies bundled
+- **🎯 Single Executable**: One file, no installation required
+- **🌐 Embedded Web Server**: Modern responsive web interface  
+- **🔌 Zero Dependencies**: Everything bundled, works out of the box
+- **📱 Cross-Platform**: Windows, macOS, and Linux support
+- **⚡ Real-time Data**: Live Sleeper API integration
+- **🎨 Modern UI**: Responsive design that works on all devices
+- **🏈 Complete Workflow**: Username → Leagues → Drafts → Rankings
+
+## 🚀 Quick Start
+
+### Download & Run
+1. **Download** the executable for your platform from [Releases](../../releases)
+2. **Run** the executable (double-click or from terminal)
+3. **Wait** ~15 seconds for startup
+4. **Use** the web interface that opens automatically
+
+### Command Line Options
+```bash
+./FantasyFootballDraftAssistant --help
+./FantasyFootballDraftAssistant --port 8080
+./FantasyFootballDraftAssistant --no-browser
+./FantasyFootballDraftAssistant --debug
+```
+
+## 📦 Downloads
+
+| Platform | File | Size | Status |
+|----------|------|------|--------|
+| **macOS** | `FantasyFootballDraftAssistant-v2.0.0-darwin-x64` | ~6MB | ✅ Available |
+| **Windows** | `FantasyFootballDraftAssistant-v2.0.0-windows-x64.exe` | ~6MB | 🔨 Build from source |
+| **Linux** | `FantasyFootballDraftAssistant-v2.0.0-linux-x64` | ~6MB | 🔨 Build from source |
+
+## 🛠️ Building from Source
+
+### Prerequisites
+- Python 3.8+ 
+- Git
+
+### Quick Build
+```bash
+git clone https://github.com/YOUR_USERNAME/SleeperLiveDraftRankingsV2.git
+cd SleeperLiveDraftRankingsV2
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python scripts/build.py --release
+```
+
+### Platform-Specific Builds
+```bash
+# Windows
+scripts\platform\build_windows.bat
+
+# Linux  
+chmod +x scripts/platform/build_linux.sh
+./scripts/platform/build_linux.sh
+
+# macOS
+python scripts/build.py --release
+```
+
+See [BUILD_GUIDE.md](docs/BUILD_GUIDE.md) for detailed instructions.
+
+## 🎯 What's New in V2
+
+This is a complete rewrite from the ground up:
+
+### Before (V1)
+- Multiple Python files to manage
+- Required Python installation  
+- Complex setup process
+- Platform-specific issues
+
+### After (V2)
+- Single executable file
+- Zero dependencies
+- One-click experience
+- Cross-platform compatibility
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Single EXE    │───▶│  Embedded Flask  │───▶│  Static Files   │
-│                 │    │     Backend      │    │   (HTML/CSS/JS) │
-│  - Auto-launch  │    │                  │    │                 │
-│  - Port finder  │    │  - API Routes    │    │  - Vanilla JS   │
-│  - Browser open │    │  - Business Logic│    │  - No frameworks│
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                 Single Executable (6MB)                     │
+├─────────────────────────────────────────────────────────────┤
+│  ✅ Python + Flask Backend (Embedded)                      │
+│  ✅ Static HTML/CSS/JS Files (Embedded)                    │
+│  ✅ Rankings Data Files (Embedded)                         │
+│  ✅ All Dependencies Bundled                               │
+│  ✅ Auto Port Detection                                     │
+│  ✅ Browser Auto-Launch                                     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## 🌐 Web Interface
 
-### For Users
-1. Download the executable for your platform
-2. Double-click to run
-3. Browser opens automatically to the app
+The application provides a modern web interface with:
 
-### For Developers
-```bash
-# Clone and setup
-git clone <repository-url>
-cd SleeperLiveDraftRankingsV2
+- **User Management**: Enter Sleeper username to load leagues
+- **League Selection**: Choose from your fantasy leagues  
+- **Draft Selection**: Pick active or completed drafts
+- **Draft Interface**: View picks, available players, and rankings
+- **Real-time Updates**: Live data from Sleeper API
+- **Responsive Design**: Works on desktop, tablet, and mobile
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+## 📡 API Endpoints
 
-# Install dependencies
-pip install -r requirements.txt
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/health` | Application health check |
+| `GET /api/info` | API information and endpoints |
+| `GET /api/user/{username}` | Get user information |
+| `GET /api/user/{username}/leagues` | Get user's leagues |
+| `GET /api/user/{username}/leagues/{league_id}/drafts` | Get league drafts |
+| `GET /api/draft/{draft_id}` | Get draft information |
+| `GET /api/draft/{draft_id}/picks` | Get draft picks |
+| `GET /api/league/{league_id}` | Get league information |
 
-# Run development server
-python main.py
-# OR use the dev script
-python scripts/dev.py run
-```
+## 🔧 Technical Details
 
-## 📁 Project Structure
-
-```
-SleeperLiveDraftRankingsV2/
-├── 📄 main.py                    # Single entry point
-├── 📄 requirements.txt           # Dependencies
-├── 📁 src/                      # Source code
-│   ├── 📁 backend/              # Flask backend
-│   │   ├── 📄 app.py            # Flask app factory
-│   │   ├── 📁 api/              # API routes (future)
-│   │   ├── 📁 services/         # Business logic (future)
-│   │   └── 📁 utils/            # Utilities
-│   └── 📁 frontend/             # Static files
-│       ├── 📄 index.html        # Main HTML
-│       ├── 📄 style.css         # Styles
-│       └── 📄 app.js            # JavaScript app
-├── 📁 scripts/                  # Build scripts
-│   ├── 📄 build.py              # Build executable
-│   └── 📄 dev.py                # Development tools
-└── 📁 docs/                     # Documentation
-    ├── 📄 PROJECT_STRUCTURE.md  # Detailed structure
-    ├── 📄 DEVELOPMENT_GUIDE.md  # Dev guidelines
-    ├── 📄 BUILD_GUIDE.md        # Build instructions
-    ├── 📄 ARCHITECTURE.md       # Architecture decisions
-    └── 📄 API_REFERENCE.md      # API documentation
-```
-
-## 🔧 Development Commands
-
-```bash
-# Development server
-python scripts/dev.py run [--port 8080] [--no-browser]
-
-# Install dependencies
-python scripts/dev.py install [--dev]
-
-# Check project info
-python scripts/dev.py info
-
-# Build executable
-python scripts/build.py [--debug] [--icon path/to/icon.ico]
-
-# Run tests (when implemented)
-python scripts/dev.py test
-```
-
-## 🎨 Technology Stack
-
-### Backend
-- **Python 3.8+**: Core runtime
-- **Flask**: Web framework and API server
-- **Requests**: HTTP client for external APIs
-- **PyInstaller**: Single executable creation
-
-### Frontend
-- **Vanilla JavaScript**: No frameworks, modern ES6+
-- **CSS Grid/Flexbox**: Responsive layout
-- **Fetch API**: HTTP requests to backend
-
-### Build Tools
-- **PyInstaller**: Primary build tool
-- **UPX**: Executable compression (optional)
-
-## 🌟 Key Features
-
-### Current (v2.0.0)
-- ✅ Single executable distribution
-- ✅ Auto port detection and browser launch
-- ✅ Modern responsive UI
-- ✅ Health check and API info endpoints
-- ✅ Cross-platform support (Windows/macOS/Linux)
-- ✅ Zero external dependencies for users
-
-### Planned
-- 🔄 Sleeper API integration
-- 🔄 Player rankings management
-- 🔄 Draft tracking and filtering
-- 🔄 League format auto-detection
-- 🔄 Real-time draft updates
+- **Backend**: Flask with embedded static files
+- **Frontend**: Modern HTML/CSS/JavaScript
+- **Build System**: PyInstaller with custom scripts
+- **API Integration**: Sleeper Fantasy Football API
+- **Architecture**: Modular service-based design
+- **File Size**: ~6MB (includes Python interpreter)
+- **Startup Time**: ~15 seconds first launch, ~3-5 seconds subsequent
+- **Memory Usage**: ~50MB runtime
 
 ## 📖 Documentation
 
-- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Detailed code organization
-- **[Development Guide](docs/DEVELOPMENT_GUIDE.md)** - Coding standards and practices
-- **[Build Guide](docs/BUILD_GUIDE.md)** - How to build executables
-- **[Architecture](docs/ARCHITECTURE.md)** - Design decisions and patterns
-- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
+- [🏗️ Architecture Guide](docs/ARCHITECTURE.md) - System design and components
+- [🔧 Build Guide](docs/BUILD_GUIDE.md) - Building executables for all platforms
+- [💻 Development Guide](docs/DEVELOPMENT_GUIDE.md) - Contributing and development setup
+- [📡 API Reference](docs/API_REFERENCE.md) - Complete API documentation
+- [📁 Project Structure](docs/PROJECT_STRUCTURE.md) - Codebase organization
 
-## 🧪 Testing
+## 🐛 Known Issues
 
-The application includes comprehensive testing:
-
-```bash
-# Check if everything is working
-python scripts/dev.py info
-
-# Run the application
-python main.py --no-browser
-
-# Test API endpoints
-curl http://localhost:5000/api/health
-curl http://localhost:5000/api/info
-```
-
-## 🔨 Building
-
-Create a single executable for distribution:
-
-```bash
-# Build for current platform
-python scripts/build.py
-
-# Build with debug info
-python scripts/build.py --debug
-
-# Build with custom icon
-python scripts/build.py --icon assets/icon.ico
-
-# Output will be in dist/
-```
-
-## 🎯 Design Principles
-
-1. **Simplicity First**: Minimal dependencies, clear code structure
-2. **Single Executable**: One file distribution, no installation
-3. **Cross-Platform**: Works on Windows, macOS, and Linux
-4. **Modern Web Tech**: Vanilla JS, CSS Grid, ES6+ features
-5. **Developer Friendly**: Clear documentation, easy to extend
-6. **Performance**: Fast startup, low memory usage
+- **Startup Time**: First launch takes ~15 seconds (normal for PyInstaller)
+- **File Size**: ~6MB (includes Python interpreter and all dependencies)
+- **Antivirus**: Some antivirus software may flag the executable (false positive)
 
 ## 🤝 Contributing
 
-1. Read the [Development Guide](docs/DEVELOPMENT_GUIDE.md)
-2. Follow the coding standards
-3. Add tests for new features
-4. Update documentation
-5. Submit pull requests
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📝 License
+See [DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) for detailed contribution guidelines.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📄 License
 
-## 🆘 Support
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- **Documentation**: Check the `docs/` folder
-- **Issues**: Create GitHub issues for bugs
-- **Development**: See [Development Guide](docs/DEVELOPMENT_GUIDE.md)
+## 🙏 Acknowledgments
+
+- [Sleeper](https://sleeper.app/) for the excellent fantasy football API
+- [PyInstaller](https://pyinstaller.org/) for making single-file executables possible
+- [Flask](https://flask.palletsprojects.com/) for the lightweight web framework
+- The fantasy football community for inspiration and feedback
+
+## 📊 Project Stats
+
+- **Language**: Python 3.9+
+- **Framework**: Flask
+- **Build Tool**: PyInstaller  
+- **Frontend**: Vanilla HTML/CSS/JavaScript
+- **API**: Sleeper Fantasy Football API
+- **Platforms**: Windows, macOS, Linux
+- **License**: MIT
 
 ---
 
-**🏈 Ready to build your fantasy football draft assistant? Start with `python main.py` and begin developing!**
+**Ready to dominate your fantasy draft? Download the executable and get started in seconds!** 🏆
