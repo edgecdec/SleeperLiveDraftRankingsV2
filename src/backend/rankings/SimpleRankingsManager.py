@@ -123,7 +123,7 @@ class SimpleRankingsManager:
                             position_filter: str = None,
                             limit: int = 50) -> List[Dict[str, Any]]:
         """
-        Get available players based on criteria
+        Get available players based on criteria with Sleeper integration
         
         Args:
             drafted_players: List of drafted player IDs
@@ -135,6 +135,9 @@ class SimpleRankingsManager:
             List of available players with rankings
         """
         try:
+            # Import here to avoid circular imports
+            from ..services.sleeper_api import SleeperAPI
+            
             # Use default format if not specified
             if not league_format or league_format not in self.rankings_cache:
                 available_formats = self.get_available_formats()
@@ -145,15 +148,43 @@ class SimpleRankingsManager:
             # Get rankings dataframe
             df = self.rankings_cache[league_format].copy()
             
+            # Get Sleeper player data for name matching
+            try:
+                sleeper_players = SleeperAPI.get_all_players()
+                print(f"📊 Loaded {len(sleeper_players)} Sleeper players for matching")
+            except Exception as e:
+                print(f"⚠️ Could not load Sleeper players: {e}")
+                sleeper_players = {}
+            
             # Convert drafted players to set for faster lookup
             drafted_set = set(drafted_players or [])
             
-            # Filter out drafted players (if we have player IDs)
-            if 'player_id' in df.columns:
-                df = df[~df['player_id'].isin(drafted_set)]
-            elif 'Player' in df.columns and drafted_players:
-                # Try to match by name if no player_id column
-                df = df[~df['Player'].isin(drafted_players)]
+            # Filter out drafted players by matching names
+            if drafted_players and sleeper_players:
+                # Get names of drafted players
+                drafted_names = set()
+                for player_id in drafted_players:
+                    player_data = sleeper_players.get(player_id, {})
+                    if player_data:
+                        first_name = player_data.get('first_name', '')
+                        last_name = player_data.get('last_name', '')
+                        name = f"{first_name} {last_name}".strip()
+                        if name:
+                            drafted_names.add(name.upper())
+                            # Also add variations
+                            drafted_names.add(f"{last_name}, {first_name}".upper())
+                            drafted_names.add(f"{first_name[0]}. {last_name}".upper() if first_name else "")
+                
+                # Filter out drafted players by name matching
+                if drafted_names:
+                    def is_drafted(row):
+                        player_name = self._get_player_name(row).upper()
+                        # Check exact match and common variations
+                        return (player_name in drafted_names or
+                                any(drafted_name in player_name or player_name in drafted_name 
+                                    for drafted_name in drafted_names if len(drafted_name) > 3))
+                    
+                    df = df[~df.apply(is_drafted, axis=1)]
             
             # Filter by position if specified
             if position_filter:
@@ -181,11 +212,16 @@ class SimpleRankingsManager:
             # Limit results
             df = df.head(limit)
             
-            # Convert to list of dictionaries
+            # Convert to list of dictionaries with enhanced data
             players = []
             for _, row in df.iterrows():
+                player_name = self._get_player_name(row)
+                
+                # Try to find matching Sleeper player for additional data
+                sleeper_match = self._find_sleeper_match(player_name, sleeper_players)
+                
                 player_info = {
-                    'name': self._get_player_name(row),
+                    'name': player_name,
                     'position': self._get_player_position(row),
                     'team': self._get_player_team(row),
                     'rank': self._get_player_rank(row),
@@ -193,9 +229,14 @@ class SimpleRankingsManager:
                     'bye_week': self._get_player_bye(row)
                 }
                 
-                # Add player_id if available
-                if 'player_id' in row:
-                    player_info['player_id'] = row['player_id']
+                # Add Sleeper data if found
+                if sleeper_match:
+                    player_info.update({
+                        'player_id': sleeper_match['id'],
+                        'sleeper_team': sleeper_match.get('team', player_info['team']),
+                        'injury_status': sleeper_match.get('injury_status'),
+                        'years_exp': sleeper_match.get('years_exp', 0)
+                    })
                 
                 players.append(player_info)
             
@@ -204,6 +245,50 @@ class SimpleRankingsManager:
         except Exception as e:
             print(f"⚠️ Error getting available players: {e}")
             return []
+    
+    def _find_sleeper_match(self, player_name: str, sleeper_players: Dict) -> Optional[Dict]:
+        """
+        Find matching Sleeper player by name
+        
+        Args:
+            player_name: Player name from rankings
+            sleeper_players: Dictionary of Sleeper players
+            
+        Returns:
+            Matching Sleeper player data or None
+        """
+        if not player_name or not sleeper_players:
+            return None
+        
+        player_name_clean = player_name.upper().strip()
+        
+        # Try exact matches first
+        for player_id, player_data in sleeper_players.items():
+            if not player_data:
+                continue
+                
+            first_name = player_data.get('first_name', '').upper()
+            last_name = player_data.get('last_name', '').upper()
+            full_name = f"{first_name} {last_name}".strip()
+            
+            if full_name == player_name_clean:
+                return {**player_data, 'id': player_id}
+        
+        # Try partial matches
+        for player_id, player_data in sleeper_players.items():
+            if not player_data:
+                continue
+                
+            first_name = player_data.get('first_name', '').upper()
+            last_name = player_data.get('last_name', '').upper()
+            
+            # Check if last name matches and first name starts with same letter
+            if (last_name and last_name in player_name_clean and
+                first_name and len(first_name) > 0 and len(player_name_clean) > 0 and
+                first_name[0] == player_name_clean[0]):
+                return {**player_data, 'id': player_id}
+        
+        return None
     
     def _get_player_name(self, row) -> str:
         """Extract player name from row"""

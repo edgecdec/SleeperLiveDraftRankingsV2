@@ -640,7 +640,7 @@ class DraftAssistantApp {
     }
     
     /**
-     * Render draft picks with better formatting
+     * Render draft picks with better formatting and actual player names
      */
     renderDraftPicks(picks) {
         if (!picks || picks.length === 0) {
@@ -651,10 +651,17 @@ class DraftAssistantApp {
         
         return recentPicks.map(pick => `
             <div class="pick-item">
-                <div class="pick-number">${pick.pick_no}</div>
+                <div class="pick-number">${pick.pick_number || pick.pick_no || '?'}</div>
                 <div class="pick-info">
-                    <div class="pick-player">${pick.player_id ? `Player: ${pick.player_id}` : 'TBD'}</div>
-                    <div class="pick-details">Round ${pick.round} • Pick ${pick.draft_slot}</div>
+                    <div class="pick-player">
+                        ${pick.name || `Player ${pick.player_id || 'Unknown'}`}
+                        ${pick.position ? `<span class="pick-position">${pick.position}</span>` : ''}
+                        ${pick.team && pick.team !== 'N/A' ? `<span class="pick-team">${pick.team}</span>` : ''}
+                    </div>
+                    <div class="pick-details">
+                        Round ${pick.round || '?'} • Pick ${pick.draft_slot || pick.pick_no || '?'}
+                        ${pick.is_keeper ? ' • <span class="keeper-badge">Keeper</span>' : ''}
+                    </div>
                 </div>
                 <div class="pick-time">
                     ${pick.picked_at ? new Date(pick.picked_at).toLocaleTimeString() : ''}
