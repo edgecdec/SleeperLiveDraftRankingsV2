@@ -12,7 +12,8 @@ class DraftAssistantApp {
         this.draftBoard = new DraftBoard(this.apiService, this.uiUtils);
         this.queueManager = new QueueManager(this.apiService, this.uiUtils);
         this.teamAnalysis = new TeamAnalysis(this.apiService, this.uiUtils);
-        this.eventHandlers = new EventHandlers(this.apiService, this.uiUtils, this.draftBoard, this.queueManager, this.teamAnalysis);
+        this.customRankings = new CustomRankings(this.apiService, this.uiUtils);
+        this.eventHandlers = new EventHandlers(this.apiService, this.uiUtils, this.draftBoard, this.queueManager, this.teamAnalysis, this.customRankings);
         
         // Initialize when Shoelace is ready
         this.initializeWhenReady();

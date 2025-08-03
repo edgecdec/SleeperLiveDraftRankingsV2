@@ -20,6 +20,7 @@ from .config import init_paths
 # Import API blueprints
 from .api.user import user_bp
 from .api.draft import draft_bp
+from .api.custom_rankings import custom_rankings_bp
 
 # Try to import rankings (optional)
 try:
@@ -107,6 +108,7 @@ def create_app(debug: bool = False) -> Flask:
     # Register API blueprints
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(draft_bp, url_prefix='/api')
+    app.register_blueprint(custom_rankings_bp, url_prefix='/api')
     
     if RANKINGS_AVAILABLE and rankings_bp:
         app.register_blueprint(rankings_bp, url_prefix='/api')

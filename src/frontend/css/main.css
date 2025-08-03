@@ -652,3 +652,304 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+/* Custom Rankings Styles */
+.custom-rankings-container {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.rankings-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--sl-color-neutral-200);
+}
+
+.rankings-header h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--sl-color-neutral-900);
+}
+
+.rankings-header p {
+    margin: 0;
+    color: var(--sl-color-neutral-600);
+    font-size: 1rem;
+}
+
+.upload-section, .existing-rankings-section, .format-help-section {
+    margin-bottom: 2rem;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.file-input-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.selected-file-name {
+    font-size: 0.875rem;
+    color: var(--sl-color-neutral-600);
+    font-style: italic;
+}
+
+.selected-file-name:not(:empty) {
+    color: var(--sl-color-success-600);
+    font-weight: 500;
+    font-style: normal;
+}
+
+.upload-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.validation-results {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: var(--sl-border-radius-medium);
+    border: 1px solid var(--sl-color-neutral-200);
+    background: var(--sl-color-neutral-50);
+}
+
+.validation-success {
+    border-color: var(--sl-color-success-300);
+    background: var(--sl-color-success-50);
+}
+
+.validation-error {
+    border-color: var(--sl-color-danger-300);
+    background: var(--sl-color-danger-50);
+}
+
+.validation-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.preview-stat {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: var(--sl-border-radius-small);
+    border: 1px solid var(--sl-color-neutral-200);
+}
+
+.preview-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--sl-color-primary-600);
+    margin-bottom: 0.25rem;
+}
+
+.preview-stat-label {
+    font-size: 0.875rem;
+    color: var(--sl-color-neutral-600);
+}
+
+.sample-players {
+    margin-top: 1rem;
+}
+
+.sample-players h6 {
+    margin: 0 0 0.5rem 0;
+    color: var(--sl-color-neutral-700);
+}
+
+.sample-player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    background: white;
+    border-radius: var(--sl-border-radius-small);
+    border: 1px solid var(--sl-color-neutral-200);
+}
+
+.sample-player-name {
+    font-weight: 600;
+    color: var(--sl-color-neutral-900);
+}
+
+.sample-player-details {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.rankings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: var(--sl-border-radius-medium);
+    border: 1px solid var(--sl-color-neutral-200);
+    transition: all 0.2s ease;
+}
+
+.ranking-item:hover {
+    border-color: var(--sl-color-primary-300);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-info {
+    flex: 1;
+}
+
+.ranking-filename {
+    font-weight: 600;
+    color: var(--sl-color-neutral-900);
+    margin-bottom: 0.25rem;
+}
+
+.ranking-details {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ranking-detail {
+    font-size: 0.875rem;
+    color: var(--sl-color-neutral-600);
+}
+
+.ranking-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.format-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.format-example {
+    padding: 1rem;
+    background: var(--sl-color-neutral-50);
+    border-radius: var(--sl-border-radius-small);
+    border-left: 3px solid var(--sl-color-primary-600);
+}
+
+.format-example h6 {
+    margin: 0 0 0.5rem 0;
+    color: var(--sl-color-neutral-900);
+}
+
+.format-example code {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    background: white;
+    padding: 0.75rem;
+    border-radius: var(--sl-border-radius-small);
+    border: 1px solid var(--sl-color-neutral-200);
+    white-space: pre-line;
+    color: var(--sl-color-neutral-800);
+}
+
+.format-notes {
+    padding: 1rem;
+    background: var(--sl-color-primary-50);
+    border-radius: var(--sl-border-radius-small);
+    border: 1px solid var(--sl-color-primary-200);
+}
+
+.format-notes h6 {
+    margin: 0 0 0.5rem 0;
+    color: var(--sl-color-primary-700);
+}
+
+.format-notes ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: var(--sl-color-neutral-700);
+}
+
+.format-notes li {
+    margin-bottom: 0.25rem;
+}
+
+.error-list {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--sl-color-danger-50);
+    border-radius: var(--sl-border-radius-small);
+    border: 1px solid var(--sl-color-danger-200);
+}
+
+.error-list h6 {
+    margin: 0 0 0.5rem 0;
+    color: var(--sl-color-danger-700);
+}
+
+.error-list ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: var(--sl-color-danger-600);
+}
+
+.error-list li {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+/* Responsive design for custom rankings */
+@media (max-width: 768px) {
+    .custom-rankings-container {
+        padding: 0.5rem;
+    }
+    
+    .file-input-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .upload-actions {
+        justify-content: stretch;
+    }
+    
+    .upload-actions sl-button {
+        flex: 1;
+    }
+    
+    .validation-preview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .ranking-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .ranking-actions {
+        align-self: stretch;
+        justify-content: stretch;
+    }
+    
+    .ranking-actions sl-button {
+        flex: 1;
+    }
+}

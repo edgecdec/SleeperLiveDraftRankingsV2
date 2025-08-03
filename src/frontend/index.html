@@ -219,6 +219,10 @@
                                 <sl-icon name="people"></sl-icon>
                                 Team Analysis
                             </sl-tab>
+                            <sl-tab slot="nav" panel="custom-rankings">
+                                <sl-icon name="upload"></sl-icon>
+                                Custom Rankings
+                            </sl-tab>
 
                             <!-- Available Players Tab -->
                             <sl-tab-panel name="available-players">
@@ -283,6 +287,109 @@
                                     </div>
                                 </div>
                             </sl-tab-panel>
+                            
+                            <!-- Custom Rankings Tab -->
+                            <sl-tab-panel name="custom-rankings">
+                                <div class="custom-rankings-container">
+                                    <div class="rankings-header">
+                                        <h3>Custom Rankings Upload</h3>
+                                        <p>Upload your own CSV rankings file to use custom player rankings during your draft.</p>
+                                    </div>
+                                    
+                                    <!-- Upload Section -->
+                                    <div class="upload-section">
+                                        <sl-card>
+                                            <div slot="header">
+                                                <h4>Upload New Rankings</h4>
+                                            </div>
+                                            
+                                            <div class="upload-form">
+                                                <div class="file-input-container">
+                                                    <input type="file" id="rankings-file-input" accept=".csv" style="display: none;">
+                                                    <sl-button id="select-file-btn" variant="default">
+                                                        <sl-icon slot="prefix" name="file-earmark-text"></sl-icon>
+                                                        Select CSV File
+                                                    </sl-button>
+                                                    <span id="selected-file-name" class="selected-file-name"></span>
+                                                </div>
+                                                
+                                                <sl-select id="format-select" label="CSV Format" value="auto" help-text="Auto-detect will try to identify the format automatically">
+                                                    <sl-option value="auto">Auto-detect</sl-option>
+                                                    <sl-option value="standard">Standard (name, position, rank, tier)</sl-option>
+                                                    <sl-option value="fantasypros">FantasyPros Export</sl-option>
+                                                    <sl-option value="espn">ESPN Export</sl-option>
+                                                </sl-select>
+                                                
+                                                <div class="upload-actions">
+                                                    <sl-button id="validate-btn" variant="neutral" disabled>
+                                                        <sl-icon slot="prefix" name="check-circle"></sl-icon>
+                                                        Validate File
+                                                    </sl-button>
+                                                    <sl-button id="upload-btn" variant="primary" disabled>
+                                                        <sl-icon slot="prefix" name="upload"></sl-icon>
+                                                        Upload Rankings
+                                                    </sl-button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Validation Results -->
+                                            <div id="validation-results" class="validation-results" style="display: none;">
+                                                <!-- Validation content will be inserted here -->
+                                            </div>
+                                        </sl-card>
+                                    </div>
+                                    
+                                    <!-- Existing Rankings Section -->
+                                    <div class="existing-rankings-section">
+                                        <sl-card>
+                                            <div slot="header">
+                                                <h4>Your Custom Rankings</h4>
+                                            </div>
+                                            
+                                            <div id="rankings-list">
+                                                <div class="loading-state">
+                                                    <sl-spinner></sl-spinner>
+                                                    <p>Loading your rankings...</p>
+                                                </div>
+                                            </div>
+                                        </sl-card>
+                                    </div>
+                                    
+                                    <!-- Format Help Section -->
+                                    <div class="format-help-section">
+                                        <sl-details summary="CSV Format Help">
+                                            <div class="format-examples">
+                                                <h5>Supported Formats:</h5>
+                                                
+                                                <div class="format-example">
+                                                    <h6>Standard Format:</h6>
+                                                    <code>name,position,rank,tier,team,bye_week<br>Josh Allen,QB,1,1,BUF,7<br>Christian McCaffrey,RB,2,1,SF,9</code>
+                                                </div>
+                                                
+                                                <div class="format-example">
+                                                    <h6>FantasyPros Format:</h6>
+                                                    <code>player_name,pos,rank,tier,team,bye<br>Josh Allen,QB,1,1,BUF,7<br>Christian McCaffrey,RB,2,1,SF,9</code>
+                                                </div>
+                                                
+                                                <div class="format-example">
+                                                    <h6>ESPN Format:</h6>
+                                                    <code>PLAYER,POS,RK,TIER,TEAM,BYE<br>Josh Allen,QB,1,1,BUF,7<br>Christian McCaffrey,RB,2,1,SF,9</code>
+                                                </div>
+                                                
+                                                <div class="format-notes">
+                                                    <h6>Notes:</h6>
+                                                    <ul>
+                                                        <li>Required columns: <strong>name/player_name/PLAYER</strong> and <strong>position/pos/POS</strong></li>
+                                                        <li>Optional columns: rank, tier, team, bye_week</li>
+                                                        <li>File must be UTF-8 encoded CSV</li>
+                                                        <li>Auto-detect will try to identify the format automatically</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </sl-details>
+                                    </div>
+                                </div>
+                            </sl-tab-panel>
                         </sl-tab-group>
                     </main>
                 </div>
@@ -344,6 +451,7 @@
     <script src="js/draft-board.js"></script>
     <script src="js/queue-manager.js"></script>
     <script src="js/team-analysis.js"></script>
+    <script src="js/custom-rankings.js"></script>
     <script src="js/event-handlers.js"></script>
     <script src="js/app-main.js"></script>
 </body>

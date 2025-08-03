@@ -5,12 +5,13 @@
  */
 
 class EventHandlers {
-    constructor(apiService, uiUtils, draftBoard, queueManager, teamAnalysis) {
+    constructor(apiService, uiUtils, draftBoard, queueManager, teamAnalysis, customRankings) {
         this.apiService = apiService;
         this.uiUtils = uiUtils;
         this.draftBoard = draftBoard;
         this.queueManager = queueManager;
         this.teamAnalysis = teamAnalysis;
+        this.customRankings = customRankings;
         this.urlManager = new URLManager();
         
         this.state = {
@@ -139,6 +140,9 @@ class EventHandlers {
         
         // Initialize team analysis
         this.teamAnalysis.init();
+        
+        // Initialize custom rankings
+        this.customRankings.init();
         
         console.log('🎯 Event listeners setup complete');
     }
@@ -637,6 +641,9 @@ class EventHandlers {
                 if (this.state.selectedDraft?.draft_id) {
                     this.teamAnalysis.loadTeamAnalysis(this.state.selectedDraft.draft_id);
                 }
+                break;
+            case 'custom-rankings':
+                this.customRankings.loadUserRankings();
                 break;
         }
     }
