@@ -5,11 +5,13 @@ This module handles draft-related API endpoints including:
 - Draft information retrieval
 - Draft picks data
 - Available players calculation
+- Player data cache management
 """
 
 from flask import Blueprint, jsonify, request
 import time
 from ..services.sleeper_api import SleeperAPI, SleeperAPIError
+from ..services.player_cache import get_player_cache
 
 draft_bp = Blueprint('draft', __name__)
 
@@ -252,8 +254,41 @@ def get_draft_updates(draft_id):
         JSON response with draft updates and timestamp
     """
     try:
-        # Get current picks with timestamps
-        picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        # Get draft info first to validate draft exists
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        if not draft_info:
+            return jsonify({
+                'error': f'Draft "{draft_id}" not found',
+                'code': 'DRAFT_NOT_FOUND'
+            }), 404
+        
+        # Get current picks with error handling
+        try:
+            picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        except Exception as e:
+            print(f"⚠️ Error getting drafted players with names: {e}")
+            # Fallback to raw picks
+            try:
+                raw_picks = SleeperAPI.get_draft_picks(draft_id)
+                picks = []
+                for pick in raw_picks:
+                    picks.append({
+                        'player_id': pick.get('player_id'),
+                        'player_name': f"Player {pick.get('player_id', 'Unknown')}",
+                        'position': 'Unknown',
+                        'team': 'N/A',
+                        'pick_no': pick.get('pick_no'),
+                        'round': pick.get('round'),
+                        'draft_slot': pick.get('draft_slot'),
+                        'picked_by': pick.get('picked_by'),
+                        'picked_at': pick.get('picked_at')
+                    })
+            except Exception as e2:
+                print(f"❌ Error getting raw picks: {e2}")
+                return jsonify({
+                    'error': f'Failed to get draft picks: {str(e2)}',
+                    'code': 'PICKS_ERROR'
+                }), 500
         
         # Get last update timestamp (most recent pick time)
         last_update = 0
@@ -262,16 +297,13 @@ def get_draft_updates(draft_id):
             if pick_times:
                 last_update = max(pick_times)
         
-        # Get draft info for additional context
-        draft_info = SleeperAPI.get_draft_info(draft_id)
-        
         return jsonify({
             'draft_id': draft_id,
             'picks': picks,
             'last_update': last_update,
             'total_picks': len(picks),
-            'draft_status': draft_info.get('status', 'unknown') if draft_info else 'unknown',
-            'current_pick': draft_info.get('draft_order', {}).get('current_pick', 0) if draft_info else 0,
+            'draft_status': draft_info.get('status', 'unknown'),
+            'current_pick': draft_info.get('draft_order', {}).get('current_pick', 0),
             'status': 'success',
             'timestamp': int(time.time())
         })
@@ -282,8 +314,9 @@ def get_draft_updates(draft_id):
             'code': 'SLEEPER_API_ERROR'
         }), 500
     except Exception as e:
+        print(f"❌ Unexpected error in get_draft_updates: {e}")
         return jsonify({
-            'error': str(e),
+            'error': f'Internal server error: {str(e)}',
             'code': 'INTERNAL_ERROR'
         }), 500
 
@@ -512,6 +545,108 @@ def get_draft_board(draft_id):
             'error': f'Sleeper API error: {str(e)}',
             'code': 'SLEEPER_API_ERROR'
         }), 500
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+
+@draft_bp.route('/cache/info')
+def get_cache_info():
+    """
+    Get information about the player data cache
+    
+    Returns:
+        JSON response with cache information
+    """
+    try:
+        player_cache = get_player_cache()
+        cache_info = player_cache.get_cache_info()
+        
+        return jsonify({
+            'cache_info': cache_info,
+            'status': 'success'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+
+@draft_bp.route('/cache/refresh', methods=['POST'])
+def refresh_player_cache():
+    """
+    Force refresh the player data cache
+    
+    Returns:
+        JSON response with refresh status
+    """
+    try:
+        player_cache = get_player_cache()
+        
+        # Clear existing cache
+        player_cache.clear_cache()
+        
+        # Force fetch fresh data
+        print("🔄 Force refreshing player cache...")
+        players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
+        
+        if not players_data:
+            return jsonify({
+                'error': 'Failed to fetch player data from Sleeper API',
+                'code': 'API_ERROR'
+            }), 500
+        
+        # Save to cache
+        success = player_cache.save_players_to_cache(players_data)
+        
+        if success:
+            cache_info = player_cache.get_cache_info()
+            return jsonify({
+                'message': 'Player cache refreshed successfully',
+                'cache_info': cache_info,
+                'players_count': len(players_data),
+                'status': 'success'
+            })
+        else:
+            return jsonify({
+                'error': 'Failed to save refreshed data to cache',
+                'code': 'CACHE_ERROR'
+            }), 500
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+
+@draft_bp.route('/cache/clear', methods=['POST'])
+def clear_player_cache():
+    """
+    Clear the player data cache
+    
+    Returns:
+        JSON response with clear status
+    """
+    try:
+        player_cache = get_player_cache()
+        success = player_cache.clear_cache()
+        
+        if success:
+            return jsonify({
+                'message': 'Player cache cleared successfully',
+                'status': 'success'
+            })
+        else:
+            return jsonify({
+                'error': 'Failed to clear cache',
+                'code': 'CACHE_ERROR'
+            }), 500
+        
     except Exception as e:
         return jsonify({
             'error': str(e),

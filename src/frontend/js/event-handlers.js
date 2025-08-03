@@ -10,6 +10,8 @@ class EventHandlers {
         this.uiUtils = uiUtils;
         this.draftBoard = draftBoard;
         this.queueManager = queueManager;
+        this.urlManager = new URLManager();
+        
         this.state = {
             currentUser: null,
             userLeagues: [],
@@ -21,6 +23,98 @@ class EventHandlers {
             draftUpdates: null,
             currentFilters: {} // Add filter state
         };
+        
+        // Setup URL navigation handler
+        this.urlManager.setupPopstateHandler((params) => {
+            this.handleUrlNavigation(params);
+        });
+        
+        // Check for auto-load from URL on initialization
+        setTimeout(() => {
+            this.checkAutoLoadFromUrl();
+        }, 1000);
+    }
+
+    /**
+     * Check if we should auto-load from URL parameters
+     */
+    async checkAutoLoadFromUrl() {
+        const params = this.urlManager.getParams();
+        
+        if (params.username) {
+            console.log('🔗 Auto-loading from URL:', params);
+            
+            // Set username in input
+            const usernameInput = document.getElementById('username-input');
+            if (usernameInput) {
+                usernameInput.value = params.username;
+            }
+            
+            // Load user data
+            try {
+                await this.loadUserData(params.username);
+                
+                if (params.league_id && params.draft_id) {
+                    // Direct to draft
+                    const league = this.state.userLeagues.find(l => l.league_id === params.league_id);
+                    if (league) {
+                        this.state.selectedLeague = league;
+                        this.state.selectedDraft = { draft_id: params.draft_id };
+                        this.uiUtils.showSection('draft');
+                        return;
+                    }
+                }
+                
+                if (params.league_id) {
+                    // Show league selection with pre-selected league
+                    this.showLeagueSelection(params.league_id);
+                    return;
+                }
+                
+                // Show league selection
+                this.showLeagueSelection();
+                
+            } catch (error) {
+                console.error('Auto-load failed:', error);
+                this.uiUtils.showNotification('Failed to load from URL: ' + error.message, 'warning');
+            }
+        }
+    }
+    
+    /**
+     * Handle URL navigation (back/forward buttons)
+     */
+    async handleUrlNavigation(params) {
+        console.log('🔗 Handling URL navigation:', params);
+        
+        if (!params.username) {
+            this.uiUtils.showSection('welcome');
+            return;
+        }
+        
+        // Load user if not already loaded
+        if (!this.state.currentUser || this.state.currentUser.username !== params.username) {
+            try {
+                await this.loadUserData(params.username);
+            } catch (error) {
+                this.uiUtils.showNotification('Failed to load user: ' + error.message, 'danger');
+                return;
+            }
+        }
+        
+        // Navigate to appropriate section
+        if (params.draft_id && params.league_id) {
+            const league = this.state.userLeagues.find(l => l.league_id === params.league_id);
+            if (league) {
+                this.state.selectedLeague = league;
+                this.state.selectedDraft = { draft_id: params.draft_id };
+                this.uiUtils.showSection('draft');
+            }
+        } else if (params.section === 'league-select' || this.state.userLeagues.length > 0) {
+            this.showLeagueSelection(params.league_id);
+        } else {
+            this.uiUtils.showSection('user-setup');
+        }
     }
 
     /**
@@ -75,7 +169,27 @@ class EventHandlers {
             console.log('✅ Setting up back-to-welcome-btn listener');
             backToWelcomeBtn.addEventListener('click', () => {
                 console.log('⬅️ Back to welcome clicked');
+                this.urlManager.clearParams();
                 this.uiUtils.showSection('welcome');
+            });
+        }
+        
+        // League selection buttons
+        const backToUserBtn = document.getElementById('back-to-user-btn');
+        if (backToUserBtn) {
+            console.log('✅ Setting up back-to-user-btn listener');
+            backToUserBtn.addEventListener('click', () => {
+                console.log('⬅️ Back to user setup clicked');
+                this.uiUtils.showSection('user-setup');
+            });
+        }
+        
+        const refreshLeaguesBtn = document.getElementById('refresh-leagues-btn');
+        if (refreshLeaguesBtn) {
+            console.log('✅ Setting up refresh-leagues-btn listener');
+            refreshLeaguesBtn.addEventListener('click', () => {
+                console.log('🔄 Refresh leagues clicked');
+                this.handleRefreshLeagues();
             });
         }
     }
@@ -212,30 +326,153 @@ class EventHandlers {
         if (loadButton) loadButton.loading = true;
         
         try {
-            // Load user data
-            const userData = await this.apiService.getUser(username);
-            this.state.currentUser = userData.user;
-            
-            // Load user leagues
-            const leaguesData = await this.apiService.getUserLeagues(username);
-            this.state.userLeagues = leaguesData.leagues;
-            
-            this.uiUtils.showNotification(`Loaded ${leaguesData.leagues.length} leagues for ${username}`, 'success');
-            
-            // For demo purposes, auto-select first league with draft
-            const leagueWithDraft = leaguesData.leagues.find(league => league.draft_id);
-            if (leagueWithDraft) {
-                this.state.selectedLeague = leagueWithDraft;
-                this.state.selectedDraft = { draft_id: leagueWithDraft.draft_id };
-                this.uiUtils.showSection('draft');
-            } else {
-                this.uiUtils.showNotification('No active drafts found', 'warning');
-            }
+            await this.loadUserData(username);
+            this.urlManager.setUsername(username);
+            this.showLeagueSelection();
             
         } catch (error) {
             this.uiUtils.showNotification('Failed to load user data: ' + error.message, 'danger');
         } finally {
             if (loadButton) loadButton.loading = false;
+        }
+    }
+    
+    /**
+     * Load user data (separated for reuse)
+     */
+    async loadUserData(username) {
+        // Load user data
+        const userData = await this.apiService.getUser(username);
+        this.state.currentUser = userData.user;
+        
+        // Load user leagues
+        const leaguesData = await this.apiService.getUserLeagues(username);
+        this.state.userLeagues = leaguesData.leagues;
+        
+        this.uiUtils.showNotification(`Loaded ${leaguesData.leagues.length} leagues for ${username}`, 'success');
+    }
+    
+    /**
+     * Show league selection screen
+     */
+    showLeagueSelection(preSelectedLeagueId = null) {
+        this.uiUtils.showSection('league-select');
+        this.renderLeagueList(preSelectedLeagueId);
+        
+        // Update subtitle
+        const subtitle = document.getElementById('league-select-subtitle');
+        if (subtitle && this.state.currentUser) {
+            subtitle.textContent = `Choose a league for ${this.state.currentUser.display_name || this.state.currentUser.username}`;
+        }
+    }
+    
+    /**
+     * Render the league list
+     */
+    renderLeagueList(preSelectedLeagueId = null) {
+        const leagueList = document.getElementById('league-list');
+        if (!leagueList) return;
+        
+        if (!this.state.userLeagues || this.state.userLeagues.length === 0) {
+            leagueList.innerHTML = `
+                <div class="league-empty-state">
+                    <sl-icon name="inbox"></sl-icon>
+                    <h3>No Leagues Found</h3>
+                    <p>This user doesn't have any leagues for the current season.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        leagueList.innerHTML = '';
+        
+        this.state.userLeagues.forEach(league => {
+            const leagueItem = document.createElement('div');
+            leagueItem.className = 'league-item';
+            if (league.league_id === preSelectedLeagueId) {
+                leagueItem.classList.add('selected');
+            }
+            
+            const hasDraft = !!league.draft_id;
+            const statusClass = hasDraft ? 'has-draft' : 'no-draft';
+            const statusIcon = hasDraft ? 'check-circle' : 'clock';
+            const statusText = hasDraft ? 'Draft Available' : 'No Active Draft';
+            
+            leagueItem.innerHTML = `
+                <div class="league-info">
+                    <div class="league-name">${league.name || 'Unnamed League'}</div>
+                    <div class="league-details">
+                        <span>👥 ${league.total_rosters || 'Unknown'} teams</span>
+                        <span>🏈 ${league.settings?.type || 'Standard'}</span>
+                        <span>📊 ${league.scoring_settings?.rec || 0} PPR</span>
+                    </div>
+                    <div class="league-status ${statusClass}">
+                        <sl-icon name="${statusIcon}"></sl-icon>
+                        ${statusText}
+                    </div>
+                </div>
+            `;
+            
+            // Add click handler
+            leagueItem.addEventListener('click', () => {
+                this.handleLeagueSelect(league);
+            });
+            
+            leagueList.appendChild(leagueItem);
+        });
+    }
+    
+    /**
+     * Handle league selection
+     */
+    async handleLeagueSelect(league) {
+        if (!league.draft_id) {
+            this.uiUtils.showNotification('This league does not have an active draft', 'warning');
+            return;
+        }
+        
+        try {
+            this.state.selectedLeague = league;
+            this.state.selectedDraft = { draft_id: league.draft_id };
+            
+            // Update URL
+            this.urlManager.setDraft(
+                this.state.currentUser.username,
+                league.league_id,
+                league.draft_id
+            );
+            
+            // Show draft section
+            this.uiUtils.showSection('draft');
+            
+            this.uiUtils.showNotification(`Selected league: ${league.name}`, 'success');
+            
+        } catch (error) {
+            this.uiUtils.showNotification('Failed to select league: ' + error.message, 'danger');
+        }
+    }
+    
+    /**
+     * Handle refresh leagues button
+     */
+    async handleRefreshLeagues() {
+        if (!this.state.currentUser) {
+            this.uiUtils.showNotification('No user loaded', 'warning');
+            return;
+        }
+        
+        const refreshBtn = document.getElementById('refresh-leagues-btn');
+        if (refreshBtn) refreshBtn.loading = true;
+        
+        try {
+            await this.loadUserData(this.state.currentUser.username);
+            this.renderLeagueList();
+            this.uiUtils.showNotification('Leagues refreshed successfully', 'success');
+            
+        } catch (error) {
+            this.uiUtils.showNotification('Failed to refresh leagues: ' + error.message, 'danger');
+        } finally {
+            if (refreshBtn) refreshBtn.loading = false;
         }
     }
 

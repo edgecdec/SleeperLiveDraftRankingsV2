@@ -110,6 +110,34 @@
                 </sl-card>
             </section>
 
+            <!-- League Selection Section -->
+            <section id="league-select-section" class="section" style="display: none;">
+                <sl-card class="league-select-card">
+                    <div slot="header">
+                        <h2>Select Your League</h2>
+                        <p id="league-select-subtitle">Choose a league to view its draft</p>
+                    </div>
+                    
+                    <div class="league-list-container">
+                        <div id="league-list" class="league-list">
+                            <!-- Leagues will be populated here -->
+                        </div>
+                        
+                        <div class="league-actions">
+                            <sl-button variant="default" id="back-to-user-btn">
+                                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                                Back to User Setup
+                            </sl-button>
+                            
+                            <sl-button variant="primary" id="refresh-leagues-btn">
+                                <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
+                                Refresh Leagues
+                            </sl-button>
+                        </div>
+                    </div>
+                </sl-card>
+            </section>
+
             <!-- Draft Section -->
             <section id="draft-section" class="section" style="display: none;">
                 <div class="draft-layout">
@@ -285,6 +313,7 @@
     <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace-autoloader.js"></script>
     
     <!-- Modular JavaScript Files -->
+    <script src="js/url-manager.js"></script>
     <script src="js/api-service.js"></script>
     <script src="js/ui-utils.js"></script>
     <script src="js/draft-board.js"></script>

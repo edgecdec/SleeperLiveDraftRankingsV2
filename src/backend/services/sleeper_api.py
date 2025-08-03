@@ -2,13 +2,14 @@
 Sleeper API Service for Fantasy Football Draft Assistant V2
 
 This module handles all interactions with the Sleeper Fantasy Football API
-with proper error handling and caching.
+with proper error handling and JSON file caching for player data.
 """
 
 import requests
 import time
 from typing import Dict, List, Optional, Tuple
 from ..config import SLEEPER_API_BASE_URL, API_TIMEOUT
+from .player_cache import get_player_cache
 
 
 class SleeperAPIError(Exception):
@@ -17,12 +18,9 @@ class SleeperAPIError(Exception):
 
 
 class SleeperAPI:
-    """Helper class for Sleeper API calls with error handling and caching"""
+    """Helper class for Sleeper API calls with error handling and JSON file caching"""
     
     BASE_URL = SLEEPER_API_BASE_URL
-    _players_cache = None
-    _players_cache_time = None
-    CACHE_DURATION = 3600  # 1 hour cache for player data
     
     @staticmethod
     def _make_request(endpoint: str, timeout: int = API_TIMEOUT) -> Optional[Dict]:
@@ -123,25 +121,27 @@ class SleeperAPI:
     
     @staticmethod
     def get_all_players() -> Dict:
-        """Get all NFL players with caching"""
-        current_time = time.time()
+        """Get all NFL players with JSON file caching (max once per day)"""
+        player_cache = get_player_cache()
         
-        # Return cached data if still valid
-        if (SleeperAPI._players_cache and SleeperAPI._players_cache_time and 
-            current_time - SleeperAPI._players_cache_time < SleeperAPI.CACHE_DURATION):
-            print(f"📊 Using cached player data ({len(SleeperAPI._players_cache)} players)")
-            return SleeperAPI._players_cache
+        # Try to load from cache first
+        cached_players = player_cache.load_cached_players()
+        if cached_players:
+            return cached_players
         
+        # Cache is invalid/missing, fetch fresh data
         print("📊 Fetching fresh player data from Sleeper API...")
         players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
         
         if not players_data:
             raise SleeperAPIError("Empty player data received from Sleeper API")
         
-        SleeperAPI._players_cache = players_data
-        SleeperAPI._players_cache_time = current_time
+        # Save to cache
+        if player_cache.save_players_to_cache(players_data):
+            print(f"📊 Updated player cache with {len(players_data)} players")
+        else:
+            print("⚠️ Failed to save player data to cache, but continuing...")
         
-        print(f"📊 Updated player cache with {len(players_data)} players")
         return players_data
     
     @staticmethod

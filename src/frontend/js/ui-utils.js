@@ -19,7 +19,7 @@ class UIUtils {
      * Show a section and hide others
      */
     showSection(sectionName) {
-        const sections = ['welcome', 'user-setup', 'draft'];
+        const sections = ['welcome', 'user-setup', 'league-select', 'draft'];
         
         sections.forEach(section => {
             const element = document.getElementById(`${section}-section`);
