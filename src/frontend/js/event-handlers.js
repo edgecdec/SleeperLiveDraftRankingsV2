@@ -25,7 +25,8 @@ class EventHandlers {
             vbdEnabled: false,
             lastUpdate: 0,
             draftUpdates: null,
-            currentFilters: {} // Add filter state
+            currentFilters: {}, // Add filter state
+            isLoadingAvailablePlayers: false // Prevent concurrent requests
         };
         
         // Setup URL navigation handler
@@ -566,8 +567,10 @@ class EventHandlers {
         // Store VBD preference
         this.state.vbdEnabled = enabled;
         
-        // Refresh available players with VBD data
-        this.applyFiltersAndSearch();
+        // Refresh available players with VBD data (only if not already loading)
+        if (!this.state.isLoadingAvailablePlayers) {
+            this.applyFiltersAndSearch();
+        }
         
         // Show notification
         this.uiUtils.showNotification(
@@ -672,7 +675,11 @@ class EventHandlers {
         console.log('Position filter changed:', position);
         this.state.currentFilters = this.state.currentFilters || {};
         this.state.currentFilters.position = position;
-        this.applyFiltersAndSearch();
+        
+        // Only apply if not already loading
+        if (!this.state.isLoadingAvailablePlayers) {
+            this.applyFiltersAndSearch();
+        }
     }
     
     /**
@@ -689,8 +696,11 @@ class EventHandlers {
         }
         
         this.searchTimeout = setTimeout(() => {
-            this.applyFiltersAndSearch();
-        }, 300); // 300ms delay
+            // Only apply if not already loading
+            if (!this.state.isLoadingAvailablePlayers) {
+                this.applyFiltersAndSearch();
+            }
+        }, 500); // Increased delay to 500ms
     }
     
     /**
@@ -701,7 +711,16 @@ class EventHandlers {
             return;
         }
         
+        // Prevent multiple concurrent requests
+        if (this.state.isLoadingAvailablePlayers) {
+            console.log('⚠️ Already loading available players, skipping request');
+            return;
+        }
+        
         try {
+            // Set loading flag
+            this.state.isLoadingAvailablePlayers = true;
+            
             // Show loading state
             this.uiUtils.showLoadingState('available-players-loading', true);
             
@@ -722,6 +741,8 @@ class EventHandlers {
                 params.append('include_vbd', 'true');
             }
             
+            console.log(`🔍 Loading available players with filters:`, Object.fromEntries(params));
+            
             // Make API request with filters
             const availableData = await this.apiService.request(
                 `/draft/${this.state.selectedDraft.draft_id}/available-players?${params.toString()}`
@@ -737,6 +758,8 @@ class EventHandlers {
             console.error('Failed to apply filters:', error);
             this.uiUtils.showNotification('Failed to apply filters: ' + error.message, 'danger');
         } finally {
+            // Clear loading flag
+            this.state.isLoadingAvailablePlayers = false;
             this.uiUtils.showLoadingState('available-players-loading', false);
         }
     }

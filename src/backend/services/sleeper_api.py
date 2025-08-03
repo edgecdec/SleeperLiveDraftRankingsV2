@@ -21,6 +21,7 @@ class SleeperAPI:
     """Helper class for Sleeper API calls with error handling and JSON file caching"""
     
     BASE_URL = SLEEPER_API_BASE_URL
+    _players_cache = None  # In-memory cache for players to avoid infinite loops
     
     @staticmethod
     def _make_request(endpoint: str, timeout: int = API_TIMEOUT) -> Optional[Dict]:
@@ -121,48 +122,21 @@ class SleeperAPI:
     
     @staticmethod
     def get_all_players() -> Dict:
-        """Get ranked players with JSON file caching (max once per day)"""
-        ranked_cache = get_ranked_player_cache()
-        
-        # Try to load ranked players from cache first
-        cached_ranked_players = ranked_cache.load_cached_ranked_players()
-        if cached_ranked_players:
-            return cached_ranked_players
-        
-        # Cache is invalid/missing, fetch fresh data
-        print("📊 Fetching fresh player data from Sleeper API...")
-        all_players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
-        
-        if not all_players_data:
-            raise SleeperAPIError("Empty player data received from Sleeper API")
-        
-        # Get player IDs that exist in our rankings
-        ranked_player_ids = ranked_cache.get_ranked_player_ids_from_rankings()
-        
-        if ranked_player_ids:
-            # Save only ranked players to cache
-            if ranked_cache.save_ranked_players_to_cache(all_players_data, ranked_player_ids):
-                print(f"📊 Updated ranked player cache with {len(ranked_player_ids)} players (filtered from {len(all_players_data)} total)")
-            else:
-                print("⚠️ Failed to save ranked player data to cache, but continuing...")
+        """Get all players with simple in-memory caching to avoid infinite loops"""
+        # Use a simple in-memory cache to avoid the circular dependency
+        # with the ranked player cache system
+        if not hasattr(SleeperAPI, '_players_cache') or not SleeperAPI._players_cache:
+            print("📊 Fetching fresh player data from Sleeper API...")
+            all_players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
             
-            # Return only ranked players
-            ranked_players_data = {
-                player_id: player_data 
-                for player_id, player_data in all_players_data.items()
-                if player_id in ranked_player_ids
-            }
-            return ranked_players_data
-        else:
-            # Fallback: if we can't get ranked player IDs, use old cache system
-            print("⚠️ Could not get ranked player IDs, falling back to full player cache")
-            from .player_cache import get_player_cache
-            player_cache = get_player_cache()
+            if not all_players_data:
+                raise SleeperAPIError("Empty player data received from Sleeper API")
             
-            if player_cache.save_players_to_cache(all_players_data):
-                print(f"📊 Updated full player cache with {len(all_players_data)} players (fallback mode)")
-            
-            return all_players_data
+            # Cache the data in memory
+            SleeperAPI._players_cache = all_players_data
+            print(f"📊 Cached {len(all_players_data)} players in memory")
+        
+        return SleeperAPI._players_cache
     
     @staticmethod
     def detect_league_format(league_info: Dict) -> Tuple[str, str]:
