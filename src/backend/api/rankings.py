@@ -35,6 +35,12 @@ def get_available_players(draft_id):
         position: Filter by position (QB, RB, WR, TE, K, DEF)
         limit: Maximum number of players to return (default: 50)
         format: League format override (e.g., 'half_ppr_superflex')
+        search: Search by player name (partial match, case-insensitive)
+        team: Filter by NFL team
+        tier: Filter by tier (1, 2, 3, etc.)
+        bye_week: Filter by bye week (1-18)
+        min_rank: Minimum rank (inclusive)
+        max_rank: Maximum rank (inclusive)
     
     Returns:
         JSON response with available players and their rankings
@@ -50,6 +56,24 @@ def get_available_players(draft_id):
         position_filter = request.args.get('position')
         limit = int(request.args.get('limit', 50))
         format_override = request.args.get('format')
+        search_term = request.args.get('search', '').strip()
+        team_filter = request.args.get('team')
+        tier_filter = request.args.get('tier')
+        bye_week_filter = request.args.get('bye_week')
+        min_rank = request.args.get('min_rank')
+        max_rank = request.args.get('max_rank')
+        
+        # Convert numeric filters
+        try:
+            tier_filter = int(tier_filter) if tier_filter else None
+            bye_week_filter = int(bye_week_filter) if bye_week_filter else None
+            min_rank = int(min_rank) if min_rank else None
+            max_rank = int(max_rank) if max_rank else None
+        except ValueError:
+            return jsonify({
+                'error': 'Invalid numeric filter values',
+                'code': 'INVALID_FILTER'
+            }), 400
         
         # Get draft info and picks
         draft_info = SleeperAPI.get_draft_info(draft_id)
@@ -86,31 +110,64 @@ def get_available_players(draft_id):
             unavailable_player_ids = [pick.get('player_id') for pick in draft_picks if pick.get('player_id')]
             is_dynasty = False
         
-        # Get available players from rankings
+        # Get available players from rankings with enhanced filtering
         try:
             available_players = rankings_manager.get_available_players(
                 drafted_players=unavailable_player_ids,
                 league_format=league_format,
                 position_filter=position_filter,
-                limit=limit
+                limit=limit * 2  # Get more to allow for filtering
             )
+            
+            # Apply additional filters
+            filtered_players = _apply_advanced_filters(
+                available_players,
+                search_term=search_term,
+                team_filter=team_filter,
+                tier_filter=tier_filter,
+                bye_week_filter=bye_week_filter,
+                min_rank=min_rank,
+                max_rank=max_rank
+            )
+            
+            # Limit results after filtering
+            filtered_players = filtered_players[:limit]
+            
         except Exception as e:
             # Fallback to basic player list if rankings fail
             print(f"⚠️ Rankings error: {e}, using fallback")
             available_players = _get_fallback_available_players(
-                unavailable_player_ids, position_filter, limit
+                unavailable_player_ids, position_filter, limit * 2
             )
+            
+            # Apply filters to fallback data
+            filtered_players = _apply_advanced_filters(
+                available_players,
+                search_term=search_term,
+                team_filter=team_filter,
+                tier_filter=tier_filter,
+                bye_week_filter=bye_week_filter,
+                min_rank=min_rank,
+                max_rank=max_rank
+            )[:limit]
         
         return jsonify({
             'draft_id': draft_id,
             'league_format': league_format,
             'is_dynasty_league': is_dynasty,
             'total_unavailable': len(unavailable_player_ids),
-            'available_players': available_players,
+            'available_players': filtered_players,
             'filters': {
                 'position': position_filter,
+                'search': search_term,
+                'team': team_filter,
+                'tier': tier_filter,
+                'bye_week': bye_week_filter,
+                'min_rank': min_rank,
+                'max_rank': max_rank,
                 'limit': limit
             },
+            'total_results': len(filtered_players),
             'status': 'success'
         })
         
@@ -330,6 +387,74 @@ def get_rankings_status():
             'error': 'Internal server error',
             'code': 'INTERNAL_ERROR'
         }), 500
+
+
+def _apply_advanced_filters(players, search_term=None, team_filter=None, tier_filter=None, 
+                          bye_week_filter=None, min_rank=None, max_rank=None):
+    """
+    Apply advanced filters to a list of players
+    
+    Args:
+        players: List of player dictionaries
+        search_term: Search by player name (case-insensitive partial match)
+        team_filter: Filter by NFL team
+        tier_filter: Filter by tier
+        bye_week_filter: Filter by bye week
+        min_rank: Minimum rank (inclusive)
+        max_rank: Maximum rank (inclusive)
+    
+    Returns:
+        Filtered list of players
+    """
+    if not players:
+        return []
+    
+    filtered = players
+    
+    # Apply search filter
+    if search_term:
+        search_lower = search_term.lower()
+        filtered = [
+            player for player in filtered
+            if search_lower in player.get('name', '').lower()
+        ]
+    
+    # Apply team filter
+    if team_filter:
+        team_upper = team_filter.upper()
+        filtered = [
+            player for player in filtered
+            if player.get('team', '').upper() == team_upper
+        ]
+    
+    # Apply tier filter
+    if tier_filter is not None:
+        filtered = [
+            player for player in filtered
+            if player.get('tier') == tier_filter
+        ]
+    
+    # Apply bye week filter
+    if bye_week_filter is not None:
+        filtered = [
+            player for player in filtered
+            if player.get('bye_week') == bye_week_filter
+        ]
+    
+    # Apply rank range filters
+    if min_rank is not None:
+        filtered = [
+            player for player in filtered
+            if player.get('rank', 999) >= min_rank
+        ]
+    
+    if max_rank is not None:
+        filtered = [
+            player for player in filtered
+            if player.get('rank', 0) <= max_rank
+        ]
+    
+    return filtered
 
 
 def _get_fallback_available_players(drafted_player_ids, position_filter=None, limit=50):

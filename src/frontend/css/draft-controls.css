@@ -243,3 +243,94 @@ sl-tab-panel {
         font-size: 0.875rem;
     }
 }
+
+/* Search and Filter Enhancements */
+.filter-summary {
+    margin-bottom: 1rem;
+}
+
+.filter-summary sl-alert {
+    --sl-color-primary-50: #eff6ff;
+    --sl-color-primary-600: #2563eb;
+}
+
+/* Search highlighting */
+mark {
+    background-color: #fef08a;
+    color: #1f2937;
+    padding: 0.1em 0.2em;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+/* Enhanced player badges */
+.player-badges {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Filter section enhancements */
+.filter-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.filter-section sl-input {
+    --sl-input-border-color: #d1d5db;
+    --sl-input-border-color-focus: #3b82f6;
+}
+
+.filter-section sl-select {
+    --sl-input-border-color: #d1d5db;
+    --sl-input-border-color-focus: #3b82f6;
+}
+
+/* Quick filter buttons */
+.quick-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.quick-filter-btn {
+    --sl-button-font-size-small: 0.75rem;
+    --sl-button-height-small: 1.75rem;
+}
+
+/* No results state */
+.no-results {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.no-results sl-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Enhanced mobile responsiveness for filters */
+@media (max-width: 768px) {
+    .filter-section {
+        gap: 0.75rem;
+    }
+    
+    .quick-filters {
+        gap: 0.25rem;
+    }
+    
+    .player-badges {
+        gap: 0.125rem;
+    }
+    
+    mark {
+        padding: 0.05em 0.1em;
+        font-size: 0.9em;
+    }
+}

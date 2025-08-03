@@ -17,7 +17,8 @@ class EventHandlers {
             autoRefreshEnabled: false,
             autoRefreshInterval: null,
             lastUpdate: 0,
-            draftUpdates: null
+            draftUpdates: null,
+            currentFilters: {} // Add filter state
         };
     }
 
@@ -366,15 +367,308 @@ class EventHandlers {
      */
     handlePositionFilter(position) {
         console.log('Position filter changed:', position);
-        // TODO: Implement position filtering
+        this.state.currentFilters = this.state.currentFilters || {};
+        this.state.currentFilters.position = position;
+        this.applyFiltersAndSearch();
     }
-
+    
     /**
      * Handle player search
      */
     handlePlayerSearch(searchTerm) {
         console.log('Player search:', searchTerm);
-        // TODO: Implement player search
+        this.state.currentFilters = this.state.currentFilters || {};
+        this.state.currentFilters.search = searchTerm;
+        
+        // Debounce search to avoid too many API calls
+        if (this.searchTimeout) {
+            clearTimeout(this.searchTimeout);
+        }
+        
+        this.searchTimeout = setTimeout(() => {
+            this.applyFiltersAndSearch();
+        }, 300); // 300ms delay
+    }
+    
+    /**
+     * Apply current filters and search to available players
+     */
+    async applyFiltersAndSearch() {
+        if (!this.state.selectedDraft?.draft_id) {
+            return;
+        }
+        
+        try {
+            // Show loading state
+            this.uiUtils.showLoadingState('available-players-loading', true);
+            
+            // Build query parameters
+            const params = new URLSearchParams();
+            params.append('limit', '100'); // Get more results for better filtering
+            
+            if (this.state.currentFilters?.position) {
+                params.append('position', this.state.currentFilters.position);
+            }
+            
+            if (this.state.currentFilters?.search) {
+                params.append('search', this.state.currentFilters.search);
+            }
+            
+            // Make API request with filters
+            const availableData = await this.apiService.request(
+                `/draft/${this.state.selectedDraft.draft_id}/available-players?${params.toString()}`
+            );
+            
+            // Update the display
+            this.displayFilteredPlayers(availableData.available_players, availableData.is_dynasty_league);
+            
+            // Update stats
+            this.updateFilterStats(availableData);
+            
+        } catch (error) {
+            console.error('Failed to apply filters:', error);
+            this.uiUtils.showNotification('Failed to apply filters: ' + error.message, 'danger');
+        } finally {
+            this.uiUtils.showLoadingState('available-players-loading', false);
+        }
+    }
+    
+    /**
+     * Display filtered players
+     */
+    displayFilteredPlayers(players, isDynasty = false) {
+        const container = document.getElementById('available-players-list');
+        if (!container) return;
+        
+        if (!players || players.length === 0) {
+            container.innerHTML = `
+                <sl-alert variant="neutral" open>
+                    <sl-icon slot="icon" name="info-circle"></sl-icon>
+                    No players found matching your search criteria.
+                    <br><br>
+                    <sl-button variant="neutral" size="small" id="clear-filters-btn">
+                        <sl-icon slot="prefix" name="x-circle"></sl-icon>
+                        Clear Filters
+                    </sl-button>
+                </sl-alert>
+            `;
+            
+            // Add clear filters button listener
+            const clearBtn = document.getElementById('clear-filters-btn');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    this.clearAllFilters();
+                });
+            }
+            
+            return;
+        }
+        
+        const playersHtml = players.map(player => this.createPlayerCard(player)).join('');
+        container.innerHTML = playersHtml;
+        
+        // Add click listeners to player cards
+        container.querySelectorAll('.player-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const playerId = card.dataset.playerId;
+                const player = players.find(p => p.player_id === playerId);
+                if (player) {
+                    this.showPlayerDetails(player);
+                }
+            });
+        });
+    }
+    
+    /**
+     * Create enhanced player card with search highlighting
+     */
+    createPlayerCard(player) {
+        const positionClass = `position-${player.position?.toLowerCase() || 'unknown'}`;
+        
+        // Highlight search terms in player name
+        let displayName = player.name || 'Unknown Player';
+        if (this.state.currentFilters?.search) {
+            const searchTerm = this.state.currentFilters.search;
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            displayName = displayName.replace(regex, '<mark>$1</mark>');
+        }
+        
+        return `
+            <sl-card class="player-card" data-player-id="${player.player_id || ''}">
+                <div slot="header" class="player-header">
+                    <strong>${displayName}</strong>
+                    <div class="player-badges">
+                        <sl-badge variant="neutral" class="${positionClass}">
+                            ${player.position || 'N/A'}
+                        </sl-badge>
+                        <sl-badge variant="neutral">${player.team || 'N/A'}</sl-badge>
+                        ${player.tier ? `<sl-badge variant="primary">Tier ${player.tier}</sl-badge>` : ''}
+                    </div>
+                </div>
+                
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Rank</span>
+                        <span class="stat-value">${player.rank || 'N/A'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tier</span>
+                        <span class="stat-value">${player.tier || 'N/A'}</span>
+                    </div>
+                    ${player.bye_week ? `
+                        <div class="stat-item">
+                            <span class="stat-label">Bye</span>
+                            <span class="stat-value">Week ${player.bye_week}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div slot="footer">
+                    <sl-button-group>
+                        <sl-button variant="primary" size="small">
+                            <sl-icon slot="prefix" name="plus"></sl-icon>
+                            Queue
+                        </sl-button>
+                        <sl-button variant="neutral" size="small">
+                            <sl-icon slot="prefix" name="info-circle"></sl-icon>
+                            Details
+                        </sl-button>
+                    </sl-button-group>
+                </div>
+            </sl-card>
+        `;
+    }
+    
+    /**
+     * Update filter statistics
+     */
+    updateFilterStats(data) {
+        const availablePlayersBadge = document.getElementById('available-players-badge');
+        if (availablePlayersBadge) {
+            availablePlayersBadge.textContent = data.total_results || data.available_players?.length || '0';
+        }
+        
+        // Show filter summary if filters are active
+        this.showFilterSummary(data.filters);
+    }
+    
+    /**
+     * Show filter summary
+     */
+    showFilterSummary(filters) {
+        const container = document.getElementById('available-players-list');
+        if (!container) return;
+        
+        const activeFilters = [];
+        if (filters?.position) activeFilters.push(`Position: ${filters.position}`);
+        if (filters?.search) activeFilters.push(`Search: "${filters.search}"`);
+        if (filters?.team) activeFilters.push(`Team: ${filters.team}`);
+        if (filters?.tier) activeFilters.push(`Tier: ${filters.tier}`);
+        
+        if (activeFilters.length > 0) {
+            const filterSummary = `
+                <div class="filter-summary">
+                    <sl-alert variant="primary" open>
+                        <sl-icon slot="icon" name="funnel"></sl-icon>
+                        <strong>Active Filters:</strong> ${activeFilters.join(', ')}
+                        <sl-button slot="suffix" variant="text" size="small" id="clear-all-filters">
+                            <sl-icon name="x"></sl-icon>
+                        </sl-button>
+                    </sl-alert>
+                </div>
+            `;
+            
+            // Insert filter summary at the top
+            container.insertAdjacentHTML('afterbegin', filterSummary);
+            
+            // Add clear all filters listener
+            const clearAllBtn = document.getElementById('clear-all-filters');
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', () => {
+                    this.clearAllFilters();
+                });
+            }
+        }
+    }
+    
+    /**
+     * Clear all active filters
+     */
+    clearAllFilters() {
+        // Reset filter state
+        this.state.currentFilters = {};
+        
+        // Clear UI elements
+        const positionFilter = document.getElementById('position-filter');
+        if (positionFilter) {
+            positionFilter.value = '';
+        }
+        
+        const playerSearch = document.getElementById('player-search');
+        if (playerSearch) {
+            playerSearch.value = '';
+        }
+        
+        // Refresh data without filters
+        this.applyFiltersAndSearch();
+        
+        this.uiUtils.showNotification('All filters cleared', 'success');
+    }
+    
+    /**
+     * Show player details modal
+     */
+    showPlayerDetails(player) {
+        const modal = document.getElementById('player-details-modal');
+        const content = document.getElementById('player-details-content');
+        
+        if (!modal || !content) return;
+        
+        // Create detailed player info
+        const detailsHtml = `
+            <div class="player-details">
+                <div class="player-header">
+                    <h3>${player.name}</h3>
+                    <div class="player-badges">
+                        <sl-badge variant="primary" class="position-${player.position?.toLowerCase()}">${player.position}</sl-badge>
+                        <sl-badge variant="neutral">${player.team}</sl-badge>
+                        ${player.tier ? `<sl-badge variant="success">Tier ${player.tier}</sl-badge>` : ''}
+                    </div>
+                </div>
+                
+                <div class="player-stats-detailed">
+                    <div class="stat-row">
+                        <span class="stat-label">Overall Rank:</span>
+                        <span class="stat-value">${player.rank || 'N/A'}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Tier:</span>
+                        <span class="stat-value">${player.tier || 'N/A'}</span>
+                    </div>
+                    ${player.bye_week ? `
+                        <div class="stat-row">
+                            <span class="stat-label">Bye Week:</span>
+                            <span class="stat-value">Week ${player.bye_week}</span>
+                        </div>
+                    ` : ''}
+                    ${player.years_exp ? `
+                        <div class="stat-row">
+                            <span class="stat-label">Experience:</span>
+                            <span class="stat-value">${player.years_exp} years</span>
+                        </div>
+                    ` : ''}
+                    ${player.value ? `
+                        <div class="stat-row">
+                            <span class="stat-label">Value:</span>
+                            <span class="stat-value">${player.value}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        content.innerHTML = detailsHtml;
+        modal.show();
     }
 }
 
