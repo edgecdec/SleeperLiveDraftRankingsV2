@@ -9,11 +9,12 @@ class DraftAssistantApp {
         // Initialize services
         this.apiService = new ApiService();
         this.uiUtils = new UIUtils();
+        this.mobileEnhancements = new MobileEnhancements(this.uiUtils);
         this.draftBoard = new DraftBoard(this.apiService, this.uiUtils);
         this.queueManager = new QueueManager(this.apiService, this.uiUtils);
         this.teamAnalysis = new TeamAnalysis(this.apiService, this.uiUtils);
         this.customRankings = new CustomRankings(this.apiService, this.uiUtils);
-        this.eventHandlers = new EventHandlers(this.apiService, this.uiUtils, this.draftBoard, this.queueManager, this.teamAnalysis, this.customRankings);
+        this.eventHandlers = new EventHandlers(this.apiService, this.uiUtils, this.draftBoard, this.queueManager, this.teamAnalysis, this.customRankings, this.mobileEnhancements);
         
         // Initialize when Shoelace is ready
         this.initializeWhenReady();

@@ -5,13 +5,14 @@
  */
 
 class EventHandlers {
-    constructor(apiService, uiUtils, draftBoard, queueManager, teamAnalysis, customRankings) {
+    constructor(apiService, uiUtils, draftBoard, queueManager, teamAnalysis, customRankings, mobileEnhancements) {
         this.apiService = apiService;
         this.uiUtils = uiUtils;
         this.draftBoard = draftBoard;
         this.queueManager = queueManager;
         this.teamAnalysis = teamAnalysis;
         this.customRankings = customRankings;
+        this.mobileEnhancements = mobileEnhancements;
         this.urlManager = new URLManager();
         
         this.state = {
@@ -143,6 +144,9 @@ class EventHandlers {
         
         // Initialize custom rankings
         this.customRankings.init();
+        
+        // Initialize mobile enhancements
+        this.mobileEnhancements.init();
         
         console.log('🎯 Event listeners setup complete');
     }
