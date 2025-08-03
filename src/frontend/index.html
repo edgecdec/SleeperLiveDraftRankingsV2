@@ -214,6 +214,10 @@
                                 <sl-icon name="bookmark-fill"></sl-icon>
                                 My Queue
                             </sl-tab>
+                            <sl-tab slot="nav" panel="team-analysis">
+                                <sl-icon name="people"></sl-icon>
+                                Team Analysis
+                            </sl-tab>
 
                             <!-- Available Players Tab -->
                             <sl-tab-panel name="available-players">
@@ -255,6 +259,26 @@
                                 <div class="queue-container">
                                     <div id="queue-content">
                                         <!-- Queue will be loaded here -->
+                                    </div>
+                                </div>
+                            </sl-tab-panel>
+                            
+                            <!-- Team Analysis Tab -->
+                            <sl-tab-panel name="team-analysis">
+                                <div class="team-analysis-container">
+                                    <div class="analysis-header">
+                                        <h3>Team Roster Analysis</h3>
+                                        <sl-button id="refresh-analysis-btn" variant="default" size="small">
+                                            <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
+                                            Refresh Analysis
+                                        </sl-button>
+                                    </div>
+                                    
+                                    <div id="team-analysis-content">
+                                        <div class="loading-state">
+                                            <sl-spinner></sl-spinner>
+                                            <p>Loading team analysis...</p>
+                                        </div>
                                     </div>
                                 </div>
                             </sl-tab-panel>
@@ -318,6 +342,7 @@
     <script src="js/ui-utils.js"></script>
     <script src="js/draft-board.js"></script>
     <script src="js/queue-manager.js"></script>
+    <script src="js/team-analysis.js"></script>
     <script src="js/event-handlers.js"></script>
     <script src="js/app-main.js"></script>
 </body>

@@ -5,11 +5,12 @@
  */
 
 class EventHandlers {
-    constructor(apiService, uiUtils, draftBoard, queueManager) {
+    constructor(apiService, uiUtils, draftBoard, queueManager, teamAnalysis) {
         this.apiService = apiService;
         this.uiUtils = uiUtils;
         this.draftBoard = draftBoard;
         this.queueManager = queueManager;
+        this.teamAnalysis = teamAnalysis;
         this.urlManager = new URLManager();
         
         this.state = {
@@ -134,6 +135,9 @@ class EventHandlers {
         
         // Tab navigation
         this.setupTabNavigation();
+        
+        // Initialize team analysis
+        this.teamAnalysis.init();
         
         console.log('🎯 Event listeners setup complete');
     }
@@ -442,6 +446,9 @@ class EventHandlers {
                 league.draft_id
             );
             
+            // Initialize team analysis with draft ID
+            this.teamAnalysis.setDraftId(league.draft_id);
+            
             // Show draft section
             this.uiUtils.showSection('draft');
             
@@ -596,6 +603,11 @@ class EventHandlers {
                 break;
             case 'my-queue':
                 this.queueManager.updateQueueDisplay();
+                break;
+            case 'team-analysis':
+                if (this.state.selectedDraft?.draft_id) {
+                    this.teamAnalysis.loadTeamAnalysis(this.state.selectedDraft.draft_id);
+                }
                 break;
         }
     }

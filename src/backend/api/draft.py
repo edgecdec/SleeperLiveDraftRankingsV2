@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, request
 import time
 from ..services.sleeper_api import SleeperAPI, SleeperAPIError
 from ..services.ranked_player_cache import get_ranked_player_cache
+from ..services.team_analyzer import TeamAnalyzer
 
 draft_bp = Blueprint('draft', __name__)
 
@@ -654,5 +655,149 @@ def clear_player_cache():
     except Exception as e:
         return jsonify({
             'error': str(e),
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+@draft_bp.route('/draft/<draft_id>/team-analysis')
+def get_team_analysis(draft_id):
+    """
+    Get comprehensive team roster analysis for all teams in the draft
+    
+    Args:
+        draft_id: Sleeper draft ID
+    
+    Returns:
+        JSON response with team roster analysis
+    """
+    try:
+        # Get draft info
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        if not draft_info:
+            return jsonify({
+                'error': f'Draft "{draft_id}" not found',
+                'code': 'DRAFT_NOT_FOUND'
+            }), 404
+        
+        # Get all draft picks with names
+        try:
+            picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        except Exception as e:
+            print(f"⚠️ Error getting drafted players: {e}")
+            return jsonify({
+                'error': f'Failed to get draft picks: {str(e)}',
+                'code': 'PICKS_ERROR'
+            }), 500
+        
+        # Get all players data for position info
+        try:
+            all_players = SleeperAPI.get_all_players()
+        except Exception as e:
+            print(f"⚠️ Error getting player data: {e}")
+            return jsonify({
+                'error': f'Failed to get player data: {str(e)}',
+                'code': 'PLAYER_DATA_ERROR'
+            }), 500
+        
+        # Analyze team rosters
+        team_analyzer = TeamAnalyzer()
+        analysis = team_analyzer.analyze_team_rosters(picks, draft_info, all_players)
+        
+        if 'error' in analysis:
+            return jsonify({
+                'error': f'Analysis failed: {analysis["error"]}',
+                'code': 'ANALYSIS_ERROR'
+            }), 500
+        
+        return jsonify({
+            'draft_id': draft_id,
+            'team_analysis': analysis,
+            'status': 'success'
+        })
+        
+    except SleeperAPIError as e:
+        return jsonify({
+            'error': f'Sleeper API error: {str(e)}',
+            'code': 'SLEEPER_API_ERROR'
+        }), 500
+    except Exception as e:
+        print(f"❌ Unexpected error in get_team_analysis: {e}")
+        return jsonify({
+            'error': f'Internal server error: {str(e)}',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+
+@draft_bp.route('/draft/<draft_id>/team/<int:team_index>/recommendations')
+def get_team_recommendations(draft_id, team_index):
+    """
+    Get position recommendations for a specific team
+    
+    Args:
+        draft_id: Sleeper draft ID
+        team_index: Team index (0-based)
+    
+    Returns:
+        JSON response with position recommendations for the team
+    """
+    try:
+        # Get team analysis first
+        team_analyzer = TeamAnalyzer()
+        
+        # Get draft info and picks
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        if not draft_info:
+            return jsonify({
+                'error': f'Draft "{draft_id}" not found',
+                'code': 'DRAFT_NOT_FOUND'
+            }), 404
+        
+        picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        all_players = SleeperAPI.get_all_players()
+        
+        # Get team analysis
+        analysis = team_analyzer.analyze_team_rosters(picks, draft_info, all_players)
+        
+        if 'error' in analysis:
+            return jsonify({
+                'error': f'Analysis failed: {analysis["error"]}',
+                'code': 'ANALYSIS_ERROR'
+            }), 500
+        
+        # Get available players (this would need to be implemented with rankings)
+        # For now, return basic recommendations based on roster analysis
+        team_rosters = analysis.get('team_rosters', {})
+        
+        if team_index not in team_rosters:
+            return jsonify({
+                'error': f'Team index {team_index} not found',
+                'code': 'TEAM_NOT_FOUND'
+            }), 404
+        
+        # Get basic recommendations without available players for now
+        team_roster = team_rosters[team_index]
+        needs = team_roster.get('needs', {})
+        
+        recommendations = []
+        for priority in ['critical', 'important', 'depth']:
+            for position in needs.get(priority, []):
+                recommendations.append({
+                    'position': position,
+                    'priority': priority.title(),
+                    'reason': f'{priority.title()} need for {position}',
+                    'current_count': team_roster.get('position_counts', {}).get(position, 0)
+                })
+        
+        return jsonify({
+            'draft_id': draft_id,
+            'team_index': team_index,
+            'team_roster': team_roster,
+            'recommendations': recommendations[:5],  # Top 5
+            'status': 'success'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting team recommendations: {e}")
+        return jsonify({
+            'error': f'Internal server error: {str(e)}',
             'code': 'INTERNAL_ERROR'
         }), 500
