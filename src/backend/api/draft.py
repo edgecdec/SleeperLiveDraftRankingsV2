@@ -13,6 +13,7 @@ import time
 from ..services.sleeper_api import SleeperAPI, SleeperAPIError
 from ..services.ranked_player_cache import get_ranked_player_cache
 from ..services.team_analyzer import TeamAnalyzer
+from ..services.vbd_calculator import VBDCalculator
 
 draft_bp = Blueprint('draft', __name__)
 
@@ -797,6 +798,203 @@ def get_team_recommendations(draft_id, team_index):
         
     except Exception as e:
         print(f"❌ Error getting team recommendations: {e}")
+        return jsonify({
+            'error': f'Internal server error: {str(e)}',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+@draft_bp.route('/draft/<draft_id>/vbd-analysis')
+def get_vbd_analysis(draft_id):
+    """
+    Get Value-Based Drafting analysis for available players
+    
+    Args:
+        draft_id: Sleeper draft ID
+    
+    Returns:
+        JSON response with VBD analysis
+    """
+    try:
+        # Get league format from query params
+        league_format = request.args.get('format', 'standard')
+        league_size = int(request.args.get('league_size', 12))
+        
+        # Get draft info for context
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        if not draft_info:
+            return jsonify({
+                'error': f'Draft "{draft_id}" not found',
+                'code': 'DRAFT_NOT_FOUND'
+            }), 404
+        
+        # Try to get available players from rankings system
+        try:
+            from ..rankings.SimpleRankingsManager import SimpleRankingsManager
+            rankings_manager = SimpleRankingsManager()
+            
+            # Get drafted players to exclude
+            drafted_players = SleeperAPI.get_drafted_players_with_names(draft_id)
+            drafted_ids = {p.get('player_id') for p in drafted_players if p.get('player_id')}
+            
+            # Get available players
+            available_players = rankings_manager.get_available_players(
+                drafted_players=drafted_ids,
+                league_format=league_format,
+                limit=200  # Get more players for VBD analysis
+            )
+            
+        except Exception as e:
+            print(f"⚠️ Error getting available players for VBD: {e}")
+            return jsonify({
+                'error': f'Failed to get available players: {str(e)}',
+                'code': 'RANKINGS_ERROR'
+            }), 500
+        
+        # Calculate VBD metrics
+        vbd_calculator = VBDCalculator()
+        vbd_analysis = vbd_calculator.calculate_vbd_metrics(
+            available_players, 
+            league_format, 
+            league_size
+        )
+        
+        if 'error' in vbd_analysis:
+            return jsonify({
+                'error': f'VBD calculation failed: {vbd_analysis["error"]}',
+                'code': 'VBD_ERROR'
+            }), 500
+        
+        return jsonify({
+            'draft_id': draft_id,
+            'vbd_analysis': vbd_analysis,
+            'league_format': league_format,
+            'league_size': league_size,
+            'status': 'success'
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            'error': f'Invalid parameters: {str(e)}',
+            'code': 'INVALID_PARAMS'
+        }), 400
+    except Exception as e:
+        print(f"❌ Error in VBD analysis: {e}")
+        return jsonify({
+            'error': f'Internal server error: {str(e)}',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+
+@draft_bp.route('/draft/<draft_id>/vbd-recommendations')
+def get_vbd_recommendations(draft_id):
+    """
+    Get VBD-based draft recommendations for a specific team
+    
+    Args:
+        draft_id: Sleeper draft ID
+    
+    Query Parameters:
+        team_index: Team index to get recommendations for
+        format: League format (default: standard)
+        league_size: League size (default: 12)
+        limit: Number of recommendations (default: 5)
+    
+    Returns:
+        JSON response with VBD recommendations
+    """
+    try:
+        # Get parameters
+        team_index = request.args.get('team_index', type=int)
+        league_format = request.args.get('format', 'standard')
+        league_size = int(request.args.get('league_size', 12))
+        limit = int(request.args.get('limit', 5))
+        
+        if team_index is None:
+            return jsonify({
+                'error': 'team_index parameter is required',
+                'code': 'MISSING_PARAM'
+            }), 400
+        
+        # Get draft info and team analysis
+        draft_info = SleeperAPI.get_draft_info(draft_id)
+        if not draft_info:
+            return jsonify({
+                'error': f'Draft "{draft_id}" not found',
+                'code': 'DRAFT_NOT_FOUND'
+            }), 404
+        
+        # Get team analysis for needs
+        team_analyzer = TeamAnalyzer()
+        picks = SleeperAPI.get_drafted_players_with_names(draft_id)
+        all_players = SleeperAPI.get_all_players()
+        
+        analysis = team_analyzer.analyze_team_rosters(picks, draft_info, all_players)
+        team_rosters = analysis.get('team_rosters', {})
+        
+        if team_index not in team_rosters:
+            return jsonify({
+                'error': f'Team index {team_index} not found',
+                'code': 'TEAM_NOT_FOUND'
+            }), 404
+        
+        team_needs = team_rosters[team_index].get('needs', {})
+        
+        # Get VBD analysis
+        try:
+            from ..rankings.SimpleRankingsManager import SimpleRankingsManager
+            rankings_manager = SimpleRankingsManager()
+            
+            # Get available players
+            drafted_ids = {p.get('player_id') for p in picks if p.get('player_id')}
+            available_players = rankings_manager.get_available_players(
+                drafted_players=drafted_ids,
+                league_format=league_format,
+                limit=100
+            )
+            
+            # Calculate VBD for available players
+            vbd_calculator = VBDCalculator()
+            vbd_analysis = vbd_calculator.calculate_vbd_metrics(
+                available_players, 
+                league_format, 
+                league_size
+            )
+            
+            if 'error' in vbd_analysis:
+                raise Exception(vbd_analysis['error'])
+            
+            # Get recommendations
+            recommendations = vbd_calculator.get_draft_recommendations(
+                vbd_analysis['players'],
+                team_needs,
+                limit
+            )
+            
+            return jsonify({
+                'draft_id': draft_id,
+                'team_index': team_index,
+                'recommendations': recommendations,
+                'team_needs': team_needs,
+                'vbd_baselines': vbd_analysis.get('baselines', {}),
+                'league_format': league_format,
+                'league_size': league_size,
+                'status': 'success'
+            })
+            
+        except Exception as e:
+            print(f"⚠️ Error getting VBD recommendations: {e}")
+            return jsonify({
+                'error': f'Failed to generate recommendations: {str(e)}',
+                'code': 'RECOMMENDATION_ERROR'
+            }), 500
+        
+    except ValueError as e:
+        return jsonify({
+            'error': f'Invalid parameters: {str(e)}',
+            'code': 'INVALID_PARAMS'
+        }), 400
+    except Exception as e:
+        print(f"❌ Error in VBD recommendations: {e}")
         return jsonify({
             'error': f'Internal server error: {str(e)}',
             'code': 'INTERNAL_ERROR'

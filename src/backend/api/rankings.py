@@ -10,6 +10,7 @@ This module handles rankings-related API endpoints including:
 
 from flask import Blueprint, jsonify, request
 from ..services.sleeper_api import SleeperAPI, SleeperAPIError
+from ..services.vbd_calculator import VBDCalculator
 from ..rankings.SimpleRankingsManager import SimpleRankingsManager
 
 rankings_bp = Blueprint('rankings', __name__)
@@ -62,6 +63,8 @@ def get_available_players(draft_id):
         bye_week_filter = request.args.get('bye_week')
         min_rank = request.args.get('min_rank')
         max_rank = request.args.get('max_rank')
+        include_vbd = request.args.get('include_vbd', 'false').lower() == 'true'
+        league_size = int(request.args.get('league_size', 12))
         
         # Convert numeric filters
         try:
@@ -133,6 +136,58 @@ def get_available_players(draft_id):
             # Limit results after filtering
             filtered_players = filtered_players[:limit]
             
+            # Add VBD calculations if requested
+            vbd_data = None
+            if include_vbd and filtered_players:
+                try:
+                    vbd_calculator = VBDCalculator()
+                    
+                    # Use a larger sample for VBD baseline calculations
+                    vbd_sample_players = rankings_manager.get_available_players(
+                        drafted_players=unavailable_player_ids,
+                        league_format=league_format,
+                        limit=200  # Larger sample for accurate baselines
+                    )
+                    
+                    # Calculate VBD metrics
+                    vbd_analysis = vbd_calculator.calculate_vbd_metrics(
+                        vbd_sample_players,
+                        league_format.split('_')[1] if league_format and '_' in league_format else 'standard',
+                        league_size
+                    )
+                    
+                    if 'error' not in vbd_analysis:
+                        # Create lookup for VBD data
+                        vbd_lookup = {
+                            player.get('player_id'): player 
+                            for player in vbd_analysis.get('players', [])
+                        }
+                        
+                        # Add VBD data to filtered players
+                        for player in filtered_players:
+                            player_id = player.get('player_id')
+                            if player_id in vbd_lookup:
+                                vbd_player = vbd_lookup[player_id]
+                                player.update({
+                                    'vbd_value': vbd_player.get('vbd_value'),
+                                    'vbd_rank': vbd_player.get('vbd_rank'),
+                                    'baseline_points': vbd_player.get('baseline_points'),
+                                    'position_scarcity': vbd_player.get('position_scarcity')
+                                })
+                        
+                        # Sort by VBD value if VBD is included
+                        filtered_players.sort(key=lambda x: x.get('vbd_value', 0), reverse=True)
+                        
+                        vbd_data = {
+                            'baselines': vbd_analysis.get('baselines', {}),
+                            'league_format': league_format,
+                            'league_size': league_size
+                        }
+                        
+                except Exception as e:
+                    print(f"⚠️ VBD calculation error: {e}")
+                    # Continue without VBD data
+            
         except Exception as e:
             # Fallback to basic player list if rankings fail
             print(f"⚠️ Rankings error: {e}, using fallback")
@@ -151,7 +206,7 @@ def get_available_players(draft_id):
                 max_rank=max_rank
             )[:limit]
         
-        return jsonify({
+        response_data = {
             'draft_id': draft_id,
             'league_format': league_format,
             'is_dynasty_league': is_dynasty,
@@ -165,11 +220,18 @@ def get_available_players(draft_id):
                 'bye_week': bye_week_filter,
                 'min_rank': min_rank,
                 'max_rank': max_rank,
-                'limit': limit
+                'limit': limit,
+                'include_vbd': include_vbd
             },
             'total_results': len(filtered_players),
             'status': 'success'
-        })
+        }
+        
+        # Add VBD data if calculated
+        if vbd_data:
+            response_data['vbd_data'] = vbd_data
+        
+        return jsonify(response_data)
         
     except ValueError as e:
         return jsonify({

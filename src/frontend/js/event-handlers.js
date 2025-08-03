@@ -20,6 +20,7 @@ class EventHandlers {
             selectedDraft: null,
             autoRefreshEnabled: false,
             autoRefreshInterval: null,
+            vbdEnabled: false,
             lastUpdate: 0,
             draftUpdates: null,
             currentFilters: {} // Add filter state
@@ -249,6 +250,15 @@ class EventHandlers {
             console.log('✅ Setting up auto-refresh-toggle listener');
             autoRefreshToggle.addEventListener('sl-change', (event) => {
                 this.handleAutoRefreshToggle(event.target.checked);
+            });
+        }
+        
+        // VBD toggle
+        const vbdToggle = document.getElementById('vbd-toggle');
+        if (vbdToggle) {
+            console.log('✅ Setting up vbd-toggle listener');
+            vbdToggle.addEventListener('sl-change', (event) => {
+                this.handleVBDToggle(event.target.checked);
             });
         }
 
@@ -527,6 +537,25 @@ class EventHandlers {
     }
 
     /**
+     * Handle VBD toggle change
+     */
+    handleVBDToggle(enabled) {
+        console.log(`🎯 VBD toggle ${enabled ? 'enabled' : 'disabled'}`);
+        
+        // Store VBD preference
+        this.state.vbdEnabled = enabled;
+        
+        // Refresh available players with VBD data
+        this.applyFiltersAndSearch();
+        
+        // Show notification
+        this.uiUtils.showNotification(
+            `VBD values ${enabled ? 'enabled' : 'disabled'}`, 
+            'success'
+        );
+    }
+
+    /**
      * Start auto-refresh with draft updates checking
      */
     startAutoRefresh() {
@@ -664,6 +693,11 @@ class EventHandlers {
                 params.append('search', this.state.currentFilters.search);
             }
             
+            // Add VBD parameter if enabled
+            if (this.state.vbdEnabled) {
+                params.append('include_vbd', 'true');
+            }
+            
             // Make API request with filters
             const availableData = await this.apiService.request(
                 `/draft/${this.state.selectedDraft.draft_id}/available-players?${params.toString()}`
@@ -782,6 +816,20 @@ class EventHandlers {
                         <div class="stat-item">
                             <span class="stat-label">Bye</span>
                             <span class="stat-value">Week ${player.bye_week}</span>
+                        </div>
+                    ` : ''}
+                    ${player.vbd_value !== undefined ? `
+                        <div class="stat-item vbd-stat">
+                            <span class="stat-label">VBD</span>
+                            <span class="stat-value ${player.vbd_value > 0 ? 'positive' : 'negative'}">
+                                ${player.vbd_value > 0 ? '+' : ''}${player.vbd_value.toFixed(1)}
+                            </span>
+                        </div>
+                    ` : ''}
+                    ${player.vbd_rank ? `
+                        <div class="stat-item vbd-stat">
+                            <span class="stat-label">VBD Rank</span>
+                            <span class="stat-value">#${player.vbd_rank}</span>
                         </div>
                     ` : ''}
                 </div>

@@ -518,3 +518,137 @@
         align-items: flex-start;
     }
 }
+/* VBD Styles */
+.vbd-stat .stat-value.positive {
+    color: var(--sl-color-success-600);
+    font-weight: 600;
+}
+
+.vbd-stat .stat-value.negative {
+    color: var(--sl-color-danger-600);
+    font-weight: 600;
+}
+
+.vbd-stat {
+    background: var(--sl-color-neutral-50);
+    border-radius: var(--sl-border-radius-small);
+    padding: 0.25rem;
+    border-left: 3px solid var(--sl-color-primary-600);
+}
+
+/* VBD Toggle Styles */
+#vbd-toggle {
+    margin-left: 1rem;
+}
+
+/* Enhanced player card stats for VBD */
+.player-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.player-stats .stat-item {
+    text-align: center;
+    padding: 0.5rem;
+    background: var(--sl-color-neutral-50);
+    border-radius: var(--sl-border-radius-small);
+    border: 1px solid var(--sl-color-neutral-200);
+}
+
+.player-stats .stat-item.vbd-stat {
+    background: linear-gradient(135deg, var(--sl-color-primary-50), var(--sl-color-primary-100));
+    border-color: var(--sl-color-primary-200);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--sl-color-neutral-600);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--sl-color-neutral-900);
+}
+
+/* VBD Analysis Tab Styles */
+.vbd-analysis-container {
+    padding: 1rem;
+}
+
+.vbd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--sl-color-neutral-200);
+}
+
+.vbd-header h3 {
+    margin: 0;
+    color: var(--sl-color-neutral-900);
+}
+
+.vbd-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.vbd-baselines {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--sl-color-neutral-50);
+    border-radius: var(--sl-border-radius-medium);
+    border: 1px solid var(--sl-color-neutral-200);
+}
+
+.baseline-item {
+    text-align: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: var(--sl-border-radius-small);
+    border: 1px solid var(--sl-color-neutral-200);
+}
+
+.baseline-position {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sl-color-neutral-700);
+    margin-bottom: 0.25rem;
+}
+
+.baseline-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sl-color-primary-600);
+}
+
+/* Responsive VBD styles */
+@media (max-width: 768px) {
+    .player-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .vbd-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .vbd-baselines {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
