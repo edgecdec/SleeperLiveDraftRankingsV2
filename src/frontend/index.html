@@ -22,10 +22,16 @@
             <sl-card class="header-card">
                 <div slot="header" class="header-content">
                     <h1>🏈 Fantasy Football Draft Assistant V2</h1>
-                    <sl-badge id="status-indicator" variant="neutral" pulse>
-                        <sl-icon name="wifi"></sl-icon>
-                        Connecting...
-                    </sl-badge>
+                    <div class="header-actions">
+                        <sl-button id="shortcuts-help-btn" variant="text" size="small" title="Keyboard Shortcuts (Press ? or h)">
+                            <sl-icon slot="prefix" name="keyboard"></sl-icon>
+                            Shortcuts
+                        </sl-button>
+                        <sl-badge id="status-indicator" variant="neutral" pulse>
+                            <sl-icon name="wifi"></sl-icon>
+                            Connecting...
+                        </sl-badge>
+                    </div>
                 </div>
             </sl-card>
         </header>
@@ -454,6 +460,7 @@
     <script src="js/team-analysis.js"></script>
     <script src="js/custom-rankings.js"></script>
     <script src="js/mobile-enhancements.js"></script>
+    <script src="js/keyboard-shortcuts.js"></script>
     <script src="js/event-handlers.js"></script>
     <script src="js/app-main.js"></script>
 </body>

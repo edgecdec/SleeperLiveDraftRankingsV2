@@ -953,3 +953,102 @@
         flex: 1;
     }
 }
+/* Header Styles */
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#shortcuts-help-btn {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+#shortcuts-help-btn:hover {
+    opacity: 1;
+}
+
+/* Keyboard Shortcuts Styles */
+.shortcut-feedback {
+    pointer-events: none;
+}
+
+.shortcut-feedback .shortcut-key {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.shortcut-feedback .shortcut-desc {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+/* Keyboard shortcut indicators */
+.has-shortcut {
+    position: relative;
+}
+
+.has-shortcut::after {
+    content: attr(data-shortcut);
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--sl-color-primary-600);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.125rem 0.25rem;
+    border-radius: var(--sl-border-radius-small);
+    font-family: monospace;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.has-shortcut:hover::after {
+    opacity: 1;
+}
+
+/* Mobile keyboard shortcuts adjustments */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .header-actions {
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    
+    #shortcuts-help-btn {
+        font-size: 0.875rem;
+    }
+    
+    .shortcut-feedback {
+        top: 10px;
+        right: 10px;
+        max-width: calc(100vw - 20px);
+        font-size: 0.8rem;
+    }
+    
+    .shortcuts-help-overlay {
+        padding: 1rem;
+    }
+    
+    .shortcuts-help-content {
+        max-height: 90vh;
+        margin: 0;
+    }
+}

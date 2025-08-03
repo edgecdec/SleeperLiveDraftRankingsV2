@@ -148,6 +148,19 @@ class EventHandlers {
         // Initialize mobile enhancements
         this.mobileEnhancements.init();
         
+        // Initialize keyboard shortcuts (after other modules)
+        if (window.app && window.app.keyboardShortcuts) {
+            window.app.keyboardShortcuts.init();
+            
+            // Setup shortcuts help button
+            const shortcutsBtn = document.getElementById('shortcuts-help-btn');
+            if (shortcutsBtn) {
+                shortcutsBtn.addEventListener('click', () => {
+                    window.app.keyboardShortcuts.showHelp();
+                });
+            }
+        }
+        
         console.log('🎯 Event listeners setup complete');
     }
 

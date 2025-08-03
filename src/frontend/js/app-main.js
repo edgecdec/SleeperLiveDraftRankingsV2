@@ -15,6 +15,7 @@ class DraftAssistantApp {
         this.teamAnalysis = new TeamAnalysis(this.apiService, this.uiUtils);
         this.customRankings = new CustomRankings(this.apiService, this.uiUtils);
         this.eventHandlers = new EventHandlers(this.apiService, this.uiUtils, this.draftBoard, this.queueManager, this.teamAnalysis, this.customRankings, this.mobileEnhancements);
+        this.keyboardShortcuts = new KeyboardShortcuts(this.uiUtils, this.eventHandlers);
         
         // Initialize when Shoelace is ready
         this.initializeWhenReady();
