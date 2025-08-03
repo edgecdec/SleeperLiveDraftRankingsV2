@@ -10,7 +10,8 @@ class DraftAssistantApp {
         this.apiService = new ApiService();
         this.uiUtils = new UIUtils();
         this.draftBoard = new DraftBoard(this.apiService, this.uiUtils);
-        this.eventHandlers = new EventHandlers(this.apiService, this.uiUtils, this.draftBoard);
+        this.queueManager = new QueueManager(this.apiService, this.uiUtils);
+        this.eventHandlers = new EventHandlers(this.apiService, this.uiUtils, this.draftBoard, this.queueManager);
         
         // Initialize when Shoelace is ready
         this.initializeWhenReady();

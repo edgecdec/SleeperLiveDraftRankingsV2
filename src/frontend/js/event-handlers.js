@@ -5,10 +5,11 @@
  */
 
 class EventHandlers {
-    constructor(apiService, uiUtils, draftBoard) {
+    constructor(apiService, uiUtils, draftBoard, queueManager) {
         this.apiService = apiService;
         this.uiUtils = uiUtils;
         this.draftBoard = draftBoard;
+        this.queueManager = queueManager;
         this.state = {
             currentUser: null,
             userLeagues: [],
@@ -357,7 +358,7 @@ class EventHandlers {
                 }
                 break;
             case 'my-queue':
-                // TODO: Implement queue
+                this.queueManager.updateQueueDisplay();
                 break;
         }
     }
@@ -476,6 +477,19 @@ class EventHandlers {
                     this.showPlayerDetails(player);
                 }
             });
+            
+            // Add queue button listeners
+            const queueBtn = card.querySelector('.add-to-queue-btn');
+            if (queueBtn) {
+                queueBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card click
+                    const playerId = card.dataset.playerId;
+                    const player = players.find(p => p.player_id === playerId);
+                    if (player) {
+                        this.queueManager.addPlayer(player);
+                    }
+                });
+            }
         });
     }
     
@@ -525,7 +539,7 @@ class EventHandlers {
                 
                 <div slot="footer">
                     <sl-button-group>
-                        <sl-button variant="primary" size="small">
+                        <sl-button variant="primary" size="small" class="add-to-queue-btn">
                             <sl-icon slot="prefix" name="plus"></sl-icon>
                             Queue
                         </sl-button>
