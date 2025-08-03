@@ -17,8 +17,8 @@ This document tracks features from the original Fantasy Football Draft Assistant
 ### 🏈 Advanced Draft Features
 
 - [x] **Draft Board View** - [Description needed]- [x] **Draft Board View** - Visual draft board showing all picks
-- [ ] **Team Roster View** - Show each team's current roster composition
-- [ ] **Position Needs Analysis** - Recommend positions based on roster gaps
+- [x] **Team Roster View** - Show each team's current roster composition
+- [x] **Position Needs Analysis** - Recommend positions based on roster gaps
 - [ ] **Value-Based Drafting** - VBD calculations and recommendations
 - [ ] **Sleeper Picks Detection** - Identify potential sleeper/value picks
 - [ ] **Draft Strategy Modes** - Different drafting strategies (Zero RB, etc.)
@@ -188,7 +188,7 @@ This document tracks features from the original Fantasy Football Draft Assistant
 
 ## 📊 Progress Tracking
 
-**Overall Progress**: 29/105 features completed (27.6%)
+**Overall Progress**: 31/105 features completed (29.5%)
 
 ### By Category:
 - **Core Draft Functionality**: 7/15 (46.7%) ✅
