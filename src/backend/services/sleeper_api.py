@@ -9,7 +9,7 @@ import requests
 import time
 from typing import Dict, List, Optional, Tuple
 from ..config import SLEEPER_API_BASE_URL, API_TIMEOUT
-from .player_cache import get_player_cache
+from .ranked_player_cache import get_ranked_player_cache
 
 
 class SleeperAPIError(Exception):
@@ -121,28 +121,48 @@ class SleeperAPI:
     
     @staticmethod
     def get_all_players() -> Dict:
-        """Get all NFL players with JSON file caching (max once per day)"""
-        player_cache = get_player_cache()
+        """Get ranked players with JSON file caching (max once per day)"""
+        ranked_cache = get_ranked_player_cache()
         
-        # Try to load from cache first
-        cached_players = player_cache.load_cached_players()
-        if cached_players:
-            return cached_players
+        # Try to load ranked players from cache first
+        cached_ranked_players = ranked_cache.load_cached_ranked_players()
+        if cached_ranked_players:
+            return cached_ranked_players
         
         # Cache is invalid/missing, fetch fresh data
         print("📊 Fetching fresh player data from Sleeper API...")
-        players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
+        all_players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
         
-        if not players_data:
+        if not all_players_data:
             raise SleeperAPIError("Empty player data received from Sleeper API")
         
-        # Save to cache
-        if player_cache.save_players_to_cache(players_data):
-            print(f"📊 Updated player cache with {len(players_data)} players")
-        else:
-            print("⚠️ Failed to save player data to cache, but continuing...")
+        # Get player IDs that exist in our rankings
+        ranked_player_ids = ranked_cache.get_ranked_player_ids_from_rankings()
         
-        return players_data
+        if ranked_player_ids:
+            # Save only ranked players to cache
+            if ranked_cache.save_ranked_players_to_cache(all_players_data, ranked_player_ids):
+                print(f"📊 Updated ranked player cache with {len(ranked_player_ids)} players (filtered from {len(all_players_data)} total)")
+            else:
+                print("⚠️ Failed to save ranked player data to cache, but continuing...")
+            
+            # Return only ranked players
+            ranked_players_data = {
+                player_id: player_data 
+                for player_id, player_data in all_players_data.items()
+                if player_id in ranked_player_ids
+            }
+            return ranked_players_data
+        else:
+            # Fallback: if we can't get ranked player IDs, use old cache system
+            print("⚠️ Could not get ranked player IDs, falling back to full player cache")
+            from .player_cache import get_player_cache
+            player_cache = get_player_cache()
+            
+            if player_cache.save_players_to_cache(all_players_data):
+                print(f"📊 Updated full player cache with {len(all_players_data)} players (fallback mode)")
+            
+            return all_players_data
     
     @staticmethod
     def detect_league_format(league_info: Dict) -> Tuple[str, str]:

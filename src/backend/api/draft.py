@@ -11,7 +11,7 @@ This module handles draft-related API endpoints including:
 from flask import Blueprint, jsonify, request
 import time
 from ..services.sleeper_api import SleeperAPI, SleeperAPIError
-from ..services.player_cache import get_player_cache
+from ..services.ranked_player_cache import get_ranked_player_cache
 
 draft_bp = Blueprint('draft', __name__)
 
@@ -302,8 +302,8 @@ def get_draft_updates(draft_id):
             'picks': picks,
             'last_update': last_update,
             'total_picks': len(picks),
-            'draft_status': draft_info.get('status', 'unknown'),
-            'current_pick': draft_info.get('draft_order', {}).get('current_pick', 0),
+            'draft_status': draft_info.get('status', 'unknown') if draft_info else 'unknown',
+            'current_pick': draft_info.get('draft_order', {}).get('current_pick', 0) if draft_info else 0,
             'status': 'success',
             'timestamp': int(time.time())
         })
@@ -555,14 +555,14 @@ def get_draft_board(draft_id):
 @draft_bp.route('/cache/info')
 def get_cache_info():
     """
-    Get information about the player data cache
+    Get information about the ranked player data cache
     
     Returns:
         JSON response with cache information
     """
     try:
-        player_cache = get_player_cache()
-        cache_info = player_cache.get_cache_info()
+        ranked_cache = get_ranked_player_cache()
+        cache_info = ranked_cache.get_cache_info()
         
         return jsonify({
             'cache_info': cache_info,
@@ -579,36 +579,40 @@ def get_cache_info():
 @draft_bp.route('/cache/refresh', methods=['POST'])
 def refresh_player_cache():
     """
-    Force refresh the player data cache
+    Force refresh the ranked player data cache
     
     Returns:
         JSON response with refresh status
     """
     try:
-        player_cache = get_player_cache()
+        ranked_cache = get_ranked_player_cache()
         
         # Clear existing cache
-        player_cache.clear_cache()
+        ranked_cache.clear_cache()
         
         # Force fetch fresh data
-        print("🔄 Force refreshing player cache...")
-        players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
+        print("🔄 Force refreshing ranked player cache...")
+        all_players_data = SleeperAPI._make_request("/players/nfl", timeout=30)
         
-        if not players_data:
+        if not all_players_data:
             return jsonify({
                 'error': 'Failed to fetch player data from Sleeper API',
                 'code': 'API_ERROR'
             }), 500
         
+        # Get ranked player IDs
+        ranked_player_ids = ranked_cache.get_ranked_player_ids_from_rankings()
+        
         # Save to cache
-        success = player_cache.save_players_to_cache(players_data)
+        success = ranked_cache.save_ranked_players_to_cache(all_players_data, ranked_player_ids)
         
         if success:
-            cache_info = player_cache.get_cache_info()
+            cache_info = ranked_cache.get_cache_info()
             return jsonify({
-                'message': 'Player cache refreshed successfully',
+                'message': 'Ranked player cache refreshed successfully',
                 'cache_info': cache_info,
-                'players_count': len(players_data),
+                'total_players_fetched': len(all_players_data),
+                'ranked_players_cached': len(ranked_player_ids),
                 'status': 'success'
             })
         else:
@@ -627,18 +631,18 @@ def refresh_player_cache():
 @draft_bp.route('/cache/clear', methods=['POST'])
 def clear_player_cache():
     """
-    Clear the player data cache
+    Clear the ranked player data cache
     
     Returns:
         JSON response with clear status
     """
     try:
-        player_cache = get_player_cache()
-        success = player_cache.clear_cache()
+        ranked_cache = get_ranked_player_cache()
+        success = ranked_cache.clear_cache()
         
         if success:
             return jsonify({
-                'message': 'Player cache cleared successfully',
+                'message': 'Ranked player cache cleared successfully',
                 'status': 'success'
             })
         else:

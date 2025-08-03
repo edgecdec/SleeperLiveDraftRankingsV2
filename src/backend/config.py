@@ -41,3 +41,25 @@ def init_paths(base_path: str):
     # Create directories if they don't exist
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(RANKINGS_DIR, exist_ok=True)
+
+
+def get_data_path() -> str:
+    """Get the data directory path"""
+    if DATA_DIR is None:
+        # Fallback to a default path if not initialized
+        import tempfile
+        fallback_path = os.path.join(tempfile.gettempdir(), 'fantasy_football_assistant')
+        os.makedirs(fallback_path, exist_ok=True)
+        return fallback_path
+    return DATA_DIR
+
+
+def get_rankings_path() -> str:
+    """Get the rankings directory path"""
+    if RANKINGS_DIR is None:
+        # Fallback to a default path if not initialized
+        data_path = get_data_path()
+        fallback_path = os.path.join(data_path, 'rankings')
+        os.makedirs(fallback_path, exist_ok=True)
+        return fallback_path
+    return RANKINGS_DIR
