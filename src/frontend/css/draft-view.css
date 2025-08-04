@@ -1,0 +1,460 @@
+/* Draft View Styles - Matching Original V1 Design */
+
+/* Main Draft Container */
+.draft-view {
+    min-height: 100vh;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Draft Header */
+.draft-header {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.draft-header-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 4rem;
+}
+
+.draft-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.draft-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.draft-title h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.draft-title sl-icon {
+    font-size: 2rem;
+    color: #3b82f6;
+}
+
+.draft-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+}
+
+.draft-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+}
+
+.draft-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.draft-status.complete {
+    color: #16a34a;
+}
+
+.draft-status.drafting {
+    color: #2563eb;
+}
+
+.draft-status.pre_draft {
+    color: #d97706;
+}
+
+.draft-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #64748b;
+}
+
+.draft-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.draft-stat sl-icon {
+    font-size: 1rem;
+}
+
+.draft-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Roster Toggle Bar */
+.roster-toggle-bar {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.5rem 0;
+}
+
+.roster-toggle-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.roster-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.roster-toggle-btn:hover {
+    color: #1e293b;
+}
+
+.roster-toggle-btn sl-icon {
+    font-size: 1rem;
+}
+
+/* Main Content Area */
+.draft-main-content {
+    flex: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.draft-main-content.roster-open {
+    margin-left: 20rem; /* 320px */
+}
+
+/* Roster Sidebar */
+.roster-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20rem; /* 320px */
+    height: 100vh;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 40;
+    overflow-y: auto;
+}
+
+.roster-sidebar.open {
+    transform: translateX(0);
+}
+
+.roster-sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.roster-sidebar-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.roster-sidebar-content {
+    padding: 1rem;
+}
+
+/* Position Grid */
+.position-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.position-section {
+    background: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.position-header {
+    background: #f8fafc;
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.position-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.position-count {
+    font-size: 0.875rem;
+    color: #64748b;
+    background: #e2e8f0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.position-players {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.player-card {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.player-card:hover {
+    background: #f8fafc;
+}
+
+.player-card:last-child {
+    border-bottom: none;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.player-details {
+    flex: 1;
+}
+
+.player-name {
+    font-weight: 500;
+    color: #1e293b;
+    margin: 0 0 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+.player-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.player-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.player-rank {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #3b82f6;
+    background: #eff6ff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Connection Status */
+.connection-status {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+}
+
+.connection-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.connection-error sl-icon {
+    font-size: 1rem;
+}
+
+/* Draft Footer */
+.draft-footer {
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem;
+    margin-top: 2rem;
+}
+
+.draft-footer-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.draft-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.draft-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Loading States */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: #64748b;
+}
+
+.loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .draft-main-content.roster-open {
+        margin-left: 0;
+    }
+    
+    .roster-sidebar {
+        width: 100%;
+        max-width: 20rem;
+    }
+    
+    .position-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .draft-header-content {
+        flex-direction: column;
+        height: auto;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .draft-info {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .draft-main-content {
+        padding: 1rem 0.5rem;
+    }
+    
+    .position-grid {
+        gap: 1rem;
+    }
+    
+    .draft-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .draft-view {
+        background: #0f172a;
+    }
+    
+    .draft-header,
+    .roster-toggle-bar,
+    .position-section,
+    .roster-sidebar,
+    .draft-footer {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    
+    .roster-sidebar-header {
+        background: #0f172a;
+    }
+    
+    .position-header {
+        background: #0f172a;
+    }
+    
+    .player-card:hover {
+        background: #0f172a;
+    }
+    
+    .draft-title h1,
+    .position-title,
+    .roster-sidebar-title,
+    .player-name {
+        color: #f1f5f9;
+    }
+    
+    .draft-user-info,
+    .draft-stats,
+    .position-count,
+    .player-meta,
+    .draft-footer-content {
+        color: #94a3b8;
+    }
+    
+    .roster-toggle-btn {
+        color: #94a3b8;
+    }
+    
+    .roster-toggle-btn:hover {
+        color: #f1f5f9;
+    }
+}

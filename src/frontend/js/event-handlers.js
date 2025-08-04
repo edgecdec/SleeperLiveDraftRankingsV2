@@ -137,6 +137,9 @@ class EventHandlers {
         // Draft controls
         this.setupDraftControls();
         
+        // Draft view event listeners
+        this.setupDraftEventListeners();
+        
         // Tab navigation
         this.setupTabNavigation();
         
@@ -1373,9 +1376,9 @@ class EventHandlers {
             // Load draft data
             const draftData = await this.apiService.request(`/draft/${draft.draft_id}`);
             
-            if (draftData.success) {
+            if (draftData.status === 'success') {
                 // Switch to draft view
-                this.uiUtils.showSection('draft');
+                this.showDraftSection();
                 
                 // Initialize draft data
                 await this.loadDraftData();
@@ -1550,6 +1553,468 @@ class EventHandlers {
         }
         
         return false;
+    }
+    
+    /**
+     * Setup draft-specific event listeners
+     */
+    setupDraftEventListeners() {
+        // Roster toggle
+        const rosterToggleBtn = document.getElementById('roster-toggle-btn');
+        if (rosterToggleBtn) {
+            rosterToggleBtn.addEventListener('click', () => {
+                this.handleRosterToggle();
+            });
+        }
+        
+        // Draft refresh
+        const refreshDraftBtn = document.getElementById('refresh-draft-btn');
+        if (refreshDraftBtn) {
+            refreshDraftBtn.addEventListener('click', () => {
+                this.handleDraftRefresh();
+            });
+        }
+        
+        // Settings modal
+        const settingsBtn = document.getElementById('draft-settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                this.handleSettingsModal();
+            });
+        }
+        
+        // Rankings manager
+        const rankingsBtn = document.getElementById('rankings-manager-btn');
+        if (rankingsBtn) {
+            rankingsBtn.addEventListener('click', () => {
+                this.handleRankingsModal();
+            });
+        }
+        
+        // Connection retry
+        const retryBtn = document.getElementById('connection-retry-btn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', () => {
+                this.handleConnectionRetry();
+            });
+        }
+        
+        // League selector dropdown
+        const leagueDropdown = document.getElementById('league-selector-dropdown');
+        if (leagueDropdown) {
+            leagueDropdown.addEventListener('sl-select', (e) => {
+                this.handleLeagueSelect(e.detail.item.value);
+            });
+        }
+    }
+    
+    /**
+     * Handle roster sidebar toggle
+     */
+    handleRosterToggle() {
+        const sidebar = document.getElementById('roster-sidebar');
+        const mainContent = document.getElementById('draft-main-content');
+        const toggleText = document.getElementById('roster-toggle-text');
+        
+        if (sidebar && mainContent && toggleText) {
+            const isOpen = sidebar.classList.contains('open');
+            
+            if (isOpen) {
+                sidebar.classList.remove('open');
+                mainContent.classList.remove('roster-open');
+                toggleText.textContent = 'Show My Roster';
+            } else {
+                sidebar.classList.add('open');
+                mainContent.classList.add('roster-open');
+                toggleText.textContent = 'Hide My Roster';
+                
+                // Load roster data if not already loaded
+                this.loadRosterData();
+            }
+            
+            // Save state to localStorage
+            localStorage.setItem('rosterSidebarOpen', JSON.stringify(!isOpen));
+        }
+    }
+    
+    /**
+     * Handle draft refresh
+     */
+    async handleDraftRefresh() {
+        const refreshBtn = document.getElementById('refresh-draft-btn');
+        
+        try {
+            if (refreshBtn) refreshBtn.loading = true;
+            
+            // Refresh draft data
+            await this.loadDraftData();
+            
+            this.uiUtils.showNotification('Draft data refreshed successfully', 'success');
+            
+        } catch (error) {
+            console.error('❌ Failed to refresh draft:', error);
+            this.uiUtils.showNotification('Failed to refresh draft data', 'danger');
+        } finally {
+            if (refreshBtn) refreshBtn.loading = false;
+        }
+    }
+    
+    /**
+     * Handle settings modal
+     */
+    handleSettingsModal() {
+        // TODO: Implement settings modal
+        this.uiUtils.showNotification('Settings modal coming soon!', 'primary');
+    }
+    
+    /**
+     * Handle rankings modal
+     */
+    handleRankingsModal() {
+        // TODO: Implement rankings modal
+        this.uiUtils.showNotification('Rankings manager coming soon!', 'primary');
+    }
+    
+    /**
+     * Handle connection retry
+     */
+    async handleConnectionRetry() {
+        const statusDiv = document.getElementById('connection-status');
+        
+        try {
+            // Hide error status
+            if (statusDiv) statusDiv.style.display = 'none';
+            
+            // Attempt to refresh data
+            await this.loadDraftData();
+            
+            this.uiUtils.showNotification('Connection restored', 'success');
+            
+        } catch (error) {
+            console.error('❌ Connection retry failed:', error);
+            this.showConnectionError('Connection retry failed');
+        }
+    }
+    
+    /**
+     * Handle league selection from dropdown
+     */
+    async handleLeagueSelect(leagueData) {
+        try {
+            const { leagueId, draftId } = JSON.parse(leagueData);
+            
+            // Find the league and draft objects
+            const league = this.state.userLeagues.find(l => l.league_id === leagueId);
+            const draft = league?.drafts?.find(d => d.draft_id === draftId);
+            
+            if (league && draft) {
+                await this.handleNewDraftSelect(league, draft);
+            }
+            
+        } catch (error) {
+            console.error('❌ Failed to select league:', error);
+            this.uiUtils.showNotification('Failed to switch league', 'danger');
+        }
+    }
+    
+    /**
+     * Load draft data and update UI
+     */
+    async loadDraftData() {
+        if (!this.state.selectedDraft) {
+            console.warn('No draft selected');
+            return;
+        }
+        
+        try {
+            // Update draft header info
+            this.updateDraftHeader();
+            
+            // Load position data
+            const positionData = await this.apiService.request(`/draft/${this.state.selectedDraft.draft_id}/available-players`);
+            
+            if (positionData.status === 'success') {
+                this.displayPositionGrid(positionData.players);
+                this.updateDraftStats(positionData);
+            }
+            
+            // Update last updated time
+            this.updateLastUpdatedTime();
+            
+        } catch (error) {
+            console.error('❌ Failed to load draft data:', error);
+            this.showConnectionError('Failed to load draft data');
+            throw error;
+        }
+    }
+    
+    /**
+     * Update draft header information
+     */
+    updateDraftHeader() {
+        const usernameEl = document.getElementById('draft-username');
+        const statusEl = document.getElementById('draft-status');
+        const statusIconEl = document.getElementById('draft-status-icon');
+        const statusTextEl = document.getElementById('draft-status-text');
+        const leagueNameEl = document.getElementById('current-league-name');
+        const dynastyIndicator = document.getElementById('dynasty-indicator');
+        
+        if (this.state.currentUser && usernameEl) {
+            usernameEl.textContent = `@${this.state.currentUser.username}`;
+        }
+        
+        if (this.state.selectedDraft && statusEl) {
+            const status = this.state.selectedDraft.status || 'unknown';
+            const statusClass = status.replace('_', ' ');
+            
+            statusEl.className = `draft-status ${status}`;
+            
+            if (statusIconEl) statusIconEl.textContent = this.getDraftStatusIcon(status);
+            if (statusTextEl) statusTextEl.textContent = statusClass;
+        }
+        
+        if (this.state.selectedLeague && leagueNameEl) {
+            leagueNameEl.textContent = this.state.selectedLeague.name;
+            
+            // Show dynasty indicator if applicable
+            if (dynastyIndicator) {
+                const isDynasty = this.isDynastyOrKeeperLeague(this.state.selectedLeague);
+                dynastyIndicator.style.display = isDynasty ? 'flex' : 'none';
+            }
+        }
+    }
+    
+    /**
+     * Display position grid with players
+     */
+    displayPositionGrid(players) {
+        const gridEl = document.getElementById('position-grid');
+        if (!gridEl || !players) return;
+        
+        // Group players by position
+        const playersByPosition = {};
+        players.forEach(player => {
+            const position = player.position || 'UNKNOWN';
+            if (!playersByPosition[position]) {
+                playersByPosition[position] = [];
+            }
+            playersByPosition[position].push(player);
+        });
+        
+        // Clear existing content
+        gridEl.innerHTML = '';
+        
+        // Create position sections
+        const positions = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
+        positions.forEach(position => {
+            const positionPlayers = playersByPosition[position] || [];
+            if (positionPlayers.length > 0) {
+                const sectionEl = this.createPositionSection(position, positionPlayers);
+                gridEl.appendChild(sectionEl);
+            }
+        });
+    }
+    
+    /**
+     * Create a position section element
+     */
+    createPositionSection(position, players) {
+        const section = document.createElement('div');
+        section.className = 'position-section';
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = 'position-header';
+        
+        const title = document.createElement('h3');
+        title.className = 'position-title';
+        title.textContent = this.getPositionName(position);
+        
+        const count = document.createElement('span');
+        count.className = 'position-count';
+        count.textContent = players.length;
+        
+        header.appendChild(title);
+        header.appendChild(count);
+        section.appendChild(header);
+        
+        // Players list
+        const playersList = document.createElement('div');
+        playersList.className = 'position-players';
+        
+        players.slice(0, 20).forEach(player => { // Show top 20 players
+            const playerCard = this.createPlayerCard(player);
+            playersList.appendChild(playerCard);
+        });
+        
+        section.appendChild(playersList);
+        return section;
+    }
+    
+    /**
+     * Create a player card element
+     */
+    createPlayerCard(player) {
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        
+        const info = document.createElement('div');
+        info.className = 'player-info';
+        
+        const details = document.createElement('div');
+        details.className = 'player-details';
+        
+        const name = document.createElement('h4');
+        name.className = 'player-name';
+        name.textContent = player.full_name || player.name;
+        
+        const meta = document.createElement('p');
+        meta.className = 'player-meta';
+        meta.textContent = `${player.team || 'FA'} • ${player.position}`;
+        
+        details.appendChild(name);
+        details.appendChild(meta);
+        info.appendChild(details);
+        
+        const actions = document.createElement('div');
+        actions.className = 'player-actions';
+        
+        if (player.rank) {
+            const rank = document.createElement('span');
+            rank.className = 'player-rank';
+            rank.textContent = `#${player.rank}`;
+            actions.appendChild(rank);
+        }
+        
+        const queueBtn = document.createElement('sl-button');
+        queueBtn.variant = 'neutral';
+        queueBtn.size = 'small';
+        queueBtn.innerHTML = '<sl-icon name="plus"></sl-icon>';
+        queueBtn.addEventListener('click', () => {
+            this.handleAddToQueue(player);
+        });
+        
+        actions.appendChild(queueBtn);
+        info.appendChild(actions);
+        card.appendChild(info);
+        
+        return card;
+    }
+    
+    /**
+     * Update draft statistics
+     */
+    updateDraftStats(data) {
+        const availableEl = document.getElementById('available-count');
+        const draftedEl = document.getElementById('drafted-count');
+        
+        if (availableEl && data.available_players) {
+            availableEl.textContent = `${data.available_players.length} available`;
+        }
+        
+        if (draftedEl && data.total_drafted) {
+            draftedEl.textContent = `${data.total_drafted} drafted`;
+        }
+    }
+    
+    /**
+     * Show connection error
+     */
+    showConnectionError(message) {
+        const statusDiv = document.getElementById('connection-status');
+        const errorText = document.getElementById('connection-error-text');
+        
+        if (statusDiv && errorText) {
+            errorText.textContent = message;
+            statusDiv.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Update last updated time
+     */
+    updateLastUpdatedTime() {
+        const timeEl = document.getElementById('last-updated-time');
+        if (timeEl) {
+            timeEl.textContent = new Date().toLocaleTimeString();
+        }
+    }
+    
+    /**
+     * Load roster data for sidebar
+     */
+    async loadRosterData() {
+        const rosterContent = document.getElementById('roster-content');
+        if (!rosterContent || !this.state.selectedDraft) return;
+        
+        try {
+            rosterContent.innerHTML = `
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading roster...</p>
+                </div>
+            `;
+            
+            // TODO: Implement roster data loading
+            // For now, show placeholder
+            setTimeout(() => {
+                rosterContent.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #64748b;">
+                        <p>Roster data coming soon!</p>
+                    </div>
+                `;
+            }, 1000);
+            
+        } catch (error) {
+            console.error('❌ Failed to load roster:', error);
+            rosterContent.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #dc2626;">
+                    <p>Failed to load roster</p>
+                </div>
+            `;
+        }
+    }
+    
+    /**
+     * Get position display name
+     */
+    getPositionName(position) {
+        const names = {
+            'QB': 'Quarterback',
+            'RB': 'Running Back',
+            'WR': 'Wide Receiver',
+            'TE': 'Tight End',
+            'K': 'Kicker',
+            'DEF': 'Defense'
+        };
+        return names[position] || position;
+    }
+    
+    /**
+     * Handle add player to queue
+     */
+    handleAddToQueue(player) {
+        // TODO: Implement queue functionality
+        this.uiUtils.showNotification(`Added ${player.full_name || player.name} to queue`, 'success');
+    }
+    
+    /**
+     * Show draft section and initialize
+     */
+    showDraftSection() {
+        // Hide other sections
+        document.getElementById('welcome-section').style.display = 'none';
+        document.getElementById('user-setup-section').style.display = 'none';
+        document.getElementById('league-select-section').style.display = 'none';
+        
+        // Show draft section
+        document.getElementById('draft-section').style.display = 'block';
+        
+        // Initialize roster sidebar state
+        const savedState = localStorage.getItem('rosterSidebarOpen');
+        if (savedState === 'true') {
+            setTimeout(() => this.handleRosterToggle(), 100);
+        }
     }
 }
 

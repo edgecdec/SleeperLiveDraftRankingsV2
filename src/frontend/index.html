@@ -264,259 +264,131 @@
                 </sl-card>
             </section>
 
-            <!-- Draft Section -->
+            <!-- Draft View -->
             <section id="draft-section" class="section" style="display: none;">
-                <div class="draft-layout">
-                    <!-- Sidebar -->
-                    <aside class="draft-sidebar">
-                        <sl-card class="controls-card">
-                            <!-- Draft Controls Header -->
-                            <div slot="header" class="draft-controls-header">
-                                <h3>Draft Controls</h3>
-                                <sl-button id="manual-refresh-btn" variant="neutral" size="small">
-                                    <sl-icon slot="prefix" name="refresh-cw"></sl-icon>
+                <div class="draft-view">
+                    <!-- Draft Header -->
+                    <header class="draft-header">
+                        <div class="draft-header-content">
+                            <div class="draft-header-left">
+                                <div class="draft-title">
+                                    <sl-icon name="trophy-fill"></sl-icon>
+                                    <h1>Fantasy Draft Assistant</h1>
+                                </div>
+                                
+                                <div class="draft-info">
+                                    <div class="draft-user-info">
+                                        <sl-icon name="person-fill"></sl-icon>
+                                        <span id="draft-username">@username</span>
+                                    </div>
+                                    
+                                    <div id="draft-status" class="draft-status pre_draft">
+                                        <span id="draft-status-icon">⏳</span>
+                                        <span id="draft-status-text">pre draft</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="draft-stats">
+                                    <div class="draft-stat">
+                                        <sl-icon name="people-fill"></sl-icon>
+                                        <span id="available-count">0 available</span>
+                                    </div>
+                                    <div class="draft-stat">
+                                        <sl-icon name="zap-fill"></sl-icon>
+                                        <span id="drafted-count">0 drafted</span>
+                                    </div>
+                                    <div id="dynasty-indicator" class="draft-stat" style="display: none;">
+                                        <sl-icon name="crown"></sl-icon>
+                                        <span>Dynasty</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="draft-header-right">
+                                <sl-button id="draft-settings-btn" variant="neutral" size="small">
+                                    <sl-icon slot="prefix" name="gear"></sl-icon>
+                                    Settings
+                                </sl-button>
+                                
+                                <sl-button id="rankings-manager-btn" variant="neutral" size="small">
+                                    <sl-icon slot="prefix" name="list-ol"></sl-icon>
+                                    Rankings
+                                </sl-button>
+                                
+                                <sl-button id="refresh-draft-btn" variant="primary" size="small">
+                                    <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
                                     Refresh
                                 </sl-button>
-                            </div>
-                            
-                            <!-- League Info -->
-                            <div class="league-info">
-                                <sl-badge id="league-format-badge" variant="primary">Half PPR Superflex</sl-badge>
-                                <sl-badge id="dynasty-badge" variant="warning" style="display: none;">
-                                    <sl-icon name="crown"></sl-icon>
-                                    Dynasty League
-                                </sl-badge>
-                            </div>
-                            
-                            <!-- Filters -->
-                            <div class="filter-section">
-                                <sl-select id="position-filter" label="Position Filter" clearable>
-                                    <sl-option value="">All Positions</sl-option>
-                                    <sl-option value="QB">Quarterback</sl-option>
-                                    <sl-option value="RB">Running Back</sl-option>
-                                    <sl-option value="WR">Wide Receiver</sl-option>
-                                    <sl-option value="TE">Tight End</sl-option>
-                                    <sl-option value="K">Kicker</sl-option>
-                                    <sl-option value="DEF">Defense</sl-option>
-                                </sl-select>
                                 
-                                <sl-input id="player-search" label="Search Players" placeholder="Search by name..." clearable>
-                                    <sl-icon slot="prefix" name="search"></sl-icon>
-                                </sl-input>
-                                
-                                <sl-switch id="auto-refresh-toggle">Auto-refresh draft</sl-switch>
-                                <sl-switch id="vbd-toggle">Show VBD Values</sl-switch>
+                                <!-- League Selector Dropdown -->
+                                <sl-dropdown id="league-selector-dropdown">
+                                    <sl-button slot="trigger" variant="neutral" size="small" caret>
+                                        <sl-icon slot="prefix" name="trophy"></sl-icon>
+                                        <span id="current-league-name">Select League</span>
+                                    </sl-button>
+                                    <sl-menu id="league-selector-menu">
+                                        <!-- League options will be populated here -->
+                                    </sl-menu>
+                                </sl-dropdown>
                             </div>
-                            
-                            <!-- Draft Stats -->
-                            <div class="draft-stats">
-                                <div class="stat-item">
-                                    <span class="stat-label">Total Picks</span>
-                                    <sl-badge id="total-picks-badge" variant="neutral">0</sl-badge>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">Available Players</span>
-                                    <sl-badge id="available-players-badge" variant="success">548</sl-badge>
+                        </div>
+                    </header>
+                    
+                    <!-- Roster Toggle Bar -->
+                    <div class="roster-toggle-bar">
+                        <div class="roster-toggle-content">
+                            <button id="roster-toggle-btn" class="roster-toggle-btn">
+                                <sl-icon name="people-fill"></sl-icon>
+                                <span id="roster-toggle-text">Show My Roster</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Roster Sidebar -->
+                    <aside id="roster-sidebar" class="roster-sidebar">
+                        <div class="roster-sidebar-header">
+                            <h2 class="roster-sidebar-title">My Roster</h2>
+                        </div>
+                        <div class="roster-sidebar-content">
+                            <div id="roster-content">
+                                <div class="loading-state">
+                                    <div class="loading-spinner"></div>
+                                    <p>Loading roster...</p>
                                 </div>
                             </div>
-                        </sl-card>
+                        </div>
                     </aside>
-
+                    
+                    <!-- Connection Status -->
+                    <div id="connection-status" class="connection-status" style="display: none;">
+                        <div class="connection-error">
+                            <sl-icon name="exclamation-triangle-fill"></sl-icon>
+                            <span id="connection-error-text">Connection error</span>
+                            <sl-button id="connection-retry-btn" variant="neutral" size="small">Retry</sl-button>
+                        </div>
+                    </div>
+                    
                     <!-- Main Content -->
-                    <main class="draft-main">
-                        <sl-tab-group>
-                            <sl-tab slot="nav" panel="available-players">
-                                <sl-icon name="list-ul"></sl-icon>
-                                Available Players
-                            </sl-tab>
-                            <sl-tab slot="nav" panel="best-available">
-                                <sl-icon name="star-fill"></sl-icon>
-                                Best Available
-                            </sl-tab>
-                            <sl-tab slot="nav" panel="draft-board">
-                                <sl-icon name="grid-3x3"></sl-icon>
-                                Draft Board
-                            </sl-tab>
-                            <sl-tab slot="nav" panel="my-queue">
-                                <sl-icon name="bookmark-fill"></sl-icon>
-                                My Queue
-                            </sl-tab>
-                            <sl-tab slot="nav" panel="team-analysis">
-                                <sl-icon name="people"></sl-icon>
-                                Team Analysis
-                            </sl-tab>
-                            <sl-tab slot="nav" panel="custom-rankings">
-                                <sl-icon name="upload"></sl-icon>
-                                Custom Rankings
-                            </sl-tab>
-
-                            <!-- Available Players Tab -->
-                            <sl-tab-panel name="available-players">
-                                <div class="players-container">
-                                    <div id="available-players-loading" class="loading-state">
-                                        <sl-spinner style="font-size: 3rem;"></sl-spinner>
-                                        <p>Loading available players...</p>
-                                    </div>
-                                    <div id="available-players-list" class="players-grid">
-                                        <!-- Player cards will be inserted here -->
-                                    </div>
+                    <main id="draft-main-content" class="draft-main-content">
+                        <!-- Position Grid -->
+                        <div id="position-grid" class="position-grid">
+                            <!-- Position sections will be populated here -->
+                        </div>
+                        
+                        <!-- Draft Footer -->
+                        <footer class="draft-footer">
+                            <div class="draft-footer-content">
+                                <div class="draft-footer-left">
+                                    <span>Last updated: <span id="last-updated-time">Never</span></span>
+                                    <span>•</span>
+                                    <span>Auto-refresh: <span id="auto-refresh-countdown">30s</span></span>
                                 </div>
-                            </sl-tab-panel>
-
-                            <!-- Best Available Tab -->
-                            <sl-tab-panel name="best-available">
-                                <div class="best-available-container">
-                                    <div id="best-available-loading" class="loading-state">
-                                        <sl-spinner style="font-size: 3rem;"></sl-spinner>
-                                        <p>Loading best available players...</p>
-                                    </div>
-                                    <div id="best-available-content">
-                                        <!-- Best available by position will be inserted here -->
-                                    </div>
+                                <div class="draft-footer-right">
+                                    <sl-icon name="wifi"></sl-icon>
+                                    <span id="connection-status-text">Connected</span>
                                 </div>
-                            </sl-tab-panel>
-
-                            <!-- Draft Board Tab -->
-                            <sl-tab-panel name="draft-board">
-                                <div class="draft-board-container">
-                                    <div id="draft-board-content">
-                                        <!-- Draft board will be loaded here -->
-                                    </div>
-                                </div>
-                            </sl-tab-panel>
-
-                            <!-- My Queue Tab -->
-                            <sl-tab-panel name="my-queue">
-                                <div class="queue-container">
-                                    <div id="queue-content">
-                                        <!-- Queue will be loaded here -->
-                                    </div>
-                                </div>
-                            </sl-tab-panel>
-                            
-                            <!-- Team Analysis Tab -->
-                            <sl-tab-panel name="team-analysis">
-                                <div class="team-analysis-container">
-                                    <div class="analysis-header">
-                                        <h3>Team Roster Analysis</h3>
-                                        <sl-button id="refresh-analysis-btn" variant="default" size="small">
-                                            <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                                            Refresh Analysis
-                                        </sl-button>
-                                    </div>
-                                    
-                                    <div id="team-analysis-content">
-                                        <div class="loading-state">
-                                            <sl-spinner></sl-spinner>
-                                            <p>Loading team analysis...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </sl-tab-panel>
-                            
-                            <!-- Custom Rankings Tab -->
-                            <sl-tab-panel name="custom-rankings">
-                                <div class="custom-rankings-container">
-                                    <div class="rankings-header">
-                                        <h3>Custom Rankings Upload</h3>
-                                        <p>Upload your own CSV rankings file to use custom player rankings during your draft.</p>
-                                    </div>
-                                    
-                                    <!-- Upload Section -->
-                                    <div class="upload-section">
-                                        <sl-card>
-                                            <div slot="header">
-                                                <h4>Upload New Rankings</h4>
-                                            </div>
-                                            
-                                            <div class="upload-form">
-                                                <div class="file-input-container">
-                                                    <input type="file" id="rankings-file-input" accept=".csv" style="display: none;">
-                                                    <sl-button id="select-file-btn" variant="default">
-                                                        <sl-icon slot="prefix" name="file-earmark-text"></sl-icon>
-                                                        Select CSV File
-                                                    </sl-button>
-                                                    <span id="selected-file-name" class="selected-file-name"></span>
-                                                </div>
-                                                
-                                                <sl-select id="format-select" label="CSV Format" value="auto" help-text="Auto-detect will try to identify the format automatically">
-                                                    <sl-option value="auto">Auto-detect</sl-option>
-                                                    <sl-option value="standard">Standard (name, position, rank, tier)</sl-option>
-                                                    <sl-option value="fantasypros">FantasyPros Export</sl-option>
-                                                    <sl-option value="espn">ESPN Export</sl-option>
-                                                </sl-select>
-                                                
-                                                <div class="upload-actions">
-                                                    <sl-button id="validate-btn" variant="neutral" disabled>
-                                                        <sl-icon slot="prefix" name="check-circle"></sl-icon>
-                                                        Validate File
-                                                    </sl-button>
-                                                    <sl-button id="upload-btn" variant="primary" disabled>
-                                                        <sl-icon slot="prefix" name="upload"></sl-icon>
-                                                        Upload Rankings
-                                                    </sl-button>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Validation Results -->
-                                            <div id="validation-results" class="validation-results" style="display: none;">
-                                                <!-- Validation content will be inserted here -->
-                                            </div>
-                                        </sl-card>
-                                    </div>
-                                    
-                                    <!-- Existing Rankings Section -->
-                                    <div class="existing-rankings-section">
-                                        <sl-card>
-                                            <div slot="header">
-                                                <h4>Your Custom Rankings</h4>
-                                            </div>
-                                            
-                                            <div id="rankings-list">
-                                                <div class="loading-state">
-                                                    <sl-spinner></sl-spinner>
-                                                    <p>Loading your rankings...</p>
-                                                </div>
-                                            </div>
-                                        </sl-card>
-                                    </div>
-                                    
-                                    <!-- Format Help Section -->
-                                    <div class="format-help-section">
-                                        <sl-details summary="CSV Format Help">
-                                            <div class="format-examples">
-                                                <h5>Supported Formats:</h5>
-                                                
-                                                <div class="format-example">
-                                                    <h6>Standard Format:</h6>
-                                                    <code>name,position,rank,tier,team,bye_week<br>Josh Allen,QB,1,1,BUF,7<br>Christian McCaffrey,RB,2,1,SF,9</code>
-                                                </div>
-                                                
-                                                <div class="format-example">
-                                                    <h6>FantasyPros Format:</h6>
-                                                    <code>player_name,pos,rank,tier,team,bye<br>Josh Allen,QB,1,1,BUF,7<br>Christian McCaffrey,RB,2,1,SF,9</code>
-                                                </div>
-                                                
-                                                <div class="format-example">
-                                                    <h6>ESPN Format:</h6>
-                                                    <code>PLAYER,POS,RK,TIER,TEAM,BYE<br>Josh Allen,QB,1,1,BUF,7<br>Christian McCaffrey,RB,2,1,SF,9</code>
-                                                </div>
-                                                
-                                                <div class="format-notes">
-                                                    <h6>Notes:</h6>
-                                                    <ul>
-                                                        <li>Required columns: <strong>name/player_name/PLAYER</strong> and <strong>position/pos/POS</strong></li>
-                                                        <li>Optional columns: rank, tier, team, bye_week</li>
-                                                        <li>File must be UTF-8 encoded CSV</li>
-                                                        <li>Auto-detect will try to identify the format automatically</li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </sl-details>
-                                    </div>
-                                </div>
-                            </sl-tab-panel>
-                        </sl-tab-group>
+                            </div>
+                        </footer>
                     </main>
                 </div>
             </section>
