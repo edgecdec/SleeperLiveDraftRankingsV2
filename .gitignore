@@ -72,6 +72,10 @@ temp/
 tmp/
 *.tmp
 
-# Data files (if sensitive)
-# data/cache/
-# data/user_data/
+# Data files - Rankings should be downloaded/uploaded at runtime
+data/
+!data/.gitkeep
+
+# User uploads and cache
+uploads/
+cache/

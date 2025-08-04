@@ -22,6 +22,10 @@ from .api.user import user_bp
 from .api.draft import draft_bp
 from .api.custom_rankings import custom_rankings_bp
 from .rankings_api import rankings_bp
+from .rankings_api_v2 import rankings_bp_v2
+
+# Import rankings initialization
+from .services.rankings_initializer import initialize_rankings, ensure_rankings_directory
 
 # Try to import rankings (optional)
 try:
@@ -105,11 +109,17 @@ def create_app(debug: bool = False) -> Flask:
     # Get static file path
     static_path = get_static_path()
     
+    # Initialize rankings system
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
+    ensure_rankings_directory(data_dir)
+    initialize_rankings(data_dir)
+    
     # Register API blueprints
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(draft_bp, url_prefix='/api')
     app.register_blueprint(custom_rankings_bp, url_prefix='/api')
-    app.register_blueprint(rankings_bp)  # Rankings API has its own /api prefix
+    app.register_blueprint(rankings_bp)  # Legacy rankings API
+    app.register_blueprint(rankings_bp_v2, url_prefix='/api/rankings')  # New rankings API
     
     if RANKINGS_AVAILABLE and init_rankings_routes:
         init_rankings_routes(app)
