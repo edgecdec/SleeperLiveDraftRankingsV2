@@ -186,8 +186,12 @@ def get_ranking_data(ranking_id):
         for player in players:
             processed_player = {}
             
-            # Standardize column names
+            # Standardize column names and handle NaN values
             for key, value in player.items():
+                # Handle NaN values - replace with None for JSON serialization
+                if pd.isna(value):
+                    value = None
+                
                 # Convert common column names to standard format
                 if key.lower() in ['overall rank', 'overall_rank', 'rank']:
                     processed_player['overall_rank'] = value
@@ -203,6 +207,8 @@ def get_ranking_data(ranking_id):
                     processed_player['tier'] = value
                 elif key.lower() in ['bye', 'bye_week']:
                     processed_player['bye_week'] = value
+                elif key.lower() in ['value']:
+                    processed_player['value'] = value if value is not None else 0
                 else:
                     # Keep original column name for any other fields
                     processed_player[key.lower().replace(' ', '_')] = value
