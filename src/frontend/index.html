@@ -521,203 +521,126 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: 1rem;
         }
         
-        /* V1-Style Position Sections */
-        .position-sections {
+        .position-tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 1rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .position-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .position-tab {
+            padding: 1rem 1.5rem;
+            border: none;
+            background: none;
+            color: #6b7280;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .position-tab:hover {
+            color: #374151;
+            background: #f9fafb;
+        }
+        
+        .position-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        
+        .players-container {
+            flex: 1;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
+        }
+        
+        .players-header {
+            display: grid;
+            grid-template-columns: 60px 1fr 60px 80px 80px 100px;
             gap: 1rem;
-            overflow-y: auto;
-            padding-bottom: 2rem;
-        }
-        
-        .position-section {
+            padding: 1rem;
             background: white;
-            border-radius: 12px;
-            border: 2px solid #e5e7eb;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .position-section.collapsed {
-            border-color: #d1d5db;
-        }
-        
-        .position-section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            background: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .position-section-header:hover {
-            background: #f3f4f6;
-        }
-        
-        .position-section.collapsed .position-section-header {
-            border-bottom: none;
-        }
-        
-        .position-section-title {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .position-icon {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.875rem;
-            color: white;
-        }
-        
-        .position-icon.QB { background: #dc2626; }
-        .position-icon.RB { background: #16a34a; }
-        .position-icon.WR { background: #2563eb; }
-        .position-icon.TE { background: #ca8a04; }
-        .position-icon.K { background: #7c3aed; }
-        .position-icon.DEF { background: #0891b2; }
-        .position-icon.FLEX { background: #059669; }
-        .position-icon.SUPER_FLEX { background: #dc2626; }
-        .position-icon.ALL { background: #6b7280; }
-        
-        .position-title {
-            font-size: 1.125rem;
+            border-bottom: 2px solid #e5e7eb;
             font-weight: 600;
-            color: #1f2937;
-        }
-        
-        .position-count {
+            color: #374151;
             font-size: 0.875rem;
-            color: #6b7280;
-            margin-left: 0.5rem;
         }
         
-        .position-section-controls {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .players-list {
+            flex: 1;
+            overflow-y: auto;
+            background: white;
         }
         
-        .collapse-icon {
-            transition: transform 0.2s ease;
-        }
-        
-        .position-section.collapsed .collapse-icon {
-            transform: rotate(-90deg);
-        }
-        
-        .position-section-content {
-            max-height: 600px;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        
-        .position-section.collapsed .position-section-content {
-            max-height: 0;
-        }
-        
-        .position-players {
-            padding: 0;
-        }
-        
-        .player-card {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
+        .player-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 60px 80px 80px 100px;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid #f3f4f6;
             transition: all 0.2s ease;
             cursor: pointer;
         }
         
-        .player-card:hover {
+        .player-row:hover {
             background: #f9fafb;
         }
         
-        .player-card:last-child {
-            border-bottom: none;
-        }
-        
-        .player-card.drafted {
+        .player-row.drafted {
             background: #fef2f2;
             color: #6b7280;
             cursor: not-allowed;
         }
         
-        .player-card.drafted:hover {
+        .player-row.drafted:hover {
             background: #fef2f2;
-        }
-        
-        .player-info {
-            display: grid;
-            grid-template-columns: 60px 1fr 60px 80px 80px 100px;
-            gap: 1rem;
-            align-items: center;
-            width: 100%;
         }
         
         .player-rank {
             font-weight: 600;
             color: #6b7280;
             text-align: center;
-            font-size: 0.875rem;
-        }
-        
-        .player-name-info {
-            display: flex;
-            flex-direction: column;
         }
         
         .player-name {
             font-weight: 600;
             color: #1f2937;
-            font-size: 0.875rem;
-        }
-        
-        .player-details {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-top: 0.125rem;
         }
         
         .player-position {
             font-weight: 600;
             text-align: center;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            color: white;
         }
         
-        .player-position.QB { background: #dc2626; }
-        .player-position.RB { background: #16a34a; }
-        .player-position.WR { background: #2563eb; }
-        .player-position.TE { background: #ca8a04; }
-        .player-position.K { background: #7c3aed; }
-        .player-position.DEF { background: #0891b2; }
+        .player-position.QB { color: #dc2626; }
+        .player-position.RB { color: #16a34a; }
+        .player-position.WR { color: #2563eb; }
+        .player-position.TE { color: #ca8a04; }
+        .player-position.K { color: #7c3aed; }
+        .player-position.DEF { color: #0891b2; }
         
         .player-team {
             color: #6b7280;
             text-align: center;
-            font-size: 0.75rem;
-            font-weight: 500;
         }
         
         .player-adp {
             color: #6b7280;
             text-align: center;
-            font-size: 0.75rem;
         }
         
         .player-status {
@@ -727,27 +650,11 @@
         .status-available {
             color: #16a34a;
             font-weight: 500;
-            font-size: 0.75rem;
         }
         
         .status-drafted {
             color: #dc2626;
             font-weight: 500;
-            font-size: 0.75rem;
-        }
-        
-        /* Loading state for position sections */
-        .position-section-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 3rem;
-            color: #6b7280;
-        }
-        
-        .position-section-loading sl-icon {
-            margin-right: 0.5rem;
-            animation: spin 1s linear infinite;
         }
         
         /* Roster Sidebar */
@@ -1052,9 +959,24 @@
         <div class="draft-content">
             <!-- Main Draft Board -->
             <div class="draft-board-container">
-                <!-- Position Sections Container -->
-                <div id="position-sections" class="position-sections">
-                    <!-- Position sections will be populated here -->
+                <!-- Position Tabs -->
+                <div class="position-tabs" id="position-tabs">
+                    <!-- Tabs will be populated dynamically based on league -->
+                </div>
+
+                <!-- Player List -->
+                <div class="players-container">
+                    <div class="players-header">
+                        <div class="player-rank">Rank</div>
+                        <div class="player-name">Player</div>
+                        <div class="player-position">Pos</div>
+                        <div class="player-team">Team</div>
+                        <div class="player-adp">ADP</div>
+                        <div class="player-status">Status</div>
+                    </div>
+                    <div id="players-list" class="players-list">
+                        <!-- Players will be populated here -->
+                    </div>
                 </div>
             </div>
 

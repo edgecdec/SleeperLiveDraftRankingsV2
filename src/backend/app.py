@@ -249,4 +249,42 @@ def create_app(debug: bool = False) -> Flask:
             return jsonify({'error': str(error)}), 500
         return jsonify({'error': 'Internal server error'}), 500
     
+    # Test dynasty detection endpoint
+    @app.route('/api/test/dynasty/<draft_id>')
+    def test_dynasty_detection(draft_id):
+        """Test dynasty detection for debugging"""
+        try:
+            from .services.sleeper_api import SleeperAPI
+            
+            # Get draft info
+            draft_info = SleeperAPI.get_draft_info(draft_id)
+            league_id = draft_info.get('league_id') if draft_info else None
+            
+            if not league_id:
+                return jsonify({'error': 'Could not get league ID from draft'})
+            
+            # Get league info
+            league_info = SleeperAPI.get_league_info(league_id)
+            
+            if not league_info:
+                return jsonify({'error': 'Could not get league info'})
+            
+            # Test dynasty detection
+            is_dynasty = SleeperAPI.is_dynasty_or_keeper_league(league_info)
+            
+            return jsonify({
+                'draft_id': draft_id,
+                'league_id': league_id,
+                'is_dynasty': is_dynasty,
+                'league_settings': league_info.get('settings', {}),
+                'previous_league_id': league_info.get('previous_league_id'),
+                'status': 'success'
+            })
+            
+        except Exception as e:
+            return jsonify({
+                'error': str(e),
+                'status': 'error'
+            })
+
     return app
