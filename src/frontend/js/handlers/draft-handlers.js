@@ -543,17 +543,6 @@ class DraftHandlers {
                 console.log('✅ Roster data loaded:', rosteredPlayerIds.size, 'rostered players');
                 console.log('🔍 Sample rostered player IDs:', Array.from(rosteredPlayerIds).slice(0, 10));
                 
-                // Debug: Check if problematic players are in roster
-                const problematicPlayerIds = ['4881', '5859', '4866']; // Common IDs for Lamar, DJ Moore, Montgomery
-                console.log('🔍 Checking if problematic players are rostered:');
-                problematicPlayerIds.forEach(id => {
-                    if (rosteredPlayerIds.has(id)) {
-                        console.log(`  ✅ Player ID ${id} IS rostered`);
-                    } else {
-                        console.log(`  ❌ Player ID ${id} NOT rostered`);
-                    }
-                });
-                
                 // Refresh the player list with roster filtering
                 this.refreshPlayersAfterDraft();
                 
@@ -1609,21 +1598,8 @@ class DraftHandlers {
         
         // Filter out drafted/rostered players
         const availablePlayers = players.filter(player => {
-            // Debug specific problematic players
-            const isProblematicPlayer = ['lamar jackson', 'dj moore', 'd.j. moore', 'david montgomery'].includes(player.full_name.toLowerCase());
-            
-            if (isProblematicPlayer) {
-                console.log(`🔍 Debugging ${player.full_name}:`);
-                console.log(`  Player ID: ${player.player_id}`);
-                console.log(`  Position: ${player.position}`);
-                console.log(`  Team: ${player.team}`);
-            }
-            
             // Check by player ID first (most reliable)
             if (draftedPlayerIds.has(player.player_id)) {
-                if (isProblematicPlayer) {
-                    console.log(`  ✅ Filtered by direct ID match: ${player.player_id}`);
-                }
                 console.log(`🚫 Filtered out by ID: ${player.full_name} (${player.player_id})`);
                 return false;
             }
@@ -1632,20 +1608,9 @@ class DraftHandlers {
             if (this.state.sleeperPlayerMap && this.state.sleeperPlayerMap.size > 0) {
                 const nameVariations = this.generateNameVariations(player.full_name);
                 
-                if (isProblematicPlayer) {
-                    console.log(`  Name variations:`, nameVariations);
-                }
-                
                 for (const variation of nameVariations) {
                     const playerMatches = this.state.sleeperPlayerMap.get(variation);
                     if (playerMatches && playerMatches.length > 0) {
-                        if (isProblematicPlayer) {
-                            console.log(`  Found ${playerMatches.length} matches for ${variation}:`);
-                            playerMatches.forEach(match => {
-                                console.log(`    - ${match.full_name} (${match.position}, ${match.team}) [ID: ${match.id}]`);
-                            });
-                        }
-                        
                         // Find the best match based on position and team
                         let bestMatch = null;
                         
@@ -1667,24 +1632,12 @@ class DraftHandlers {
                         }
                         
                         if (bestMatch) {
-                            if (isProblematicPlayer) {
-                                console.log(`  Best match: ${bestMatch.full_name} (${bestMatch.position}, ${bestMatch.team}) [ID: ${bestMatch.id}]`);
-                                console.log(`  Is ${bestMatch.id} in draftedPlayerIds?`, draftedPlayerIds.has(bestMatch.id));
-                            }
-                            
                             if (draftedPlayerIds.has(bestMatch.id)) {
-                                if (isProblematicPlayer) {
-                                    console.log(`  ✅ Should be filtered by mapped ID!`);
-                                }
                                 console.log(`🚫 Filtered out by mapped ID: ${player.full_name} (${variation}) -> ${bestMatch.id} (${bestMatch.position}, ${bestMatch.team})`);
                                 return false;
                             }
                         }
                     }
-                }
-                
-                if (isProblematicPlayer) {
-                    console.log(`  ❌ No matching rostered ID found - player is available`);
                 }
             }
             
@@ -1697,18 +1650,11 @@ class DraftHandlers {
                 for (const playerVar of playerNameVariations) {
                     for (const draftedVar of draftedNameVariations) {
                         if (playerVar === draftedVar) {
-                            if (isProblematicPlayer) {
-                                console.log(`  ✅ Filtered by name variation: ${playerVar} = ${draftedVar}`);
-                            }
                             console.log(`🚫 Filtered out by name variation: ${player.full_name} (${playerVar} = ${draftedVar})`);
                             return false;
                         }
                     }
                 }
-            }
-            
-            if (isProblematicPlayer) {
-                console.log(`  ✅ Player passes all filters - showing as available`);
             }
             
             return true;
@@ -1992,27 +1938,6 @@ class DraftHandlers {
                 
                 this.state.sleeperPlayerMap = nameToIdsMap;
                 console.log('✅ Sleeper player database loaded:', nameToIdsMap.size, 'name variations mapped');
-                
-                // Debug specific problematic players
-                const problematicPlayers = [
-                    'lamar jackson', 'dj moore', 'd.j. moore', 'david moore', 'david montgomery', 'dave montgomery'
-                ];
-                
-                console.log('🔍 Debugging problematic players:');
-                problematicPlayers.forEach(name => {
-                    const variations = this.generateNameVariations(name);
-                    console.log(`  ${name}:`, variations);
-                    
-                    variations.forEach(variation => {
-                        const playerMatches = nameToIdsMap.get(variation);
-                        if (playerMatches && playerMatches.length > 0) {
-                            console.log(`    ✅ ${variation} -> ${playerMatches.length} matches:`);
-                            playerMatches.forEach(match => {
-                                console.log(`      - ${match.full_name} (${match.position}, ${match.team}) [ID: ${match.id}]`);
-                            });
-                        }
-                    });
-                });
                 
                 return nameToIdsMap;
             } else {
