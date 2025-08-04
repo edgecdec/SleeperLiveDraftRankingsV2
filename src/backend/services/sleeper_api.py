@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple
 from ..config import SLEEPER_API_BASE_URL, API_TIMEOUT
 from .ranked_player_cache import get_ranked_player_cache
 
+print("🔥 DEBUG: sleeper_api.py module loaded!")
 
 class SleeperAPIError(Exception):
     """Custom exception for Sleeper API errors"""
@@ -454,50 +455,67 @@ class SleeperAPI:
         Returns:
             Tuple of (unavailable_player_ids, is_dynasty_league)
         """
-        print(f"🔍 DEBUG: get_all_unavailable_players called with draft_id={draft_id}, league_id={league_id}")
+        print(f"🚀 DEBUG: get_all_unavailable_players STARTED with draft_id={draft_id}, league_id={league_id}")
         
         try:
+            print(f"🔍 DEBUG: Inside try block, getting drafted players...")
             unavailable_players = set()
             
             # Get drafted players
             drafted_players = SleeperAPI.get_drafted_players_with_names(draft_id)
+            print(f"🔍 DEBUG: Got {len(drafted_players)} drafted players")
+            
             for player in drafted_players:
                 if player.get('player_id'):
                     unavailable_players.add(player['player_id'])
             
             # Get league info if not provided
             if not league_id:
+                print(f"🔍 DEBUG: No league_id provided, getting from draft info...")
                 draft_info = SleeperAPI.get_draft_info(draft_id)
                 league_id = draft_info.get('league_id') if draft_info else None
+                print(f"🔍 DEBUG: Got league_id from draft: {league_id}")
             
             is_dynasty = False
             if league_id:
+                print(f"🔍 DEBUG: Getting league info for league_id: {league_id}")
                 # Check if dynasty/keeper league
                 league_info = SleeperAPI.get_league_info(league_id)
                 if league_info:
-                    print(f"🔍 DEBUG: About to call is_dynasty_or_keeper_league method")
-                    print(f"🔍 DEBUG: Method exists: {hasattr(SleeperAPI, 'is_dynasty_or_keeper_league')}")
+                    print(f"🔍 DEBUG: Got league info, checking dynasty status...")
                     
-                    # Try calling the method directly
-                    try:
-                        is_dynasty = SleeperAPI.is_dynasty_or_keeper_league(league_info)
-                        print(f"🔍 DEBUG: Dynasty detection result: {is_dynasty}")
-                    except Exception as method_error:
-                        print(f"❌ DEBUG: Error calling is_dynasty_or_keeper_league: {method_error}")
+                    # DIRECT DYNASTY DETECTION (bypass method call issues)
+                    settings = league_info.get('settings', {})
+                    league_type = settings.get('type')
+                    max_keepers = settings.get('max_keepers', 0)
+                    taxi_slots = settings.get('taxi_slots', 0)
+                    previous_league = league_info.get('previous_league_id')
+                    
+                    print(f"🔍 DEBUG: League settings - type={league_type}, max_keepers={max_keepers}, taxi_slots={taxi_slots}, previous_league={previous_league}")
+                    
+                    # Dynasty detection logic (inline)
+                    if league_type == 2 or max_keepers > 0 or taxi_slots > 0 or previous_league:
+                        is_dynasty = True
+                        print(f"✅ DYNASTY DETECTED: type={league_type}, keepers={max_keepers}, taxi={taxi_slots}")
+                    else:
                         is_dynasty = False
+                        print(f"❌ REDRAFT DETECTED")
                     
                     if is_dynasty:
                         print(f"🏰 Dynasty/Keeper league detected - filtering rostered players")
                         rostered_players = SleeperAPI.get_rostered_players(league_id)
+                        print(f"🔍 DEBUG: Got {len(rostered_players)} rostered players")
                         unavailable_players.update(rostered_players)
                     else:
                         print(f"🏈 Redraft league detected - only filtering drafted players")
             
             print(f"📊 Total unavailable players: {len(unavailable_players)} (drafted + rostered)")
+            print(f"🚀 DEBUG: Returning is_dynasty={is_dynasty}")
             return list(unavailable_players), is_dynasty
             
         except Exception as e:
             print(f"⚠️ Error getting unavailable players: {e}")
+            print(f"🚀 DEBUG: Exception caught, returning fallback")
             # Fallback to just drafted players
             try:
                 drafted_players = SleeperAPI.get_drafted_players_with_names(draft_id)
