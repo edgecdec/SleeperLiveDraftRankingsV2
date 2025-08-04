@@ -8,7 +8,7 @@ from datetime import datetime
 
 # Import unified rankings manager
 try:
-    from .services.rankings_manager import rankings_manager
+    from services.rankings_manager import rankings_manager
     RANKINGS_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️ Rankings manager not available: {e}")

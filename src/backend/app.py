@@ -128,12 +128,14 @@ def create_app(debug: bool = False) -> Flask:
     
     # Initialize unified rankings manager
     try:
-        from .services.rankings_manager import initialize_rankings_manager
+        from services.rankings_manager import initialize_rankings_manager
         data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
         initialize_rankings_manager(data_dir)
         print("🏈 Unified rankings manager initialized - Fantasy Pros + persistent uploads")
     except Exception as e:
         print(f"⚠️ Failed to initialize rankings manager: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Register API blueprints
     app.register_blueprint(user_bp, url_prefix='/api')
