@@ -9,6 +9,9 @@ class DraftHandlers {
         this.apiService = apiService;
         this.uiUtils = uiUtils;
         
+        // Initialize rankings service
+        this.rankingsService = new RankingsService();
+        
         // State
         this.state = {
             currentDraft: null,
@@ -18,7 +21,8 @@ class DraftHandlers {
             currentPosition: 'ALL',
             myRoster: {},
             draftPicks: [],
-            isRosterVisible: false
+            isRosterVisible: false,
+            currentRankings: null
         };
         
         // Setup event listeners
@@ -59,6 +63,25 @@ class DraftHandlers {
         document.addEventListener('draftSelected', (event) => {
             this.handleDraftSelected(event.detail);
         });
+        
+        // Rankings selector
+        const rankingsSelect = document.getElementById('rankings-select');
+        if (rankingsSelect) {
+            rankingsSelect.addEventListener('sl-change', (event) => {
+                this.handleRankingSelection(event.target.value);
+            });
+        }
+        
+        // Upload rankings button
+        const uploadBtn = document.getElementById('upload-rankings-btn');
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => {
+                this.showUploadDialog();
+            });
+        }
+        
+        // Upload dialog handlers
+        this.setupUploadDialogHandlers();
         
         console.log('✅ Draft event listeners setup complete');
     }
@@ -226,6 +249,9 @@ class DraftHandlers {
                 this.state.players = players;
                 this.state.filteredPlayers = players;
                 
+                // Initialize rankings selector
+                await this.initializeRankingsSelector();
+                
                 // Render players
                 this.renderPlayers();
                 
@@ -244,12 +270,15 @@ class DraftHandlers {
     /**
      * Load mock players as fallback
      */
-    loadMockPlayers() {
+    async loadMockPlayers() {
         console.log('📡 Loading mock player data...');
         
         const mockPlayers = this.generateMockPlayers();
         this.state.players = mockPlayers;
         this.state.filteredPlayers = mockPlayers;
+        
+        // Initialize rankings selector
+        await this.initializeRankingsSelector();
         
         // Render players
         this.renderPlayers();
@@ -495,13 +524,29 @@ class DraftHandlers {
             // Handle hybrid positions for CSS classes
             const positionClass = player.position.replace('/', '-'); // WR/TE becomes WR-TE
             
+            // Get ranking information
+            const ranking = player.ranking;
+            const rankDisplay = ranking?.overall_rank || player.rank;
+            const posRankDisplay = ranking?.position_rank ? `${ranking.position_rank}` : '';
+            const tierDisplay = ranking?.tier ? `T${ranking.tier}` : '';
+            const byeDisplay = ranking?.bye_week ? `Bye ${ranking.bye_week}` : '';
+            
             return `
                 <div class="player-row ${player.status}" data-player-id="${player.player_id}">
-                    <div class="player-rank">${player.rank}</div>
-                    <div class="player-name">${player.full_name}${injuryStatus}</div>
-                    <div class="player-position ${positionClass}" data-position="${player.position}">${player.position}</div>
+                    <div class="player-rank">${rankDisplay}</div>
+                    <div class="player-name">
+                        ${player.full_name}${injuryStatus}
+                        ${tierDisplay ? `<span class="tier-badge">${tierDisplay}</span>` : ''}
+                    </div>
+                    <div class="player-position ${positionClass}" data-position="${player.position}">
+                        ${player.position}
+                        ${posRankDisplay ? `<span class="pos-rank">${posRankDisplay}</span>` : ''}
+                    </div>
                     <div class="player-team">${player.team}</div>
-                    <div class="player-adp">${player.adp}</div>
+                    <div class="player-adp">
+                        ${player.adp}
+                        ${byeDisplay ? `<div class="bye-week">${byeDisplay}</div>` : ''}
+                    </div>
                     <div class="player-status">
                         <span class="status-${player.status}">${player.status === 'available' ? 'Available' : 'Drafted'}</span>
                     </div>
@@ -588,6 +633,287 @@ class DraftHandlers {
      */
     setLandingHandlers(landingHandlers) {
         this.landingHandlers = landingHandlers;
+    }
+    
+    /**
+     * Initialize rankings selector
+     */
+    async initializeRankingsSelector() {
+        try {
+            console.log('🏈 Initializing rankings selector...');
+            
+            const rankingsSelect = document.getElementById('rankings-select');
+            if (!rankingsSelect) {
+                console.warn('⚠️ Rankings selector not found');
+                return;
+            }
+            
+            // Load available rankings
+            const rankings = await this.rankingsService.getAvailableRankings();
+            
+            // Clear existing options
+            rankingsSelect.innerHTML = '';
+            
+            // Add default option
+            const defaultOption = document.createElement('sl-option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select Rankings';
+            rankingsSelect.appendChild(defaultOption);
+            
+            // Group rankings by type
+            const builtInRankings = rankings.filter(r => r.type === 'built-in');
+            const customRankings = rankings.filter(r => r.type === 'custom');
+            
+            // Add built-in rankings
+            if (builtInRankings.length > 0) {
+                const builtInGroup = document.createElement('sl-option-group');
+                builtInGroup.label = 'Built-in Rankings';
+                
+                builtInRankings.forEach(ranking => {
+                    const option = document.createElement('sl-option');
+                    option.value = ranking.id;
+                    option.textContent = `${ranking.name} (${ranking.scoring} - ${ranking.format})`;
+                    builtInGroup.appendChild(option);
+                });
+                
+                rankingsSelect.appendChild(builtInGroup);
+            }
+            
+            // Add custom rankings
+            if (customRankings.length > 0) {
+                const customGroup = document.createElement('sl-option-group');
+                customGroup.label = 'Custom Rankings';
+                
+                customRankings.forEach(ranking => {
+                    const option = document.createElement('sl-option');
+                    option.value = ranking.id;
+                    option.textContent = ranking.name;
+                    customGroup.appendChild(option);
+                });
+                
+                rankingsSelect.appendChild(customGroup);
+            }
+            
+            // Auto-select first built-in ranking if available
+            if (builtInRankings.length > 0) {
+                rankingsSelect.value = builtInRankings[0].id;
+                await this.handleRankingSelection(builtInRankings[0].id);
+            }
+            
+            console.log(`✅ Rankings selector initialized with ${rankings.length} options`);
+            
+        } catch (error) {
+            console.error('❌ Error initializing rankings selector:', error);
+        }
+    }
+    
+    /**
+     * Handle ranking selection
+     */
+    async handleRankingSelection(rankingId) {
+        try {
+            if (!rankingId) {
+                this.state.currentRankings = null;
+                console.log('🏈 Cleared ranking selection');
+                return;
+            }
+            
+            console.log(`🏈 Loading rankings: ${rankingId}`);
+            
+            // Load ranking data
+            const rankingData = await this.rankingsService.getRankingData(rankingId);
+            this.state.currentRankings = rankingData;
+            
+            // Update player list with rankings
+            this.updatePlayersWithRankings();
+            
+            console.log(`✅ Rankings loaded: ${rankingData.totalPlayers} players`);
+            
+        } catch (error) {
+            console.error('❌ Error loading rankings:', error);
+            this.uiUtils?.showError?.('Failed to load rankings: ' + error.message);
+        }
+    }
+    
+    /**
+     * Update players with ranking data
+     */
+    updatePlayersWithRankings() {
+        if (!this.state.currentRankings || !this.state.players) {
+            return;
+        }
+        
+        console.log('🏈 Updating players with ranking data...');
+        
+        // Add ranking data to each player
+        this.state.players.forEach(player => {
+            const ranking = this.rankingsService.getPlayerRanking(
+                player.full_name || player.first_name + ' ' + player.last_name,
+                player.position
+            );
+            
+            if (ranking) {
+                player.ranking = {
+                    overall_rank: ranking.overall_rank,
+                    position_rank: ranking.position_rank,
+                    tier: ranking.tier,
+                    bye_week: ranking.bye_week
+                };
+            } else {
+                player.ranking = null;
+            }
+        });
+        
+        // Re-filter and display players
+        this.filterPlayersByPosition(this.state.currentPosition);
+        
+        console.log('✅ Players updated with ranking data');
+    }
+    
+    /**
+     * Show upload dialog
+     */
+    showUploadDialog() {
+        const dialog = document.getElementById('upload-dialog');
+        if (dialog) {
+            dialog.show();
+        }
+    }
+    
+    /**
+     * Setup upload dialog handlers
+     */
+    setupUploadDialogHandlers() {
+        const dialog = document.getElementById('upload-dialog');
+        const fileInput = document.getElementById('ranking-file');
+        const nameInput = document.getElementById('ranking-name');
+        const scoringSelect = document.getElementById('scoring-type');
+        const formatSelect = document.getElementById('format-type');
+        const cancelBtn = document.getElementById('cancel-upload');
+        const confirmBtn = document.getElementById('confirm-upload');
+        const previewDiv = document.getElementById('upload-preview');
+        const previewContent = document.getElementById('preview-content');
+        
+        if (!dialog) return;
+        
+        // File selection handler
+        if (fileInput) {
+            fileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        const preview = await this.rankingsService.parseCSVFile(file);
+                        this.showFilePreview(preview, previewDiv, previewContent);
+                        if (confirmBtn) confirmBtn.disabled = false;
+                    } catch (error) {
+                        console.error('❌ Error parsing CSV:', error);
+                        this.uiUtils?.showError?.('Invalid CSV file: ' + error.message);
+                        if (confirmBtn) confirmBtn.disabled = true;
+                    }
+                }
+            });
+        }
+        
+        // Cancel button
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                this.resetUploadDialog();
+                dialog.hide();
+            });
+        }
+        
+        // Confirm upload button
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                await this.handleFileUpload();
+                dialog.hide();
+            });
+        }
+    }
+    
+    /**
+     * Show file preview
+     */
+    showFilePreview(preview, previewDiv, previewContent) {
+        if (!previewDiv || !previewContent) return;
+        
+        let html = `<strong>Headers:</strong> ${preview.headers.join(', ')}<br><br>`;
+        html += `<strong>Sample Data (${preview.previewRows.length} of ${preview.totalRows} rows):</strong><br>`;
+        
+        preview.previewRows.forEach((row, index) => {
+            html += `<br><strong>Row ${index + 1}:</strong><br>`;
+            Object.entries(row).forEach(([key, value]) => {
+                html += `  ${key}: ${value}<br>`;
+            });
+        });
+        
+        previewContent.innerHTML = html;
+        previewDiv.style.display = 'block';
+    }
+    
+    /**
+     * Handle file upload
+     */
+    async handleFileUpload() {
+        try {
+            const fileInput = document.getElementById('ranking-file');
+            const nameInput = document.getElementById('ranking-name');
+            const scoringSelect = document.getElementById('scoring-type');
+            const formatSelect = document.getElementById('format-type');
+            
+            if (!fileInput?.files[0]) {
+                throw new Error('No file selected');
+            }
+            
+            const file = fileInput.files[0];
+            const metadata = {
+                name: nameInput?.value || '',
+                scoring: scoringSelect?.value || 'custom',
+                format: formatSelect?.value || 'custom'
+            };
+            
+            console.log('📤 Uploading ranking file...');
+            
+            const result = await this.rankingsService.uploadRanking(file, metadata);
+            
+            console.log('✅ File uploaded successfully:', result);
+            
+            // Refresh rankings selector
+            await this.initializeRankingsSelector();
+            
+            // Auto-select the uploaded ranking
+            const rankingsSelect = document.getElementById('rankings-select');
+            if (rankingsSelect && result.id) {
+                rankingsSelect.value = result.id;
+                await this.handleRankingSelection(result.id);
+            }
+            
+            this.resetUploadDialog();
+            this.uiUtils?.showSuccess?.('Rankings uploaded successfully!');
+            
+        } catch (error) {
+            console.error('❌ Error uploading file:', error);
+            this.uiUtils?.showError?.('Failed to upload file: ' + error.message);
+        }
+    }
+    
+    /**
+     * Reset upload dialog
+     */
+    resetUploadDialog() {
+        const fileInput = document.getElementById('ranking-file');
+        const nameInput = document.getElementById('ranking-name');
+        const scoringSelect = document.getElementById('scoring-type');
+        const formatSelect = document.getElementById('format-type');
+        const confirmBtn = document.getElementById('confirm-upload');
+        const previewDiv = document.getElementById('upload-preview');
+        
+        if (fileInput) fileInput.value = '';
+        if (nameInput) nameInput.value = '';
+        if (scoringSelect) scoringSelect.value = 'custom';
+        if (formatSelect) formatSelect.value = 'custom';
+        if (confirmBtn) confirmBtn.disabled = true;
+        if (previewDiv) previewDiv.style.display = 'none';
     }
 }
 

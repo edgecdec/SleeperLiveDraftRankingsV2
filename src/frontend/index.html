@@ -179,6 +179,17 @@
                         </div>
                     </div>
                     <div class="draft-controls">
+                        <!-- Rankings Selector -->
+                        <div class="rankings-selector">
+                            <sl-select id="rankings-select" value="" placeholder="Select Rankings" size="medium">
+                                <sl-option value="">Loading rankings...</sl-option>
+                            </sl-select>
+                            <sl-button id="upload-rankings-btn" variant="default" size="medium">
+                                <sl-icon name="upload"></sl-icon>
+                                Upload CSV
+                            </sl-button>
+                        </div>
+                        
                         <div class="connection-status">
                             <div id="connection-indicator" class="status-indicator offline">
                                 <div class="status-dot"></div>
@@ -289,8 +300,56 @@
         </div>
     </div>
 
+    <!-- File Upload Dialog -->
+    <sl-dialog id="upload-dialog" label="Upload Custom Rankings">
+        <div class="upload-form">
+            <div class="form-group">
+                <label for="ranking-file">Select CSV File</label>
+                <input type="file" id="ranking-file" accept=".csv" />
+                <small>CSV must contain at least 'Name' and 'Position' columns</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="ranking-name">Ranking Name (Optional)</label>
+                <sl-input id="ranking-name" placeholder="e.g., My Custom Rankings"></sl-input>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="scoring-type">Scoring Type</label>
+                    <sl-select id="scoring-type" value="custom">
+                        <sl-option value="standard">Standard</sl-option>
+                        <sl-option value="ppr">PPR</sl-option>
+                        <sl-option value="half-ppr">Half PPR</sl-option>
+                        <sl-option value="custom">Custom</sl-option>
+                    </sl-select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="format-type">Format</label>
+                    <sl-select id="format-type" value="custom">
+                        <sl-option value="standard">Standard</sl-option>
+                        <sl-option value="superflex">Superflex</sl-option>
+                        <sl-option value="custom">Custom</sl-option>
+                    </sl-select>
+                </div>
+            </div>
+            
+            <div class="upload-preview" id="upload-preview" style="display: none;">
+                <h4>Preview:</h4>
+                <div id="preview-content"></div>
+            </div>
+        </div>
+        
+        <div slot="footer">
+            <sl-button variant="default" id="cancel-upload">Cancel</sl-button>
+            <sl-button variant="primary" id="confirm-upload" disabled>Upload</sl-button>
+        </div>
+    </sl-dialog>
+
     <!-- JavaScript -->
     <script src="/js/api-service.js"></script>
+    <script src="/js/services/rankings-service.js"></script>
     <script src="/js/handlers/navigation-handlers.js"></script>
     <script src="/js/handlers/landing-handlers.js"></script>
     <script src="/js/handlers/draft-handlers.js"></script>

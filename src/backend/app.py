@@ -21,15 +21,15 @@ from .config import init_paths
 from .api.user import user_bp
 from .api.draft import draft_bp
 from .api.custom_rankings import custom_rankings_bp
+from .rankings_api import rankings_bp
 
 # Try to import rankings (optional)
 try:
-    from .api.rankings import rankings_bp, init_rankings_routes
+    from .api.rankings import init_rankings_routes
     RANKINGS_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️ Rankings system not available: {e}")
     RANKINGS_AVAILABLE = False
-    rankings_bp = None
     init_rankings_routes = None
 
 
@@ -109,12 +109,13 @@ def create_app(debug: bool = False) -> Flask:
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(draft_bp, url_prefix='/api')
     app.register_blueprint(custom_rankings_bp, url_prefix='/api')
+    app.register_blueprint(rankings_bp)  # Rankings API has its own /api prefix
     
-    if RANKINGS_AVAILABLE and rankings_bp:
-        app.register_blueprint(rankings_bp, url_prefix='/api')
-        print("🏈 Rankings API endpoints registered")
-    else:
-        print("⚠️ Rankings API endpoints not available")
+    if RANKINGS_AVAILABLE and init_rankings_routes:
+        init_rankings_routes(app)
+        print("🏈 Additional rankings API endpoints registered")
+    
+    print("🏈 Rankings CSV API endpoints registered")
     
     # Serve main HTML file
     @app.route('/')
