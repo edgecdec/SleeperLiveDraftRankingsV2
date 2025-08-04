@@ -178,6 +178,39 @@ def get_ranking_data(ranking_id):
         # Read CSV data
         df = pd.read_csv(filepath)
         
+        # Define fantasy football positions to include
+        FANTASY_POSITIONS = {'QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DST', 'D/ST'}
+        
+        # Normalize defense positions (DEF, DST, D/ST all become DEF)
+        position_col = None
+        
+        # Find the position column (could be 'position' or 'pos')
+        for col in ['position', 'pos', 'Position', 'Pos']:
+            if col in df.columns:
+                position_col = col
+                break
+        
+        if position_col:
+            # Normalize defense positions before filtering
+            df[position_col] = df[position_col].replace({'DST': 'DEF', 'D/ST': 'DEF'})
+            
+            # Filter to only include fantasy football positions
+            original_count = len(df)
+            df = df[df[position_col].isin(FANTASY_POSITIONS)]
+            filtered_count = len(df)
+            
+            if original_count != filtered_count:
+                removed_count = original_count - filtered_count
+                logger.info(f"Filtered out {removed_count} non-fantasy positions from {ranking_id} (kept {filtered_count} fantasy players)")
+                
+                # Log which positions were removed
+                if original_count > 0:
+                    original_df = pd.read_csv(filepath)
+                    if position_col in original_df.columns:
+                        removed_positions = set(original_df[position_col].unique()) - FANTASY_POSITIONS
+                        if removed_positions:
+                            logger.info(f"Removed positions: {', '.join(sorted(removed_positions))}")
+        
         # Convert to list of dictionaries
         players = df.to_dict('records')
         
