@@ -142,18 +142,6 @@ class SimpleApp {
         
         console.log('ℹ️ No auto-load pattern found in URL');
     }
-            console.log('🎯 Found draft URL:', { leagueId, draftId });
-            
-            // Mark as attempted
-            this.autoLoadAttempted = true;
-            
-            // Load draft directly
-            this.loadDraftFromUrl(leagueId, draftId);
-            return;
-        }
-        
-        console.log('ℹ️ Not a recognized page, no auto-load needed');
-    }
     
     /**
      * Load draft directly from URL parameters
