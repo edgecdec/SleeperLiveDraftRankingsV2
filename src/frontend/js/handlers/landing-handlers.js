@@ -59,24 +59,34 @@ class LandingHandlers {
     setupUserSearchForm() {
         const form = document.getElementById('user-search-form');
         const usernameInput = document.getElementById('username-input');
-        const loadButton = document.querySelector('.search-button'); // Updated selector
+        const seasonSelect = document.getElementById('season-select');
+        const loadButton = document.getElementById('load-user-btn');
         
         console.log('🔍 Form elements found:', {
             form: !!form,
             usernameInput: !!usernameInput,
+            seasonSelect: !!seasonSelect,
             loadButton: !!loadButton
         });
         
-        if (form && usernameInput && loadButton) {
+        if (form && usernameInput && seasonSelect && loadButton) {
             console.log('✅ Setting up user search form');
             
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const username = usernameInput.value.trim();
-                const season = '2025'; // Default season since we don't have a selector
+                const season = seasonSelect.value;
                 
                 if (username) {
                     await this.handleUserSearch(username, season);
+                }
+            });
+            
+            // Season change handler
+            seasonSelect.addEventListener('sl-change', async (e) => {
+                const username = usernameInput.value.trim();
+                if (username) {
+                    await this.handleUserSearch(username, e.target.value);
                 }
             });
             
@@ -85,6 +95,7 @@ class LandingHandlers {
             console.log('⚠️ Some form elements not found:', {
                 form: !!form,
                 usernameInput: !!usernameInput,
+                seasonSelect: !!seasonSelect,
                 loadButton: !!loadButton
             });
         }

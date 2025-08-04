@@ -149,6 +149,14 @@
     align-items: stretch;
 }
 
+.form-group {
+    flex: 1;
+}
+
+.season-group {
+    flex: 0 0 120px; /* Fixed width for season selector */
+}
+
 .username-input {
     flex: 1;
 }

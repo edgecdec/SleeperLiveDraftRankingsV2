@@ -73,25 +73,29 @@ class SimpleApp {
             
             // Fill in the form elements
             const usernameInput = document.getElementById('username-input');
+            const seasonSelect = document.getElementById('season-select');
             
             console.log('🔍 Form elements found:', {
                 usernameInput: !!usernameInput,
-                usernameInputValue: usernameInput?.value
+                seasonSelect: !!seasonSelect,
+                usernameInputValue: usernameInput?.value,
+                seasonSelectValue: seasonSelect?.value
             });
             
-            if (usernameInput) {
+            if (usernameInput && seasonSelect) {
                 // Mark as attempted
                 this.autoLoadAttempted = true;
                 
-                // Set the username value
+                // Set the values
                 usernameInput.value = username;
+                seasonSelect.value = season;
                 
                 console.log('✅ Form values set:', {
                     username: usernameInput.value,
-                    season: season
+                    season: seasonSelect.value
                 });
                 
-                // Trigger the search automatically (season is handled internally)
+                // Trigger the search automatically
                 console.log('🔄 Auto-triggering search for:', { username, season });
                 this.landingHandlers.handleUserSearch(username, season);
             } else {

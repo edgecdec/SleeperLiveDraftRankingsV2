@@ -69,13 +69,25 @@
                                             class="username-input">
                                             <sl-icon name="person-fill" slot="prefix"></sl-icon>
                                         </sl-input>
-                                        <sl-button type="submit" variant="primary" size="large" class="search-button">
+                                        <sl-select id="season-select" value="2025" size="large">
+                                            <sl-option value="2025">2025</sl-option>
+                                            <sl-option value="2024">2024</sl-option>
+                                            <sl-option value="2023">2023</sl-option>
+                                        </sl-select>
+                                        <sl-button id="load-user-btn" type="submit" variant="primary" size="large" class="search-button">
                                             <sl-icon name="search"></sl-icon>
                                             Search
                                         </sl-button>
                                     </div>
                                 </form>
                             </div>
+                        </div>
+
+                        <!-- Error Message -->
+                        <div id="user-error" class="error-state" style="display: none;">
+                            <sl-icon name="exclamation-triangle-fill" class="error-icon"></sl-icon>
+                            <h3>Error</h3>
+                            <p id="user-error-text">An error occurred while loading user data.</p>
                         </div>
 
                         <!-- Loading State -->
