@@ -73,31 +73,71 @@ class SimpleApp {
             
             // Fill in the form elements
             const usernameInput = document.getElementById('username-input');
-            const seasonSelect = document.getElementById('season-select');
             
             console.log('🔍 Form elements found:', {
                 usernameInput: !!usernameInput,
-                seasonSelect: !!seasonSelect,
-                usernameInputValue: usernameInput?.value,
-                seasonSelectValue: seasonSelect?.value
+                usernameInputValue: usernameInput?.value
             });
             
-            if (usernameInput && seasonSelect) {
+            if (usernameInput) {
                 // Mark as attempted
                 this.autoLoadAttempted = true;
                 
-                // Set the values
+                // Set the username value
                 usernameInput.value = username;
-                seasonSelect.value = season;
                 
                 console.log('✅ Form values set:', {
                     username: usernameInput.value,
-                    season: seasonSelect.value
+                    season: season
                 });
                 
-                // Trigger the search automatically
+                // Trigger the search automatically (season is handled internally)
                 console.log('🔄 Auto-triggering search for:', { username, season });
                 this.landingHandlers.handleUserSearch(username, season);
+            } else {
+                console.log('⚠️ Username input not found, retrying in 1 second...');
+                // Retry after a short delay if elements aren't ready
+                setTimeout(() => {
+                    if (!this.autoLoadAttempted) {
+                        this.checkUrlForAutoLoad();
+                    }
+                }, 1000);
+            }
+            return;
+        }
+        
+        // Check for draft URLs: /sleeper/league/{league_id}/draft/{draft_id}
+        const draftMatch = path.match(/^\/sleeper\/league\/([^\/]+)\/draft\/([^\/]+)$/);
+        if (draftMatch) {
+            const leagueId = draftMatch[1];
+            const draftId = draftMatch[2];
+            
+            console.log('🎯 Found draft URL:', { leagueId, draftId });
+            
+            // Mark as attempted
+            this.autoLoadAttempted = true;
+            
+            // Load draft directly
+            console.log('🚀 Loading draft from URL:', { leagueId, draftId });
+            
+            // Create a mock draft object for the handlers
+            const mockDraft = {
+                draft_id: draftId,
+                type: 'snake', // Default type
+                status: 'drafting', // Default status
+                league: {
+                    league_id: leagueId
+                }
+            };
+            
+            // Trigger direct draft selection
+            console.log('🎯 Triggering direct draft selection with:', mockDraft);
+            this.draftHandlers.selectDraft(mockDraft);
+            return;
+        }
+        
+        console.log('ℹ️ No auto-load pattern found in URL');
+    }
             } else {
                 console.error('❌ Form elements not found, retrying in 1000ms...');
                 // Retry after a longer delay in case elements aren't ready
