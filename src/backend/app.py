@@ -126,15 +126,15 @@ def create_app(debug: bool = False) -> Flask:
     # Get static file path
     static_path = get_static_path()
     
-    # Initialize new rankings system for runtime Fantasy Pros generation
-    if NEW_RANKINGS_AVAILABLE and initialize_rankings and ensure_rankings_directory:
+    # Initialize Fantasy Pros provider for runtime rankings generation
+    if NEW_RANKINGS_AVAILABLE:
         try:
+            from .services.fantasy_pros_provider import initialize_fantasy_pros_provider
             data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
-            ensure_rankings_directory(data_dir)
-            initialize_rankings(data_dir)
-            print("🏈 New rankings system initialized - Fantasy Pros generated at runtime")
+            initialize_fantasy_pros_provider(data_dir)
+            print("🏈 Fantasy Pros provider initialized for runtime rankings")
         except Exception as e:
-            print(f"⚠️ Failed to initialize new rankings system: {e}")
+            print(f"⚠️ Failed to initialize Fantasy Pros provider: {e}")
     
     # Register API blueprints
     app.register_blueprint(user_bp, url_prefix='/api')
