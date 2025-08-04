@@ -572,11 +572,9 @@ class DraftHandlers {
                 }
         }
         
-        // Maintain ranking sort order within filtered results
+        // Maintain ranking sort order within filtered results (all players have rankings now)
         this.state.filteredPlayers.sort((a, b) => {
-            const aRank = a.ranking?.overall_rank || a.rank || 9999;
-            const bRank = b.ranking?.overall_rank || b.rank || 9999;
-            return aRank - bRank;
+            return a.ranking.overall_rank - b.ranking.overall_rank;
         });
         
         this.state.currentPosition = position;
@@ -622,14 +620,15 @@ class DraftHandlers {
             const positionClass = player.position.replace('/', '-'); // WR/TE becomes WR-TE
             
             // Get ranking information
+            // Get ranking information (all players have this now)
             const ranking = player.ranking;
-            const rankDisplay = ranking?.overall_rank || player.rank;
-            const posRankDisplay = ranking?.position_rank ? `${ranking.position_rank}` : '';
-            const tierDisplay = ranking?.tier ? `T${ranking.tier}` : '';
-            const byeDisplay = ranking?.bye_week ? `Bye ${ranking.bye_week}` : '';
+            const rankDisplay = ranking.overall_rank;
+            const posRankDisplay = ranking.position_rank;
+            const tierDisplay = ranking.tier ? `T${ranking.tier}` : '';
+            const byeDisplay = ranking.bye_week ? `Bye ${ranking.bye_week}` : '';
             
-            // For ADP column, show the ranking value (since we updated player.adp to match ranking)
-            const adpDisplay = ranking?.overall_rank || player.adp;
+            // ADP shows the same as rank since we're using CSV rankings
+            const adpDisplay = ranking.overall_rank;
             
             return `
                 <div class="player-row ${player.status}" data-player-id="${player.player_id}">
@@ -857,7 +856,9 @@ class DraftHandlers {
         
         console.log('🏈 Updating players with ranking data...');
         
-        // Add ranking data to each player
+        // Add ranking data to each player and filter to only ranked players
+        const rankedPlayers = [];
+        
         this.state.players.forEach(player => {
             const ranking = this.rankingsService.getPlayerRanking(
                 player.full_name || player.first_name + ' ' + player.last_name,
@@ -865,6 +866,7 @@ class DraftHandlers {
             );
             
             if (ranking) {
+                // Only include players that have ranking data
                 player.ranking = {
                     overall_rank: ranking.overall_rank,
                     position_rank: ranking.position_rank,
@@ -875,26 +877,29 @@ class DraftHandlers {
                 // Update the player's rank and ADP to match CSV rankings
                 player.rank = ranking.overall_rank;
                 player.adp = ranking.overall_rank.toString();
-            } else {
-                player.ranking = null;
-                // Keep original mock rank/ADP for players not in rankings
+                
+                rankedPlayers.push(player);
             }
+            // Skip players without ranking data - they won't be displayed
         });
         
-        // Sort players by CSV ranking (overall_rank) - players with rankings first
-        this.state.players.sort((a, b) => {
-            const aRank = a.ranking?.overall_rank || 9999; // Unranked players go to end
+        console.log(`🏈 Filtered to ${rankedPlayers.length} players with ranking data (from ${this.state.players.length} total)`);
+        
+        // Sort players by CSV ranking (overall_rank)
+        rankedPlayers.sort((a, b) => {
+            const aRank = a.ranking?.overall_rank || 9999;
             const bRank = b.ranking?.overall_rank || 9999;
             return aRank - bRank;
         });
         
-        // Update filtered players to maintain sort order
-        this.state.filteredPlayers = [...this.state.players];
+        // Update state to only include ranked players
+        this.state.players = rankedPlayers;
+        this.state.filteredPlayers = [...rankedPlayers];
         
         // Re-filter and display players
         this.filterByPosition(this.state.currentPosition);
         
-        console.log('✅ Players updated with ranking data and sorted by CSV rankings');
+        console.log('✅ Players updated with ranking data and filtered to CSV-only players');
     }
     
     /**
