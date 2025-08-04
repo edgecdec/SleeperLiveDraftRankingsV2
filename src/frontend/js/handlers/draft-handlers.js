@@ -22,6 +22,7 @@ class DraftHandlers {
             myRoster: {},
             draftPicks: [],
             rosteredPlayerIds: new Set(),
+            sleeperPlayerMap: new Map(),
             isRosterVisible: false,
             currentRankings: null
         };
@@ -212,6 +213,9 @@ class DraftHandlers {
                 if (response.league_info) {
                     this.loadRosterData(response.league_info);
                 }
+                
+                // Load Sleeper player database for better ID mapping
+                await this.loadSleeperPlayerData();
                 
                 console.log('✅ Draft data loaded:', this.state.currentDraft);
                 return this.state.currentDraft;
@@ -1080,10 +1084,24 @@ class DraftHandlers {
                 return false;
             }
             
-            // Check by name (for CSV players that might not have matching IDs)
-            if (draftedPlayerNames.has(player.full_name.toLowerCase())) {
-                console.log(`🚫 Filtered out by name: ${player.full_name}`);
-                return false;
+            // Try to map CSV player name to Sleeper ID
+            if (this.state.sleeperPlayerMap && this.state.sleeperPlayerMap.size > 0) {
+                const normalizedName = this.normalizePlayerName(player.full_name);
+                const sleeperId = this.state.sleeperPlayerMap.get(normalizedName);
+                
+                if (sleeperId && draftedPlayerIds.has(sleeperId)) {
+                    console.log(`🚫 Filtered out by mapped ID: ${player.full_name} -> ${sleeperId}`);
+                    return false;
+                }
+            }
+            
+            // Check by name (fallback for CSV players)
+            const normalizedPlayerName = this.normalizePlayerName(player.full_name);
+            for (const draftedName of draftedPlayerNames) {
+                if (normalizedPlayerName === this.normalizePlayerName(draftedName)) {
+                    console.log(`🚫 Filtered out by normalized name: ${player.full_name}`);
+                    return false;
+                }
             }
             
             return true;
@@ -1097,6 +1115,78 @@ class DraftHandlers {
         }
         
         return availablePlayers;
+    }
+    
+    /**
+     * Normalize player name for better matching
+     */
+    normalizePlayerName(name) {
+        if (!name) return '';
+        
+        return name
+            .toLowerCase()
+            .trim()
+            // Remove common suffixes
+            .replace(/\s+(jr\.?|sr\.?|iii?|iv)$/i, '')
+            // Remove periods and apostrophes
+            .replace(/[.']/g, '')
+            // Replace multiple spaces with single space
+            .replace(/\s+/g, ' ')
+            // Handle common name variations
+            .replace(/\bmike\b/g, 'michael')
+            .replace(/\bbob\b/g, 'robert')
+            .replace(/\bbill\b/g, 'william')
+            .replace(/\btom\b/g, 'thomas')
+            .replace(/\bjim\b/g, 'james')
+            .replace(/\bdave\b/g, 'david')
+            .replace(/\bchris\b/g, 'christopher')
+            .replace(/\bmatt\b/g, 'matthew')
+            .replace(/\bdan\b/g, 'daniel')
+            .replace(/\bsteve\b/g, 'steven');
+    }
+    
+    /**
+     * Get Sleeper player data to map names to IDs
+     */
+    async loadSleeperPlayerData() {
+        try {
+            console.log('📡 Loading Sleeper player database for ID mapping...');
+            
+            // Load Sleeper's player database
+            const response = await fetch('https://api.sleeper.app/v1/players/nfl');
+            
+            if (response.ok) {
+                const players = await response.json();
+                
+                // Create name-to-ID mapping
+                const nameToIdMap = new Map();
+                
+                Object.entries(players).forEach(([playerId, playerData]) => {
+                    if (playerData.full_name) {
+                        const normalizedName = this.normalizePlayerName(playerData.full_name);
+                        nameToIdMap.set(normalizedName, playerId);
+                    }
+                    
+                    // Also try first_name + last_name
+                    if (playerData.first_name && playerData.last_name) {
+                        const fullName = `${playerData.first_name} ${playerData.last_name}`;
+                        const normalizedName = this.normalizePlayerName(fullName);
+                        nameToIdMap.set(normalizedName, playerId);
+                    }
+                });
+                
+                this.state.sleeperPlayerMap = nameToIdMap;
+                console.log('✅ Sleeper player database loaded:', nameToIdMap.size, 'players mapped');
+                
+                return nameToIdMap;
+            } else {
+                console.log('⚠️ Failed to load Sleeper player database');
+                return new Map();
+            }
+        } catch (error) {
+            console.error('❌ Error loading Sleeper player database:', error);
+            return new Map();
+        }
     }
     
     /**
