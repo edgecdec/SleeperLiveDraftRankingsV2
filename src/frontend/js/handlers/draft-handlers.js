@@ -572,6 +572,13 @@ class DraftHandlers {
                 }
         }
         
+        // Maintain ranking sort order within filtered results
+        this.state.filteredPlayers.sort((a, b) => {
+            const aRank = a.ranking?.overall_rank || a.rank || 9999;
+            const bRank = b.ranking?.overall_rank || b.rank || 9999;
+            return aRank - bRank;
+        });
+        
         this.state.currentPosition = position;
         
         // Re-render players
@@ -621,6 +628,9 @@ class DraftHandlers {
             const tierDisplay = ranking?.tier ? `T${ranking.tier}` : '';
             const byeDisplay = ranking?.bye_week ? `Bye ${ranking.bye_week}` : '';
             
+            // For ADP column, show the ranking value (since we updated player.adp to match ranking)
+            const adpDisplay = ranking?.overall_rank || player.adp;
+            
             return `
                 <div class="player-row ${player.status}" data-player-id="${player.player_id}">
                     <div class="player-rank">${rankDisplay}</div>
@@ -634,7 +644,7 @@ class DraftHandlers {
                     </div>
                     <div class="player-team">${player.team}</div>
                     <div class="player-adp">
-                        ${player.adp}
+                        ${adpDisplay}
                         ${byeDisplay ? `<div class="bye-week">${byeDisplay}</div>` : ''}
                     </div>
                     <div class="player-status">
@@ -861,15 +871,30 @@ class DraftHandlers {
                     tier: ranking.tier,
                     bye_week: ranking.bye_week
                 };
+                
+                // Update the player's rank and ADP to match CSV rankings
+                player.rank = ranking.overall_rank;
+                player.adp = ranking.overall_rank.toString();
             } else {
                 player.ranking = null;
+                // Keep original mock rank/ADP for players not in rankings
             }
         });
+        
+        // Sort players by CSV ranking (overall_rank) - players with rankings first
+        this.state.players.sort((a, b) => {
+            const aRank = a.ranking?.overall_rank || 9999; // Unranked players go to end
+            const bRank = b.ranking?.overall_rank || 9999;
+            return aRank - bRank;
+        });
+        
+        // Update filtered players to maintain sort order
+        this.state.filteredPlayers = [...this.state.players];
         
         // Re-filter and display players
         this.filterByPosition(this.state.currentPosition);
         
-        console.log('✅ Players updated with ranking data');
+        console.log('✅ Players updated with ranking data and sorted by CSV rankings');
     }
     
     /**
