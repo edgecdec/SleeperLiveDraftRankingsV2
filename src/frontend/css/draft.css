@@ -210,22 +210,22 @@ input[type="file"]:focus {
 
 /* Position-based row coloring - Sleeper Standard Colors */
 .player-row.position-QB {
-    background: linear-gradient(135deg, #fef3e2 0%, #fed7aa 100%);
-    border-left: 4px solid #ea580c;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-left: 4px solid #dc2626;
 }
 
 .player-row.position-RB {
-    background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
-    border-left: 4px solid #059669;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-left: 4px solid #16a34a;
 }
 
 .player-row.position-WR {
-    background: linear-gradient(135deg, #eff6ff 0%, #bfdbfe 100%);
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     border-left: 4px solid #2563eb;
 }
 
 .player-row.position-TE {
-    background: linear-gradient(135deg, #fef7ff 0%, #f3e8ff 100%);
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
     border-left: 4px solid #9333ea;
 }
 
@@ -235,45 +235,45 @@ input[type="file"]:focus {
 }
 
 .player-row.position-DEF, .player-row.position-DST, .player-row.position-D/ST {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border-left: 4px solid #64748b;
 }
 
 /* Hover effects for position rows - Sleeper Colors */
 .player-row.position-QB:hover {
-    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(234, 88, 12, 0.2);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.15);
 }
 
 .player-row.position-RB:hover {
-    background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
+    box-shadow: 0 4px 8px rgba(22, 163, 74, 0.15);
 }
 
 .player-row.position-WR:hover {
-    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15);
 }
 
 .player-row.position-TE:hover {
     background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(147, 51, 234, 0.2);
+    box-shadow: 0 4px 8px rgba(147, 51, 234, 0.15);
 }
 
 .player-row.position-K:hover {
     background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(236, 72, 153, 0.2);
+    box-shadow: 0 4px 8px rgba(236, 72, 153, 0.15);
 }
 
 .player-row.position-DEF:hover, .player-row.position-DST:hover, .player-row.position-D/ST:hover {
-    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(100, 116, 139, 0.2);
+    box-shadow: 0 4px 8px rgba(100, 116, 139, 0.15);
 }
 .player-name-card.QB {
     background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%);
@@ -329,44 +329,44 @@ input[type="file"]:focus {
 
 /* Position colors - Sleeper Standard Colors */
 .player-position.QB {
-    background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+    background: #dc2626;
     color: white;
     border: 1px solid #b91c1c;
-    box-shadow: 0 1px 2px rgba(234, 88, 12, 0.2);
+    box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
 }
 
 .player-position.RB {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    background: #16a34a;
     color: white;
-    border: 1px solid #065f46;
-    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
+    border: 1px solid #15803d;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
 }
 
 .player-position.WR {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: #2563eb;
     color: white;
-    border: 1px solid #1e40af;
+    border: 1px solid #1d4ed8;
     box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
 }
 
 .player-position.TE {
-    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    background: #9333ea;
     color: white;
-    border: 1px solid #6d28d9;
+    border: 1px solid #7c3aed;
     box-shadow: 0 1px 2px rgba(147, 51, 234, 0.2);
 }
 
 .player-position.K {
-    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+    background: #ec4899;
     color: white;
-    border: 1px solid #be185d;
+    border: 1px solid #db2777;
     box-shadow: 0 1px 2px rgba(236, 72, 153, 0.2);
 }
 
 .player-position.DEF, .player-position.DST, .player-position.D/ST {
-    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    background: #64748b;
     color: white;
-    border: 1px solid #334155;
+    border: 1px solid #475569;
     box-shadow: 0 1px 2px rgba(100, 116, 139, 0.2);
 }
 }

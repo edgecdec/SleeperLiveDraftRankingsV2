@@ -198,6 +198,13 @@ class DraftHandlers {
                 if (response.draft_info && response.draft_info.picks) {
                     this.state.draftPicks = response.draft_info.picks;
                     console.log('✅ Draft picks loaded:', response.draft_info.picks.length, 'picks');
+                    console.log('🔍 Sample draft pick:', response.draft_info.picks[0]);
+                } else {
+                    console.log('⚠️ No draft picks found in response');
+                    console.log('🔍 Draft info structure:', response.draft_info);
+                    
+                    // Try to load draft picks directly from Sleeper API
+                    this.loadDraftPicksFromSleeper();
                 }
                 
                 console.log('✅ Draft data loaded:', this.state.currentDraft);
@@ -272,6 +279,40 @@ class DraftHandlers {
             console.error('❌ Error loading player rankings:', error);
             console.warn('⚠️ Falling back to mock data');
             this.loadMockPlayers();
+        }
+    }
+    
+    /**
+     * Load draft picks directly from Sleeper API as fallback
+     */
+    async loadDraftPicksFromSleeper() {
+        if (!this.state.currentDraft || !this.state.currentDraft.draft_id) {
+            console.log('⚠️ No draft ID available for loading picks');
+            return;
+        }
+        
+        try {
+            console.log('📡 Loading draft picks directly from Sleeper API...');
+            const draftId = this.state.currentDraft.draft_id;
+            
+            // Call Sleeper API directly
+            const response = await fetch(`https://api.sleeper.app/v1/draft/${draftId}/picks`);
+            
+            if (response.ok) {
+                const picks = await response.json();
+                this.state.draftPicks = picks || [];
+                console.log('✅ Draft picks loaded from Sleeper:', picks.length, 'picks');
+                
+                if (picks.length > 0) {
+                    console.log('🔍 Sample Sleeper pick:', picks[0]);
+                    // Refresh the player list with new draft picks
+                    this.refreshPlayersAfterDraft();
+                }
+            } else {
+                console.log('⚠️ Failed to load draft picks from Sleeper API');
+            }
+        } catch (error) {
+            console.error('❌ Error loading draft picks from Sleeper:', error);
         }
     }
     
@@ -939,24 +980,44 @@ class DraftHandlers {
         const draftedPlayerNames = new Set();
         
         this.state.draftPicks.forEach(pick => {
+            // Handle Sleeper API format
             if (pick.player_id) {
                 draftedPlayerIds.add(pick.player_id);
             }
-            if (pick.metadata && pick.metadata.first_name && pick.metadata.last_name) {
-                const fullName = `${pick.metadata.first_name} ${pick.metadata.last_name}`;
-                draftedPlayerNames.add(fullName.toLowerCase());
+            
+            // Handle different metadata formats
+            if (pick.metadata) {
+                // Format 1: first_name + last_name
+                if (pick.metadata.first_name && pick.metadata.last_name) {
+                    const fullName = `${pick.metadata.first_name} ${pick.metadata.last_name}`;
+                    draftedPlayerNames.add(fullName.toLowerCase());
+                }
+                // Format 2: full_name
+                if (pick.metadata.full_name) {
+                    draftedPlayerNames.add(pick.metadata.full_name.toLowerCase());
+                }
+            }
+            
+            // Handle direct player name in pick object
+            if (pick.player_name) {
+                draftedPlayerNames.add(pick.player_name.toLowerCase());
             }
         });
+        
+        console.log('🚫 Drafted player IDs:', Array.from(draftedPlayerIds).slice(0, 5), '...');
+        console.log('🚫 Drafted player names:', Array.from(draftedPlayerNames).slice(0, 5), '...');
         
         // Filter out drafted players
         const availablePlayers = players.filter(player => {
             // Check by player ID first
             if (draftedPlayerIds.has(player.player_id)) {
+                console.log(`🚫 Filtered out by ID: ${player.full_name} (${player.player_id})`);
                 return false;
             }
             
             // Check by name (for CSV players that might not have matching IDs)
             if (draftedPlayerNames.has(player.full_name.toLowerCase())) {
+                console.log(`🚫 Filtered out by name: ${player.full_name}`);
                 return false;
             }
             
@@ -966,6 +1027,8 @@ class DraftHandlers {
         const draftedCount = players.length - availablePlayers.length;
         if (draftedCount > 0) {
             console.log(`🚫 Filtered out ${draftedCount} drafted players (${availablePlayers.length} available)`);
+        } else {
+            console.log(`📋 No players filtered - all ${players.length} players still available`);
         }
         
         return availablePlayers;
