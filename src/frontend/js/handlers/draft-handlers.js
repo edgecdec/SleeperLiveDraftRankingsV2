@@ -359,6 +359,17 @@ class DraftHandlers {
                 console.log('✅ Roster data loaded:', rosteredPlayerIds.size, 'rostered players');
                 console.log('🔍 Sample rostered player IDs:', Array.from(rosteredPlayerIds).slice(0, 10));
                 
+                // Debug: Check if problematic players are in roster
+                const problematicPlayerIds = ['4881', '5859', '4866']; // Common IDs for Lamar, DJ Moore, Montgomery
+                console.log('🔍 Checking if problematic players are rostered:');
+                problematicPlayerIds.forEach(id => {
+                    if (rosteredPlayerIds.has(id)) {
+                        console.log(`  ✅ Player ID ${id} IS rostered`);
+                    } else {
+                        console.log(`  ❌ Player ID ${id} NOT rostered`);
+                    }
+                });
+                
                 // Refresh the player list with roster filtering
                 this.refreshPlayersAfterDraft();
                 
@@ -1221,16 +1232,23 @@ class DraftHandlers {
         if (!name) return [];
         
         const variations = new Set();
-        const normalized = this.normalizePlayerName(name);
         
-        // Add the normalized version
-        variations.add(normalized);
+        // Start with original name (basic normalization)
+        let baseName = name.toLowerCase().trim()
+            .replace(/\s+(jr\.?|sr\.?|iii?|iv)$/i, '') // Remove suffixes
+            .replace(/\s+/g, ' '); // Normalize spaces
         
-        // Add the original (normalized basic)
-        variations.add(name.toLowerCase().trim());
+        variations.add(baseName);
+        
+        // Handle periods in initials (D.J. Moore -> DJ Moore, D J Moore, David Moore)
+        let noPeriods = baseName.replace(/\./g, ''); // D.J. Moore -> DJ Moore
+        variations.add(noPeriods);
+        
+        let spacedInitials = baseName.replace(/\./g, ' ').replace(/\s+/g, ' '); // D.J. Moore -> D J Moore
+        variations.add(spacedInitials);
         
         // Split name and try different combinations
-        const parts = normalized.split(' ');
+        const parts = noPeriods.split(' ');
         if (parts.length >= 2) {
             const firstName = parts[0];
             const lastName = parts[parts.length - 1];
@@ -1238,32 +1256,95 @@ class DraftHandlers {
             // Try first + last only
             variations.add(`${firstName} ${lastName}`);
             
+            // Handle specific NFL player mappings
+            const specificMappings = {
+                // D.J. Moore variations
+                'dj moore': ['david moore', 'dj moore', 'd j moore'],
+                'david moore': ['dj moore', 'd j moore', 'david moore'],
+                'd j moore': ['dj moore', 'david moore', 'd j moore'],
+                
+                // Other common D.J./DJ players
+                'dj chark': ['david chark', 'dj chark', 'd j chark'],
+                'david chark': ['dj chark', 'd j chark', 'david chark'],
+                
+                // A.J. variations
+                'aj brown': ['allen brown', 'aj brown', 'a j brown'],
+                'allen brown': ['aj brown', 'a j brown', 'allen brown'],
+                'aj green': ['adriel green', 'aj green', 'a j green'],
+                'adriel green': ['aj green', 'a j green', 'adriel green'],
+                
+                // T.J. variations  
+                'tj watt': ['thomas watt', 'tj watt', 't j watt'],
+                'thomas watt': ['tj watt', 't j watt', 'thomas watt'],
+                'tj hockenson': ['thomas hockenson', 'tj hockenson', 't j hockenson'],
+                'thomas hockenson': ['tj hockenson', 't j hockenson', 'thomas hockenson'],
+                
+                // C.J. variations
+                'cj stroud': ['calvin stroud', 'cj stroud', 'c j stroud'],
+                'calvin stroud': ['cj stroud', 'c j stroud', 'calvin stroud'],
+                'cj anderson': ['calvin anderson', 'cj anderson', 'c j anderson'],
+                'calvin anderson': ['cj anderson', 'c j anderson', 'calvin anderson'],
+                
+                // David/Dave variations
+                'david montgomery': ['dave montgomery', 'david montgomery'],
+                'dave montgomery': ['david montgomery', 'dave montgomery'],
+                'david johnson': ['dave johnson', 'david johnson'],
+                'dave johnson': ['david johnson', 'dave johnson'],
+                
+                // Cameron/Cam variations
+                'cameron skattebo': ['cam skattebo', 'cameron skattebo'],
+                'cam skattebo': ['cameron skattebo', 'cam skattebo'],
+                'cameron newton': ['cam newton', 'cameron newton'],
+                'cam newton': ['cameron newton', 'cam newton'],
+                'cameron akers': ['cam akers', 'cameron akers'],
+                'cam akers': ['cameron akers', 'cam akers'],
+                
+                // Marquise/Hollywood variations
+                'marquise brown': ['hollywood brown', 'marquise brown'],
+                'hollywood brown': ['marquise brown', 'hollywood brown'],
+                
+                // Other common variations
+                'michael thomas': ['mike thomas', 'michael thomas'],
+                'mike thomas': ['michael thomas', 'mike thomas'],
+                'christopher godwin': ['chris godwin', 'christopher godwin'],
+                'chris godwin': ['christopher godwin', 'chris godwin'],
+                'matthew stafford': ['matt stafford', 'matthew stafford'],
+                'matt stafford': ['matthew stafford', 'matt stafford'],
+                'daniel jones': ['danny jones', 'dan jones', 'daniel jones'],
+                'danny jones': ['daniel jones', 'dan jones', 'danny jones'],
+                'dan jones': ['daniel jones', 'danny jones', 'dan jones']
+            };
+            
+            // Add specific mappings
+            const normalizedFullName = `${firstName} ${lastName}`;
+            if (specificMappings[normalizedFullName]) {
+                specificMappings[normalizedFullName].forEach(variation => {
+                    variations.add(variation);
+                });
+            }
+            
             // Try common nickname variations for first name
             const nicknameMap = {
-                'cameron': 'cam',
-                'cam': 'cameron',
-                'marquise': 'hollywood',
-                'hollywood': 'marquise',
-                'michael': 'mike',
-                'mike': 'michael',
-                'christopher': 'chris',
-                'chris': 'christopher',
-                'matthew': 'matt',
-                'matt': 'matthew',
-                'daniel': 'dan',
-                'dan': 'daniel',
-                'thomas': 'tom',
-                'tom': 'thomas',
-                'james': 'jim',
-                'jim': 'james',
-                'robert': 'bob',
-                'bob': 'robert',
-                'william': 'bill',
-                'bill': 'william',
-                'david': 'dave',
-                'dave': 'david',
-                'steven': 'steve',
-                'steve': 'steven'
+                'cameron': 'cam', 'cam': 'cameron',
+                'david': 'dave', 'dave': 'david',
+                'michael': 'mike', 'mike': 'michael',
+                'christopher': 'chris', 'chris': 'christopher',
+                'matthew': 'matt', 'matt': 'matthew',
+                'daniel': 'dan', 'dan': 'daniel', 'danny': 'daniel',
+                'thomas': 'tom', 'tom': 'thomas',
+                'james': 'jim', 'jim': 'james',
+                'robert': 'bob', 'bob': 'robert',
+                'william': 'bill', 'bill': 'william',
+                'steven': 'steve', 'steve': 'steven',
+                'anthony': 'tony', 'tony': 'anthony',
+                'richard': 'rick', 'rick': 'richard',
+                'timothy': 'tim', 'tim': 'timothy',
+                'patrick': 'pat', 'pat': 'patrick',
+                'nicholas': 'nick', 'nick': 'nicholas',
+                'alexander': 'alex', 'alex': 'alexander',
+                'benjamin': 'ben', 'ben': 'benjamin',
+                'samuel': 'sam', 'sam': 'samuel',
+                'joseph': 'joe', 'joe': 'joseph'
             };
             
             if (nicknameMap[firstName]) {
@@ -1271,7 +1352,8 @@ class DraftHandlers {
             }
         }
         
-        return Array.from(variations);
+        // Remove empty strings and return unique variations
+        return Array.from(variations).filter(v => v && v.trim());
     }
     
     /**
@@ -1314,12 +1396,23 @@ class DraftHandlers {
                 this.state.sleeperPlayerMap = nameToIdMap;
                 console.log('✅ Sleeper player database loaded:', nameToIdMap.size, 'name variations mapped');
                 
-                // Log some specific mappings for debugging
-                console.log('🔍 Sample mappings:');
-                console.log('  cam skattebo ->', nameToIdMap.get('cam skattebo'));
-                console.log('  cameron skattebo ->', nameToIdMap.get('cameron skattebo'));
-                console.log('  hollywood brown ->', nameToIdMap.get('hollywood brown'));
-                console.log('  marquise brown ->', nameToIdMap.get('marquise brown'));
+                // Debug specific problematic players
+                const problematicPlayers = [
+                    'lamar jackson', 'dj moore', 'd.j. moore', 'david moore', 'david montgomery', 'dave montgomery'
+                ];
+                
+                console.log('🔍 Debugging problematic players:');
+                problematicPlayers.forEach(name => {
+                    const variations = this.generateNameVariations(name);
+                    console.log(`  ${name}:`, variations);
+                    
+                    variations.forEach(variation => {
+                        const id = nameToIdMap.get(variation);
+                        if (id) {
+                            console.log(`    ✅ ${variation} -> ${id}`);
+                        }
+                    });
+                });
                 
                 return nameToIdMap;
             } else {
