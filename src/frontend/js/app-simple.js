@@ -22,9 +22,44 @@ class SimpleApp {
             // Setup event handlers
             this.setupEventHandlers();
             
+            // Check for URL parameters and auto-load user
+            this.checkUrlForAutoLoad();
+            
             console.log('✅ Simple app initialized successfully');
         } catch (error) {
             console.error('❌ Simple app initialization failed:', error);
+        }
+    }
+    
+    /**
+     * Check URL for auto-loading user data
+     */
+    checkUrlForAutoLoad() {
+        const path = window.location.pathname;
+        console.log('🔍 Checking URL path:', path);
+        
+        // Check if we're on a user page: /user/username
+        const userMatch = path.match(/^\/user\/([^\/]+)$/);
+        if (userMatch) {
+            const username = userMatch[1];
+            console.log('🎯 Found username in URL:', username);
+            
+            // Get season from URL params or default to 2025
+            const urlParams = new URLSearchParams(window.location.search);
+            const season = urlParams.get('season') || '2025';
+            
+            // Fill in the form and trigger search
+            const usernameInput = document.getElementById('username-input');
+            const seasonSelect = document.getElementById('season-select');
+            
+            if (usernameInput && seasonSelect) {
+                usernameInput.value = username;
+                seasonSelect.value = season;
+                
+                // Trigger the search automatically
+                console.log('🔄 Auto-triggering search for:', { username, season });
+                this.landingHandlers.handleUserSearch(username, season);
+            }
         }
     }
     

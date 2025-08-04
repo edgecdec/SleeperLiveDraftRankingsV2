@@ -11,7 +11,7 @@ This module creates and configures the Flask application with:
 import os
 import sys
 from pathlib import Path
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
 
 # Import configuration
@@ -116,6 +116,36 @@ def create_app(debug: bool = False) -> Flask:
     else:
         print("⚠️ Rankings API endpoints not available")
     
+    # SPA routes MUST be defined FIRST, before any catch-all routes
+    @app.route('/user/<username>')
+    @app.route('/sleeper/<path:path>')
+    @app.route('/mock/<path:path>')
+    def serve_spa_routes(username=None, path=None):
+        """
+        Serve the main HTML file for frontend routes.
+        This enables direct URL access and page refresh for SPA routes.
+        """
+        print(f"🎯 SPA route called with username={username}, path={path}")
+        try:
+            return send_from_directory(static_path, 'index.html')
+        except FileNotFoundError:
+            return jsonify({
+                'error': 'Frontend files not found',
+                'path': static_path,
+                'help': 'Make sure frontend files are built and in the correct location'
+            }), 404
+    
+    print("✅ SPA routes registered")
+    
+    # Test route to debug SPA routing
+    @app.route('/test-user/<username>')
+    def test_user_route(username):
+        """Test route to debug SPA routing"""
+        print(f"🧪 Test route called with username={username}")
+        return jsonify({'message': f'Test route works for user: {username}'})
+    
+    print("✅ Test route registered")
+
     # Serve main HTML file
     @app.route('/')
     def serve_index():
@@ -128,15 +158,37 @@ def create_app(debug: bool = False) -> Flask:
                 'path': static_path,
                 'help': 'Make sure frontend files are built and in the correct location'
             }), 404
-    
-    # Serve static assets
-    @app.route('/<path:filename>')
-    def serve_static(filename):
-        """Serve static files (CSS, JS, images, etc.)"""
+
+    # Serve static assets - handle specific directories
+    @app.route('/js/<path:filename>')
+    def serve_js(filename):
+        """Serve JavaScript files"""
         try:
-            return send_from_directory(static_path, filename)
+            return send_from_directory(os.path.join(static_path, 'js'), filename)
         except FileNotFoundError:
-            return jsonify({'error': f'File not found: {filename}'}), 404
+            return jsonify({'error': f'JS file not found: {filename}'}), 404
+    
+    @app.route('/css/<path:filename>')
+    def serve_css(filename):
+        """Serve CSS files"""
+        try:
+            return send_from_directory(os.path.join(static_path, 'css'), filename)
+        except FileNotFoundError:
+            return jsonify({'error': f'CSS file not found: {filename}'}), 404
+    
+    # Fallback for other static files with extensions
+    @app.route('/<filename>')
+    def serve_static_root(filename):
+        """Serve static files from root (like favicon.ico)"""
+        # Only serve files with extensions to avoid catching SPA routes
+        if '.' in filename:
+            try:
+                return send_from_directory(static_path, filename)
+            except FileNotFoundError:
+                return jsonify({'error': f'File not found: {filename}'}), 404
+        else:
+            # No extension, probably a SPA route that we missed
+            return jsonify({'error': f'Route not found: /{filename}'}), 404
     
     # Health check endpoint
     @app.route('/api/health')
@@ -149,6 +201,25 @@ def create_app(debug: bool = False) -> Flask:
             'static_path': static_path,
             'base_path': base_path
         })
+    
+    # Debug endpoint to see registered routes
+    @app.route('/api/debug/routes')
+    def debug_routes():
+        """Debug endpoint to see all registered routes"""
+        routes = []
+        for rule in app.url_map.iter_rules():
+            routes.append({
+                'endpoint': rule.endpoint,
+                'methods': list(rule.methods),
+                'rule': str(rule)
+            })
+        return jsonify({'routes': routes})
+    
+    # Test route to debug SPA routing
+    @app.route('/test-user/<username>')
+    def test_user_route(username):
+        """Test route to debug SPA routing"""
+        return jsonify({'message': f'Test route works for user: {username}'})
     
     # Basic API info endpoint
     @app.route('/api/info')
