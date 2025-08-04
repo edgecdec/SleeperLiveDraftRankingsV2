@@ -55,15 +55,6 @@ class DraftHandlers {
             });
         }
         
-        // Position tabs
-        const positionTabs = document.querySelectorAll('.position-tab');
-        positionTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const position = tab.dataset.position;
-                this.filterByPosition(position);
-            });
-        });
-        
         // Listen for draft selection events
         document.addEventListener('draftSelected', (event) => {
             this.handleDraftSelected(event.detail);
@@ -319,42 +310,15 @@ class DraftHandlers {
     }
     
     /**
-     * Filter players by position
-     */
-    filterByPosition(position) {
-        console.log('🔍 Filtering by position:', position);
-        
-        // Update active tab
-        document.querySelectorAll('.position-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.querySelector(`[data-position="${position}"]`).classList.add('active');
-        
-        // Filter players
-        if (position === 'ALL') {
-            this.state.filteredPlayers = this.state.players;
-        } else {
-            this.state.filteredPlayers = this.state.players.filter(player => 
-                player.position === position
-            );
-        }
-        
-        this.state.currentPosition = position;
-        
-        // Re-render players
-        this.renderPlayers();
-    }
-    
-    /**
-     * Render players list
+     * Render players in V1-style position sections
      */
     renderPlayers() {
-        const playersList = document.getElementById('players-list');
-        if (!playersList) return;
+        const sectionsContainer = document.getElementById('position-sections');
+        if (!sectionsContainer) return;
         
-        if (this.state.filteredPlayers.length === 0) {
-            playersList.innerHTML = `
-                <div class="loading-players">
+        if (this.state.players.length === 0) {
+            sectionsContainer.innerHTML = `
+                <div class="position-section-loading">
                     <sl-icon name="hourglass"></sl-icon>
                     Loading players...
                 </div>
@@ -362,30 +326,141 @@ class DraftHandlers {
             return;
         }
         
-        playersList.innerHTML = this.state.filteredPlayers.map(player => `
-            <div class="player-row ${player.status}" data-player-id="${player.player_id}">
-                <div class="player-rank">${player.rank}</div>
-                <div class="player-name">${player.full_name}</div>
-                <div class="player-position ${player.position}">${player.position}</div>
-                <div class="player-team">${player.team}</div>
-                <div class="player-adp">${player.adp}</div>
-                <div class="player-status">
-                    <span class="status-${player.status}">${player.status === 'available' ? 'Available' : 'Drafted'}</span>
-                </div>
-            </div>
-        `).join('');
+        // Group players by position
+        const playersByPosition = this.groupPlayersByPosition(this.state.players);
         
-        // Add click handlers for player selection
-        playersList.querySelectorAll('.player-row').forEach(row => {
-            if (!row.classList.contains('drafted')) {
-                row.addEventListener('click', () => {
-                    const playerId = row.dataset.playerId;
-                    this.handlePlayerSelect(playerId);
-                });
+        // Define position order (like V1)
+        const positionOrder = ['ALL', 'SUPER_FLEX', 'FLEX', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
+        
+        sectionsContainer.innerHTML = '';
+        
+        positionOrder.forEach(position => {
+            const players = playersByPosition[position] || [];
+            if (players.length === 0 && position !== 'ALL') return;
+            
+            const section = this.createPositionSection(position, players);
+            sectionsContainer.appendChild(section);
+        });
+        
+        console.log('✅ Rendered position sections for', this.state.players.length, 'players');
+    }
+    
+    /**
+     * Group players by position (including multi-position groups)
+     */
+    groupPlayersByPosition(players) {
+        const groups = {
+            'ALL': [...players],
+            'QB': [],
+            'RB': [],
+            'WR': [],
+            'TE': [],
+            'K': [],
+            'DEF': [],
+            'FLEX': [], // RB/WR/TE
+            'SUPER_FLEX': [] // QB/RB/WR/TE
+        };
+        
+        players.forEach(player => {
+            const pos = player.position;
+            
+            // Add to specific position
+            if (groups[pos]) {
+                groups[pos].push(player);
+            }
+            
+            // Add to FLEX (RB/WR/TE)
+            if (['RB', 'WR', 'TE'].includes(pos)) {
+                groups['FLEX'].push(player);
+            }
+            
+            // Add to SUPER_FLEX (QB/RB/WR/TE)
+            if (['QB', 'RB', 'WR', 'TE'].includes(pos)) {
+                groups['SUPER_FLEX'].push(player);
             }
         });
         
-        console.log('✅ Rendered', this.state.filteredPlayers.length, 'players');
+        return groups;
+    }
+    
+    /**
+     * Create a position section element
+     */
+    createPositionSection(position, players) {
+        const section = document.createElement('div');
+        section.className = 'position-section';
+        section.dataset.position = position;
+        
+        const positionNames = {
+            'ALL': 'All Players',
+            'QB': 'Quarterbacks',
+            'RB': 'Running Backs', 
+            'WR': 'Wide Receivers',
+            'TE': 'Tight Ends',
+            'K': 'Kickers',
+            'DEF': 'Defense/ST',
+            'FLEX': 'Flex (RB/WR/TE)',
+            'SUPER_FLEX': 'Super Flex (QB/RB/WR/TE)'
+        };
+        
+        section.innerHTML = `
+            <div class="position-section-header" onclick="window.app.draftHandlers.toggleSection('${position}')">
+                <div class="position-section-title">
+                    <div class="position-icon ${position}">${position}</div>
+                    <div>
+                        <div class="position-title">${positionNames[position]}</div>
+                        <div class="position-count">${players.length} players</div>
+                    </div>
+                </div>
+                <div class="position-section-controls">
+                    <sl-icon name="chevron-down" class="collapse-icon"></sl-icon>
+                </div>
+            </div>
+            <div class="position-section-content">
+                <div class="position-players">
+                    ${players.map(player => this.createPlayerCard(player)).join('')}
+                </div>
+            </div>
+        `;
+        
+        return section;
+    }
+    
+    /**
+     * Create a player card element
+     */
+    createPlayerCard(player) {
+        const injuryStatus = player.injury_status ? ` (${player.injury_status})` : '';
+        const byeWeek = player.bye_week ? `Bye: ${player.bye_week}` : '';
+        const details = [byeWeek, `Exp: ${player.years_exp || 0}y`].filter(Boolean).join(' • ');
+        
+        return `
+            <div class="player-card ${player.status}" data-player-id="${player.player_id}" onclick="window.app.draftHandlers.handlePlayerSelect('${player.player_id}')">
+                <div class="player-info">
+                    <div class="player-rank">${player.rank}</div>
+                    <div class="player-name-info">
+                        <div class="player-name">${player.full_name}${injuryStatus}</div>
+                        ${details ? `<div class="player-details">${details}</div>` : ''}
+                    </div>
+                    <div class="player-position ${player.position}">${player.position}</div>
+                    <div class="player-team">${player.team}</div>
+                    <div class="player-adp">${player.adp}</div>
+                    <div class="player-status">
+                        <span class="status-${player.status}">${player.status === 'available' ? 'Available' : 'Drafted'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Toggle position section collapse/expand
+     */
+    toggleSection(position) {
+        const section = document.querySelector(`[data-position="${position}"]`);
+        if (section) {
+            section.classList.toggle('collapsed');
+        }
     }
     
     /**
