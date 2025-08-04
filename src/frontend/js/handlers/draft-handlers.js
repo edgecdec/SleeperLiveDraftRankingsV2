@@ -95,11 +95,16 @@ class DraftHandlers {
      * Show the draft view and hide league selection
      */
     showDraftView() {
-        const userSetupPage = document.getElementById('user-setup-page');
-        const draftSection = document.getElementById('draft-section');
-        
-        if (userSetupPage) userSetupPage.style.display = 'none';
-        if (draftSection) draftSection.style.display = 'block';
+        if (this.navigationHandlers) {
+            this.navigationHandlers.showDraftPage();
+        } else {
+            // Fallback for backward compatibility
+            const landingSection = document.getElementById('landing-section');
+            const draftSection = document.getElementById('draft-section');
+            
+            if (landingSection) landingSection.style.display = 'none';
+            if (draftSection) draftSection.style.display = 'flex';
+        }
         
         // Update page title
         document.title = 'Fantasy Draft Assistant - Draft Board';
@@ -111,11 +116,16 @@ class DraftHandlers {
      * Show league selection and hide draft view
      */
     showLeagueSelection() {
-        const userSetupPage = document.getElementById('user-setup-page');
-        const draftSection = document.getElementById('draft-section');
-        
-        if (userSetupPage) userSetupPage.style.display = 'block';
-        if (draftSection) draftSection.style.display = 'none';
+        if (this.navigationHandlers) {
+            this.navigationHandlers.showLandingPage();
+        } else {
+            // Fallback for backward compatibility
+            const landingSection = document.getElementById('landing-section');
+            const draftSection = document.getElementById('draft-section');
+            
+            if (landingSection) landingSection.style.display = 'flex';
+            if (draftSection) draftSection.style.display = 'none';
+        }
         
         // Update page title
         document.title = 'Fantasy Draft Assistant';

@@ -1,0 +1,124 @@
+<!-- Draft Page -->
+<div id="draft-section" class="draft-section" style="display: none;">
+    <!-- Draft Header -->
+    <div class="draft-header">
+        <div class="draft-header-content">
+            <div class="draft-title-section">
+                <button id="back-to-leagues-btn" class="back-button">
+                    <sl-icon name="arrow-left"></sl-icon>
+                    Back to Leagues
+                </button>
+                <div class="draft-title-info">
+                    <h1 id="draft-title">Draft Board</h1>
+                    <p id="draft-subtitle">Loading draft information...</p>
+                </div>
+            </div>
+            <div class="draft-controls">
+                <div class="connection-status">
+                    <div id="connection-indicator" class="status-indicator offline">
+                        <div class="status-dot"></div>
+                        <span id="connection-text">Connecting...</span>
+                    </div>
+                </div>
+                <button id="toggle-roster-btn" class="roster-toggle-btn">
+                    <sl-icon name="people-fill"></sl-icon>
+                    <span>Show Roster</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draft Content -->
+    <div class="draft-content">
+        <!-- Main Draft Board -->
+        <div class="draft-board-container">
+            <!-- Position Tabs -->
+            <div class="position-tabs" id="position-tabs">
+                <!-- Tabs will be populated dynamically based on league -->
+            </div>
+
+            <!-- Player List -->
+            <div class="players-container">
+                <div class="players-header">
+                    <div class="player-rank">Rank</div>
+                    <div class="player-name">Player</div>
+                    <div class="player-position">Pos</div>
+                    <div class="player-team">Team</div>
+                    <div class="player-adp">ADP</div>
+                    <div class="player-status">Status</div>
+                </div>
+                <div id="players-list" class="players-list">
+                    <!-- Players will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Roster Sidebar -->
+        <div id="roster-sidebar" class="roster-sidebar hidden">
+            <div class="roster-header">
+                <h3>My Team</h3>
+                <button id="close-roster-btn" class="close-roster-btn">
+                    <sl-icon name="x"></sl-icon>
+                </button>
+            </div>
+            <div class="roster-content">
+                <div class="roster-positions">
+                    <div class="roster-position">
+                        <div class="position-label">QB</div>
+                        <div class="position-slots" data-position="QB">
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                    <div class="roster-position">
+                        <div class="position-label">RB</div>
+                        <div class="position-slots" data-position="RB">
+                            <div class="roster-slot empty">Empty</div>
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                    <div class="roster-position">
+                        <div class="position-label">WR</div>
+                        <div class="position-slots" data-position="WR">
+                            <div class="roster-slot empty">Empty</div>
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                    <div class="roster-position">
+                        <div class="position-label">TE</div>
+                        <div class="position-slots" data-position="TE">
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                    <div class="roster-position">
+                        <div class="position-label">FLEX</div>
+                        <div class="position-slots" data-position="FLEX">
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                    <div class="roster-position">
+                        <div class="position-label">K</div>
+                        <div class="position-slots" data-position="K">
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                    <div class="roster-position">
+                        <div class="position-label">DEF</div>
+                        <div class="position-slots" data-position="DEF">
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                    <div class="roster-position">
+                        <div class="position-label">BENCH</div>
+                        <div class="position-slots" data-position="BENCH">
+                            <div class="roster-slot empty">Empty</div>
+                            <div class="roster-slot empty">Empty</div>
+                            <div class="roster-slot empty">Empty</div>
+                            <div class="roster-slot empty">Empty</div>
+                            <div class="roster-slot empty">Empty</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

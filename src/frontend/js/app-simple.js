@@ -5,8 +5,9 @@
 class SimpleApp {
     constructor() {
         this.apiService = new ApiService();
-        this.landingHandlers = new LandingHandlers(this.apiService, null);
-        this.draftHandlers = new DraftHandlers(this.apiService, null);
+        this.navigationHandlers = new NavigationHandlers();
+        this.landingHandlers = new LandingHandlers(this.apiService, this.navigationHandlers);
+        this.draftHandlers = new DraftHandlers(this.apiService, this.navigationHandlers);
         this.autoLoadAttempted = false; // Prevent multiple auto-load attempts
         
         // Set up cross-references
