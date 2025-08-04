@@ -8,6 +8,7 @@
 @import url('base.css');
 
 /* Component-specific styles */
+@import url('landing.css');
 @import url('welcome.css');
 @import url('draft-controls.css');
 @import url('draft-board.css');

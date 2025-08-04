@@ -38,54 +38,173 @@
 
         <!-- Main Content -->
         <main class="app-main">
-            <!-- Welcome Section -->
+            <!-- Landing Page -->
             <section id="welcome-section" class="section">
-                <sl-card class="welcome-card">
-                    <div slot="header">
-                        <h2>Welcome to Your Draft Assistant!</h2>
-                        <p>This application helps you make better fantasy football draft picks by providing real-time player rankings and analysis.</p>
-                    </div>
-                    
-                    <div class="feature-grid">
-                        <sl-card class="feature-card">
-                            <div class="feature-icon">📊</div>
-                            <h3>Live Rankings</h3>
-                            <p>Real-time player rankings based on your league format</p>
-                        </sl-card>
-                        
-                        <sl-card class="feature-card">
-                            <div class="feature-icon">🎯</div>
-                            <h3>Smart Filtering</h3>
-                            <p>Automatically filters out drafted and rostered players</p>
-                        </sl-card>
-                        
-                        <sl-card class="feature-card">
-                            <div class="feature-icon">⚡</div>
-                            <h3>Fast & Local</h3>
-                            <p>Runs entirely on your computer - lightning fast</p>
-                        </sl-card>
-                        
-                        <sl-card class="feature-card">
-                            <div class="feature-icon">🔧</div>
-                            <h3>Zero Setup</h3>
-                            <p>Single executable - no installation needed</p>
-                        </sl-card>
-                    </div>
+                <div class="landing-container">
+                    <div class="landing-content">
+                        <!-- Header -->
+                        <div class="landing-header">
+                            <div class="landing-title">
+                                <sl-icon name="trophy-fill" style="font-size: 3rem; color: #3b82f6;"></sl-icon>
+                                <h1>Fantasy Draft Assistant</h1>
+                            </div>
+                            <p class="landing-subtitle">Manage your drafts, upload custom rankings, and connect to mock drafts</p>
+                        </div>
 
-                    <div slot="footer" class="action-buttons">
-                        <sl-button id="get-started-btn" variant="primary" size="large">
-                            <sl-icon slot="prefix" name="play-fill"></sl-icon>
-                            Get Started
-                        </sl-button>
-                        <sl-button id="test-connection-btn" variant="neutral" size="large">
-                            <sl-icon slot="prefix" name="wifi"></sl-icon>
-                            Test Connection
-                        </sl-button>
+                        <!-- Tab Navigation -->
+                        <div class="tab-navigation">
+                            <div class="tab-nav-container">
+                                <button id="leagues-tab" class="tab-button active">
+                                    <sl-icon name="people-fill"></sl-icon>
+                                    <span>My Leagues</span>
+                                </button>
+                                <button id="mock-draft-tab" class="tab-button">
+                                    <sl-icon name="target"></sl-icon>
+                                    <span>Mock Draft</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content">
+                            <!-- My Leagues Tab -->
+                            <div id="leagues-tab-content" class="tab-panel">
+                                <div class="landing-card">
+                                    <div class="card-header">
+                                        <h2>Connect to Sleeper</h2>
+                                        <p>Enter your Sleeper username to load your leagues and drafts</p>
+                                    </div>
+                                    <div class="card-content">
+                                        <!-- Search Form -->
+                                        <form id="user-search-form" class="search-form">
+                                            <div class="form-group">
+                                                <label for="username-input">Sleeper Username</label>
+                                                <sl-input 
+                                                    id="username-input" 
+                                                    placeholder="Enter your username"
+                                                    help-text="This is your Sleeper app username"
+                                                    clearable>
+                                                    <sl-icon slot="prefix" name="person-fill"></sl-icon>
+                                                </sl-input>
+                                            </div>
+                                            
+                                            <div class="form-group season-select">
+                                                <label for="season-select">Season</label>
+                                                <sl-select id="season-select" value="2025">
+                                                    <sl-option value="2025">2025</sl-option>
+                                                    <sl-option value="2024">2024</sl-option>
+                                                    <sl-option value="2023">2023</sl-option>
+                                                </sl-select>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <sl-button id="load-user-btn" type="submit" variant="primary" size="large" class="search-button">
+                                                    <sl-icon slot="prefix" name="search"></sl-icon>
+                                                    Search
+                                                </sl-button>
+                                            </div>
+                                        </form>
+
+                                        <!-- Error Message -->
+                                        <div id="user-error" class="error-card" style="display: none;">
+                                            <div class="error-content">
+                                                <sl-icon name="exclamation-triangle-fill"></sl-icon>
+                                                <p id="user-error-text"></p>
+                                            </div>
+                                        </div>
+
+                                        <!-- User Info -->
+                                        <div id="user-info" class="user-info-card landing-card" style="display: none;">
+                                            <div class="card-content">
+                                                <div class="user-info-content">
+                                                    <div class="user-avatar">
+                                                        <img id="user-avatar-img" style="display: none;" />
+                                                        <sl-icon id="user-avatar-icon" name="person-fill"></sl-icon>
+                                                    </div>
+                                                    <div class="user-details">
+                                                        <h3 id="user-display-name"></h3>
+                                                        <p id="user-username" class="username"></p>
+                                                        <p id="user-league-count" class="league-count"></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Leagues List -->
+                                        <div id="leagues-section" style="display: none;">
+                                            <div class="leagues-section">
+                                                <h3>Select a League & Draft</h3>
+                                                <div id="leagues-list">
+                                                    <!-- Leagues will be populated here -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Empty State -->
+                                        <div id="leagues-empty" class="empty-state" style="display: none;">
+                                            <sl-icon name="trophy"></sl-icon>
+                                            <h3>No Leagues Found</h3>
+                                            <p id="empty-message">No leagues found for this user in the selected season.</p>
+                                            <p class="help-text">Try selecting a different season or check your Sleeper account.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mock Draft Tab -->
+                            <div id="mock-draft-tab-content" class="tab-panel" style="display: none;">
+                                <div class="mock-draft-container">
+                                    <div class="landing-card">
+                                        <div class="card-content">
+                                            <div class="mock-draft-header">
+                                                <sl-icon name="target"></sl-icon>
+                                                <h2>Connect to Mock Draft</h2>
+                                                <p>Enter a Sleeper mock draft ID to connect and track the draft in real-time</p>
+                                            </div>
+
+                                            <form id="mock-draft-form" class="mock-draft-form">
+                                                <sl-input 
+                                                    id="mock-draft-id" 
+                                                    label="Mock Draft ID"
+                                                    placeholder="e.g., 123456789"
+                                                    help-text="Find this in your Sleeper mock draft URL"
+                                                    size="large">
+                                                </sl-input>
+
+                                                <!-- Error Message -->
+                                                <div id="mock-draft-error" class="error-card" style="display: none;">
+                                                    <div class="error-content">
+                                                        <sl-icon name="exclamation-triangle-fill"></sl-icon>
+                                                        <p id="mock-draft-error-text"></p>
+                                                    </div>
+                                                </div>
+
+                                                <sl-button id="connect-mock-draft-btn" type="submit" variant="primary" size="large" style="width: 100%;">
+                                                    <sl-icon slot="prefix" name="target"></sl-icon>
+                                                    Connect to Mock Draft
+                                                </sl-button>
+                                            </form>
+
+                                            <div class="mock-draft-help">
+                                                <h3>How to find your Mock Draft ID:</h3>
+                                                <ol>
+                                                    <li>Go to your Sleeper mock draft</li>
+                                                    <li>Look at the URL in your browser</li>
+                                                    <li>Copy the numbers at the end of the URL</li>
+                                                    <li>Paste them in the field above</li>
+                                                </ol>
+                                                <p class="note"><strong>Note:</strong> This only works with Sleeper mock drafts, not live league drafts.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </sl-card>
+                </div>
             </section>
 
-            <!-- User Setup Section -->
+            <!-- User Setup Section (Hidden - Legacy) -->
             <section id="user-setup-section" class="section" style="display: none;">
                 <sl-card class="setup-card">
                     <div slot="header">
@@ -95,7 +214,7 @@
                     
                     <div class="setup-form">
                         <sl-input 
-                            id="username-input" 
+                            id="username-input-legacy" 
                             label="Sleeper Username" 
                             placeholder="Enter your username"
                             help-text="This is your Sleeper app username"
@@ -104,7 +223,7 @@
                         </sl-input>
                         
                         <div class="form-actions">
-                            <sl-button id="load-user-btn" variant="primary" loading>
+                            <sl-button id="load-user-btn-legacy" variant="primary" loading>
                                 <sl-icon slot="prefix" name="download"></sl-icon>
                                 Load My Leagues
                             </sl-button>
@@ -117,7 +236,7 @@
                 </sl-card>
             </section>
 
-            <!-- League Selection Section -->
+            <!-- League Selection Section (Hidden - Legacy) -->
             <section id="league-select-section" class="section" style="display: none;">
                 <sl-card class="league-select-card">
                     <div slot="header">

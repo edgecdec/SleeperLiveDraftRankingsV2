@@ -169,6 +169,30 @@ class EventHandlers {
      * Setup main navigation buttons
      */
     setupNavigationButtons() {
+        // Tab navigation for landing page
+        const leaguesTab = document.getElementById('leagues-tab');
+        const mockDraftTab = document.getElementById('mock-draft-tab');
+        const leaguesContent = document.getElementById('leagues-tab-content');
+        const mockDraftContent = document.getElementById('mock-draft-tab-content');
+        
+        if (leaguesTab && mockDraftTab) {
+            console.log('✅ Setting up landing page tab navigation');
+            leaguesTab.addEventListener('click', () => {
+                leaguesTab.classList.add('active');
+                mockDraftTab.classList.remove('active');
+                leaguesContent.style.display = 'block';
+                mockDraftContent.style.display = 'none';
+            });
+            
+            mockDraftTab.addEventListener('click', () => {
+                mockDraftTab.classList.add('active');
+                leaguesTab.classList.remove('active');
+                mockDraftContent.style.display = 'block';
+                leaguesContent.style.display = 'none';
+            });
+        }
+        
+        // Legacy buttons (for backward compatibility)
         const getStartedBtn = document.getElementById('get-started-btn');
         if (getStartedBtn) {
             console.log('✅ Setting up get-started-btn listener');
@@ -176,8 +200,6 @@ class EventHandlers {
                 console.log('🚀 Get Started clicked - showing user setup');
                 this.uiUtils.showSection('user-setup');
             });
-        } else {
-            console.error('❌ get-started-btn not found');
         }
         
         const testConnectionBtn = document.getElementById('test-connection-btn');
@@ -187,8 +209,6 @@ class EventHandlers {
                 console.log('🔌 Test Connection clicked');
                 this.handleTestConnection();
             });
-        } else {
-            console.error('❌ test-connection-btn not found');
         }
 
         const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
@@ -225,26 +245,75 @@ class EventHandlers {
      * Setup user form interactions
      */
     setupUserForm() {
+        // New landing page form
+        const userSearchForm = document.getElementById('user-search-form');
+        const usernameInput = document.getElementById('username-input');
+        const seasonSelect = document.getElementById('season-select');
         const loadUserBtn = document.getElementById('load-user-btn');
-        if (loadUserBtn) {
-            console.log('✅ Setting up load-user-btn listener');
-            loadUserBtn.addEventListener('click', () => {
+        
+        if (userSearchForm && usernameInput && loadUserBtn) {
+            console.log('✅ Setting up new user search form');
+            
+            userSearchForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = usernameInput.value.trim();
+                const season = seasonSelect.value;
+                
+                if (username) {
+                    await this.handleUserSearch(username, season);
+                }
+            });
+            
+            // Season change handler
+            if (seasonSelect) {
+                seasonSelect.addEventListener('sl-change', async (e) => {
+                    const username = usernameInput.value.trim();
+                    if (username) {
+                        await this.handleUserSearch(username, e.target.value);
+                    }
+                });
+            }
+        }
+        
+        // Mock draft form
+        const mockDraftForm = document.getElementById('mock-draft-form');
+        const mockDraftId = document.getElementById('mock-draft-id');
+        const connectButton = document.getElementById('connect-mock-draft-btn');
+        
+        if (mockDraftForm && mockDraftId && connectButton) {
+            console.log('✅ Setting up mock draft form');
+            
+            mockDraftForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const draftId = mockDraftId.value.trim();
+                
+                if (draftId) {
+                    await this.handleMockDraftConnect(draftId);
+                }
+            });
+        }
+        
+        // Legacy form (for backward compatibility)
+        const legacyLoadUserBtn = document.getElementById('load-user-btn-legacy');
+        if (legacyLoadUserBtn) {
+            console.log('✅ Setting up legacy load-user-btn listener');
+            legacyLoadUserBtn.addEventListener('click', () => {
                 console.log('👤 Load user clicked');
                 this.handleLoadUser();
             });
         }
 
-        const usernameInput = document.getElementById('username-input');
-        if (usernameInput) {
-            console.log('✅ Setting up username-input listeners');
-            usernameInput.addEventListener('sl-input', (event) => {
-                const loadButton = document.getElementById('load-user-btn');
+        const legacyUsernameInput = document.getElementById('username-input-legacy');
+        if (legacyUsernameInput) {
+            console.log('✅ Setting up legacy username-input listeners');
+            legacyUsernameInput.addEventListener('sl-input', (event) => {
+                const loadButton = document.getElementById('load-user-btn-legacy');
                 if (loadButton) {
                     loadButton.disabled = !event.target.value.trim();
                 }
             });
             
-            usernameInput.addEventListener('keydown', (event) => {
+            legacyUsernameInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' && event.target.value.trim()) {
                     this.handleLoadUser();
                 }
@@ -1027,6 +1096,460 @@ class EventHandlers {
         
         content.innerHTML = detailsHtml;
         modal.show();
+    }
+    
+    /**
+     * Handle user search from new landing page
+     */
+    async handleUserSearch(username, season = '2025') {
+        console.log(`🔍 Searching for user: ${username}, season: ${season}`);
+        
+        const loadButton = document.getElementById('load-user-btn');
+        
+        try {
+            // Show loading state
+            if (loadButton) loadButton.loading = true;
+            this.hideError();
+            
+            // Fetch user data
+            const userData = await this.apiService.request(`/user/${username}`);
+            
+            if (userData.success) {
+                // Display user info
+                this.displayUserInfo(userData.user);
+                
+                // Fetch leagues for the season
+                const leaguesData = await this.apiService.request(`/user/${username}/leagues?season=${season}`);
+                
+                if (leaguesData.success) {
+                    this.displayLeagues(leaguesData.leagues, season);
+                } else {
+                    this.showError(leaguesData.message || 'Failed to load leagues');
+                }
+            } else {
+                this.showError(userData.message || 'User not found');
+            }
+            
+        } catch (error) {
+            console.error('❌ User search failed:', error);
+            this.showError('Failed to search for user. Please try again.');
+        } finally {
+            if (loadButton) loadButton.loading = false;
+        }
+    }
+    
+    /**
+     * Display user information
+     */
+    displayUserInfo(user) {
+        const userInfoDiv = document.getElementById('user-info');
+        const avatarImg = document.getElementById('user-avatar-img');
+        const avatarIcon = document.getElementById('user-avatar-icon');
+        const displayName = document.getElementById('user-display-name');
+        const username = document.getElementById('user-username');
+        
+        if (userInfoDiv && displayName && username) {
+            // Show user info
+            userInfoDiv.style.display = 'block';
+            
+            // Set user details
+            displayName.textContent = user.display_name || user.username;
+            username.textContent = `@${user.username}`;
+            
+            // Handle avatar
+            if (user.avatar && avatarImg && avatarIcon) {
+                avatarImg.src = `https://sleepercdn.com/avatars/thumbs/${user.avatar}`;
+                avatarImg.style.display = 'block';
+                avatarIcon.style.display = 'none';
+            } else if (avatarIcon) {
+                avatarIcon.style.display = 'block';
+                if (avatarImg) avatarImg.style.display = 'none';
+            }
+            
+            // Store user data
+            this.state.currentUser = user;
+        }
+    }
+    
+    /**
+     * Display leagues list
+     */
+    displayLeagues(leagues, season) {
+        const leaguesSection = document.getElementById('leagues-section');
+        const leaguesList = document.getElementById('leagues-list');
+        const emptyState = document.getElementById('leagues-empty');
+        const emptyMessage = document.getElementById('empty-message');
+        const leagueCount = document.getElementById('user-league-count');
+        
+        // Update league count
+        if (leagueCount) {
+            leagueCount.textContent = `${leagues.length} leagues found for ${season}`;
+        }
+        
+        if (leagues.length > 0) {
+            // Show leagues section
+            if (leaguesSection) leaguesSection.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
+            
+            // Clear existing leagues
+            if (leaguesList) leaguesList.innerHTML = '';
+            
+            // Sort leagues by draft status
+            const sortedLeagues = this.sortLeaguesByDraftStatus(leagues);
+            
+            // Create league cards
+            sortedLeagues.forEach(league => {
+                const leagueCard = this.createLeagueCard(league);
+                if (leaguesList) leaguesList.appendChild(leagueCard);
+            });
+            
+            // Store leagues data
+            this.state.userLeagues = leagues;
+            
+        } else {
+            // Show empty state
+            if (leaguesSection) leaguesSection.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'block';
+            
+            if (emptyMessage) {
+                emptyMessage.textContent = `No leagues found for ${this.state.currentUser?.display_name || 'this user'} in the ${season} season.`;
+            }
+        }
+    }
+    
+    /**
+     * Create a league card element
+     */
+    createLeagueCard(league) {
+        const card = document.createElement('div');
+        card.className = 'league-card';
+        
+        // Check if league has active draft
+        const hasActiveDraft = league.drafts && league.drafts.some(draft => draft.status === 'drafting');
+        if (hasActiveDraft) {
+            card.classList.add('active-draft');
+        }
+        
+        // League header
+        const header = document.createElement('div');
+        header.className = 'league-header';
+        
+        const titleRow = document.createElement('div');
+        titleRow.className = 'league-title-row';
+        
+        const titleLeft = document.createElement('div');
+        titleLeft.className = 'league-title-left';
+        
+        const title = document.createElement('h4');
+        title.textContent = league.name;
+        titleLeft.appendChild(title);
+        
+        // League type badge
+        const badge = document.createElement('div');
+        badge.className = `league-badge ${this.isDynastyOrKeeperLeague(league) ? 'dynasty' : 'redraft'}`;
+        
+        if (this.isDynastyOrKeeperLeague(league)) {
+            badge.innerHTML = '<sl-icon name="crown"></sl-icon><span>Dynasty/Keeper</span>';
+        } else {
+            badge.innerHTML = '<sl-icon name="arrow-clockwise"></sl-icon><span>Redraft</span>';
+        }
+        titleLeft.appendChild(badge);
+        
+        titleRow.appendChild(titleLeft);
+        
+        // League meta info
+        const meta = document.createElement('div');
+        meta.className = 'league-meta';
+        meta.innerHTML = `
+            <sl-icon name="people-fill"></sl-icon>
+            <span>${league.total_rosters} teams</span>
+        `;
+        titleRow.appendChild(meta);
+        
+        header.appendChild(titleRow);
+        
+        // League description
+        const description = document.createElement('p');
+        description.className = 'league-description';
+        description.textContent = `${league.settings?.type || 'Standard'} • Season ${league.season}`;
+        header.appendChild(description);
+        
+        card.appendChild(header);
+        
+        // Drafts section
+        if (league.drafts && league.drafts.length > 0) {
+            const draftsSection = document.createElement('div');
+            draftsSection.className = 'drafts-section';
+            
+            const draftsTitle = document.createElement('h5');
+            draftsTitle.textContent = 'Available Drafts:';
+            draftsSection.appendChild(draftsTitle);
+            
+            league.drafts.forEach(draft => {
+                const draftItem = this.createDraftItem(league, draft);
+                draftsSection.appendChild(draftItem);
+            });
+            
+            card.appendChild(draftsSection);
+        }
+        
+        return card;
+    }
+    
+    /**
+     * Create a draft item element
+     */
+    createDraftItem(league, draft) {
+        const item = document.createElement('div');
+        item.className = 'draft-item';
+        
+        const draftInfo = document.createElement('div');
+        draftInfo.className = 'draft-info';
+        
+        // Status icon
+        const statusIcon = document.createElement('div');
+        statusIcon.className = 'draft-status-icon';
+        statusIcon.textContent = this.getDraftStatusIcon(draft.status);
+        draftInfo.appendChild(statusIcon);
+        
+        // Draft details
+        const details = document.createElement('div');
+        details.className = 'draft-details';
+        
+        const title = document.createElement('h6');
+        title.textContent = draft.type === 'snake' ? 'Snake Draft' : draft.type;
+        details.appendChild(title);
+        
+        const time = document.createElement('p');
+        time.className = 'draft-time';
+        time.textContent = draft.start_time ? 
+            new Date(draft.start_time).toLocaleString() : 
+            'Start time TBD';
+        details.appendChild(time);
+        
+        draftInfo.appendChild(details);
+        item.appendChild(draftInfo);
+        
+        // Status badge and select button
+        const rightSide = document.createElement('div');
+        rightSide.style.display = 'flex';
+        rightSide.style.alignItems = 'center';
+        rightSide.style.gap = '0.5rem';
+        
+        const statusBadge = document.createElement('div');
+        statusBadge.className = `draft-status-badge ${draft.status}`;
+        statusBadge.textContent = draft.status.replace('_', ' ');
+        rightSide.appendChild(statusBadge);
+        
+        const selectButton = document.createElement('sl-button');
+        selectButton.variant = 'primary';
+        selectButton.size = 'small';
+        selectButton.innerHTML = '<sl-icon slot="prefix" name="play-fill"></sl-icon>Select Draft';
+        
+        selectButton.addEventListener('click', () => {
+            this.handleNewDraftSelect(league, draft);
+        });
+        
+        rightSide.appendChild(selectButton);
+        item.appendChild(rightSide);
+        
+        return item;
+    }
+    
+    /**
+     * Handle draft selection from new landing page
+     */
+    async handleNewDraftSelect(league, draft) {
+        console.log('🎯 Draft selected:', { league: league.league_id, draft: draft.draft_id });
+        
+        try {
+            // Store selected draft info
+            this.state.selectedLeague = league;
+            this.state.selectedDraft = draft;
+            
+            // Show loading overlay
+            this.uiUtils.showLoadingOverlay('Loading draft data...');
+            
+            // Load draft data
+            const draftData = await this.apiService.request(`/draft/${draft.draft_id}`);
+            
+            if (draftData.success) {
+                // Switch to draft view
+                this.uiUtils.showSection('draft');
+                
+                // Initialize draft data
+                await this.loadDraftData();
+                
+            } else {
+                this.uiUtils.showNotification('Failed to load draft data: ' + draftData.message, 'danger');
+            }
+            
+        } catch (error) {
+            console.error('❌ Failed to select draft:', error);
+            this.uiUtils.showNotification('Failed to load draft. Please try again.', 'danger');
+        } finally {
+            this.uiUtils.hideLoadingOverlay();
+        }
+    }
+    
+    /**
+     * Handle mock draft connection
+     */
+    async handleMockDraftConnect(draftId) {
+        console.log('🎯 Connecting to mock draft:', draftId);
+        
+        const connectButton = document.getElementById('connect-mock-draft-btn');
+        
+        // Validate draft ID
+        if (!draftId.match(/^\d+$/)) {
+            this.showMockDraftError('Draft ID must be numeric');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            if (connectButton) connectButton.loading = true;
+            this.hideMockDraftError();
+            
+            // Create mock draft object
+            const mockDraft = {
+                draft_id: draftId,
+                type: 'snake',
+                status: 'drafting'
+            };
+            
+            const mockLeague = {
+                league_id: 'mock',
+                name: `Mock Draft ${draftId}`,
+                total_rosters: 12,
+                season: '2025'
+            };
+            
+            // Handle as regular draft selection
+            await this.handleNewDraftSelect(mockLeague, mockDraft);
+            
+        } catch (error) {
+            console.error('❌ Mock draft connection failed:', error);
+            this.showMockDraftError('Network error while connecting to mock draft');
+        } finally {
+            if (connectButton) connectButton.loading = false;
+        }
+    }
+    
+    /**
+     * Show error message
+     */
+    showError(message) {
+        const errorDiv = document.getElementById('user-error');
+        const errorText = document.getElementById('user-error-text');
+        
+        if (errorDiv && errorText) {
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Hide error message
+     */
+    hideError() {
+        const errorDiv = document.getElementById('user-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Show mock draft error
+     */
+    showMockDraftError(message) {
+        const errorDiv = document.getElementById('mock-draft-error');
+        const errorText = document.getElementById('mock-draft-error-text');
+        
+        if (errorDiv && errorText) {
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Hide mock draft error
+     */
+    hideMockDraftError() {
+        const errorDiv = document.getElementById('mock-draft-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Sort leagues by draft status priority
+     */
+    sortLeaguesByDraftStatus(leagues) {
+        return [...leagues].sort((a, b) => {
+            const getLeaguePriority = (league) => {
+                if (!league.drafts || league.drafts.length === 0) return 4;
+                
+                const priorities = league.drafts.map(draft => this.getDraftStatusPriority(draft.status));
+                return Math.min(...priorities);
+            };
+            
+            const priorityA = getLeaguePriority(a);
+            const priorityB = getLeaguePriority(b);
+            
+            return priorityA - priorityB;
+        });
+    }
+    
+    /**
+     * Get draft status priority for sorting
+     */
+    getDraftStatusPriority(status) {
+        switch (status) {
+            case 'drafting': return 1;
+            case 'pre_draft': return 2;
+            case 'complete': return 3;
+            default: return 4;
+        }
+    }
+    
+    /**
+     * Get draft status icon
+     */
+    getDraftStatusIcon(status) {
+        switch (status) {
+            case 'complete': return '✅';
+            case 'drafting': return '🔴';
+            case 'pre_draft': return '⏳';
+            default: return '❓';
+        }
+    }
+    
+    /**
+     * Check if league is dynasty or keeper
+     */
+    isDynastyOrKeeperLeague(league) {
+        const settings = league.settings || {};
+        
+        if (settings.type === 2) return true;
+        if (settings.taxi_slots > 0) return true;
+        if (settings.max_keepers > 1) return true;
+        
+        if (league.previous_league_id) {
+            if (settings.max_keepers > 1 || settings.taxi_slots > 0 || settings.type === 2) {
+                return true;
+            }
+        }
+        
+        if (league.drafts && league.drafts.length > 0) {
+            const draft = league.drafts[0];
+            if (draft.metadata && draft.metadata.scoring_type && 
+                draft.metadata.scoring_type.includes('dynasty')) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
 
