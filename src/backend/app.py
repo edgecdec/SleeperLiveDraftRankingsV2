@@ -126,28 +126,29 @@ def create_app(debug: bool = False) -> Flask:
     # Get static file path
     static_path = get_static_path()
     
-    # The old rankings system is working fine with existing Fantasy Pros data
-    # No need to initialize new rankings system since it conflicts
-    # if NEW_RANKINGS_AVAILABLE and initialize_rankings and ensure_rankings_directory:
-    #     try:
-    #         data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
-    #         ensure_rankings_directory(data_dir)
-    #         initialize_rankings(data_dir)
-    #         print("🏈 New rankings system initialized")
-    #     except Exception as e:
-    #         print(f"⚠️ Failed to initialize new rankings system: {e}")
+    # Initialize new rankings system for runtime Fantasy Pros generation
+    if NEW_RANKINGS_AVAILABLE and initialize_rankings and ensure_rankings_directory:
+        try:
+            data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
+            ensure_rankings_directory(data_dir)
+            initialize_rankings(data_dir)
+            print("🏈 New rankings system initialized - Fantasy Pros generated at runtime")
+        except Exception as e:
+            print(f"⚠️ Failed to initialize new rankings system: {e}")
     
     # Register API blueprints
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(draft_bp, url_prefix='/api')
     app.register_blueprint(custom_rankings_bp, url_prefix='/api')
-    app.register_blueprint(rankings_bp)  # Legacy rankings API (working fine)
     
-    # Temporarily disable new rankings API v2 to avoid conflicts
-    # The old rankings API is working perfectly and serving Fantasy Pros rankings
-    # if NEW_RANKINGS_AVAILABLE and rankings_bp_v2:
-    #     app.register_blueprint(rankings_bp_v2, url_prefix='/api/rankings')
-    #     print("🏈 New rankings API v2 registered")
+    # Register new rankings API v2 (primary system)
+    if NEW_RANKINGS_AVAILABLE and rankings_bp_v2:
+        app.register_blueprint(rankings_bp_v2, url_prefix='/api/rankings')
+        print("🏈 New rankings API v2 registered at /api/rankings/*")
+    
+    # Register legacy rankings API at different path to avoid conflicts
+    app.register_blueprint(rankings_bp, url_prefix='/api/legacy')  # Changed from root to /api/legacy
+    print("🏈 Legacy rankings API registered at /api/legacy/rankings/*")
     
     if RANKINGS_AVAILABLE and init_rankings_routes:
         init_rankings_routes(app)

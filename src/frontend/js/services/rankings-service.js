@@ -19,6 +19,7 @@ class RankingsService {
         try {
             console.log('📡 Fetching available rankings...');
             
+            // Use new rankings API v2 for runtime-generated Fantasy Pros rankings
             const response = await fetch('/api/rankings/list');
             const data = await response.json();
             

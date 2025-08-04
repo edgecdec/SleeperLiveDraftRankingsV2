@@ -91,17 +91,43 @@ def list_rankings():
         # Get uploaded rankings
         uploaded_rankings = in_memory_rankings.get_available_rankings() if in_memory_rankings else []
         
-        # Combine all rankings
-        all_rankings = fantasy_pros_rankings + uploaded_rankings
+        # Convert Fantasy Pros rankings to frontend-expected format
+        formatted_fantasy_pros = []
+        for ranking in fantasy_pros_rankings:
+            formatted_fantasy_pros.append({
+                'id': ranking['id'],
+                'name': ranking['name'],
+                'type': 'built-in',  # Frontend expects 'built-in' for Fantasy Pros
+                'scoring': ranking['scoring'].upper(),
+                'format': ranking['format'].title(),
+                'source': ranking['source'],
+                'category': 'FantasyPros'
+            })
         
-        logger.info(f"✅ Found {len(all_rankings)} total rankings ({len(fantasy_pros_rankings)} Fantasy Pros, {len(uploaded_rankings)} uploaded)")
+        # Convert uploaded rankings to frontend-expected format
+        formatted_uploaded = []
+        for ranking in uploaded_rankings:
+            formatted_uploaded.append({
+                'id': ranking['id'],
+                'name': ranking['name'],
+                'type': 'custom',  # Frontend expects 'custom' for uploads
+                'scoring': 'Custom',
+                'format': 'Custom',
+                'source': ranking['source'],
+                'category': 'Custom Upload'
+            })
+        
+        # Combine all rankings
+        all_rankings = formatted_fantasy_pros + formatted_uploaded
+        
+        logger.info(f"✅ Found {len(all_rankings)} total rankings ({len(formatted_fantasy_pros)} Fantasy Pros, {len(formatted_uploaded)} uploaded)")
         
         return jsonify({
             'status': 'success',
             'rankings': all_rankings,
             'total': len(all_rankings),
-            'fantasy_pros_count': len(fantasy_pros_rankings),
-            'uploaded_count': len(uploaded_rankings)
+            'fantasy_pros_count': len(formatted_fantasy_pros),
+            'uploaded_count': len(formatted_uploaded)
         })
         
     except Exception as e:
