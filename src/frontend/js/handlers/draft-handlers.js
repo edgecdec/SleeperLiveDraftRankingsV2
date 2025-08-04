@@ -21,6 +21,7 @@ class DraftHandlers {
             currentPosition: 'ALL',
             myRoster: {},
             draftPicks: [],
+            rosteredPlayerIds: new Set(),
             isRosterVisible: false,
             currentRankings: null
         };
@@ -207,6 +208,11 @@ class DraftHandlers {
                     this.loadDraftPicksFromSleeper();
                 }
                 
+                // Load roster data for dynasty leagues
+                if (response.league_info) {
+                    this.loadRosterData(response.league_info);
+                }
+                
                 console.log('✅ Draft data loaded:', this.state.currentDraft);
                 return this.state.currentDraft;
             } else {
@@ -313,6 +319,50 @@ class DraftHandlers {
             }
         } catch (error) {
             console.error('❌ Error loading draft picks from Sleeper:', error);
+        }
+    }
+    
+    /**
+     * Load roster data for dynasty leagues
+     */
+    async loadRosterData(leagueInfo) {
+        if (!leagueInfo || !leagueInfo.league_id) {
+            console.log('⚠️ No league ID available for loading rosters');
+            return;
+        }
+        
+        try {
+            console.log('📡 Loading roster data for dynasty league...');
+            const leagueId = leagueInfo.league_id;
+            
+            // Call Sleeper API to get all rosters
+            const response = await fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`);
+            
+            if (response.ok) {
+                const rosters = await response.json();
+                
+                // Extract all rostered player IDs
+                const rosteredPlayerIds = new Set();
+                rosters.forEach(roster => {
+                    if (roster.players) {
+                        roster.players.forEach(playerId => {
+                            rosteredPlayerIds.add(playerId);
+                        });
+                    }
+                });
+                
+                this.state.rosteredPlayerIds = rosteredPlayerIds;
+                console.log('✅ Roster data loaded:', rosteredPlayerIds.size, 'rostered players');
+                console.log('🔍 Sample rostered player IDs:', Array.from(rosteredPlayerIds).slice(0, 10));
+                
+                // Refresh the player list with roster filtering
+                this.refreshPlayersAfterDraft();
+                
+            } else {
+                console.log('⚠️ Failed to load roster data from Sleeper API');
+            }
+        } catch (error) {
+            console.error('❌ Error loading roster data from Sleeper:', error);
         }
     }
     
@@ -967,11 +1017,14 @@ class DraftHandlers {
     }
     
     /**
-     * Filter out players who have already been drafted
+     * Filter out players who have already been drafted or are on rosters (dynasty)
      */
     filterDraftedPlayers(players) {
-        if (!this.state.draftPicks || this.state.draftPicks.length === 0) {
-            console.log('📋 No draft picks to filter against');
+        const hasDraftPicks = this.state.draftPicks && this.state.draftPicks.length > 0;
+        const hasRosteredPlayers = this.state.rosteredPlayerIds && this.state.rosteredPlayerIds.size > 0;
+        
+        if (!hasDraftPicks && !hasRosteredPlayers) {
+            console.log('📋 No draft picks or roster data to filter against');
             return players;
         }
         
@@ -979,37 +1032,49 @@ class DraftHandlers {
         const draftedPlayerIds = new Set();
         const draftedPlayerNames = new Set();
         
-        this.state.draftPicks.forEach(pick => {
-            // Handle Sleeper API format
-            if (pick.player_id) {
-                draftedPlayerIds.add(pick.player_id);
-            }
-            
-            // Handle different metadata formats
-            if (pick.metadata) {
-                // Format 1: first_name + last_name
-                if (pick.metadata.first_name && pick.metadata.last_name) {
-                    const fullName = `${pick.metadata.first_name} ${pick.metadata.last_name}`;
-                    draftedPlayerNames.add(fullName.toLowerCase());
+        // Add draft picks
+        if (hasDraftPicks) {
+            this.state.draftPicks.forEach(pick => {
+                // Handle Sleeper API format
+                if (pick.player_id) {
+                    draftedPlayerIds.add(pick.player_id);
                 }
-                // Format 2: full_name
-                if (pick.metadata.full_name) {
-                    draftedPlayerNames.add(pick.metadata.full_name.toLowerCase());
+                
+                // Handle different metadata formats
+                if (pick.metadata) {
+                    // Format 1: first_name + last_name
+                    if (pick.metadata.first_name && pick.metadata.last_name) {
+                        const fullName = `${pick.metadata.first_name} ${pick.metadata.last_name}`;
+                        draftedPlayerNames.add(fullName.toLowerCase());
+                    }
+                    // Format 2: full_name
+                    if (pick.metadata.full_name) {
+                        draftedPlayerNames.add(pick.metadata.full_name.toLowerCase());
+                    }
                 }
-            }
-            
-            // Handle direct player name in pick object
-            if (pick.player_name) {
-                draftedPlayerNames.add(pick.player_name.toLowerCase());
-            }
-        });
+                
+                // Handle direct player name in pick object
+                if (pick.player_name) {
+                    draftedPlayerNames.add(pick.player_name.toLowerCase());
+                }
+            });
+        }
         
-        console.log('🚫 Drafted player IDs:', Array.from(draftedPlayerIds).slice(0, 5), '...');
-        console.log('🚫 Drafted player names:', Array.from(draftedPlayerNames).slice(0, 5), '...');
+        // Add rostered players (dynasty leagues)
+        if (hasRosteredPlayers) {
+            this.state.rosteredPlayerIds.forEach(playerId => {
+                draftedPlayerIds.add(playerId);
+            });
+        }
         
-        // Filter out drafted players
+        console.log('🚫 Draft picks to filter:', this.state.draftPicks?.length || 0);
+        console.log('🚫 Rostered players to filter:', this.state.rosteredPlayerIds?.size || 0);
+        console.log('🚫 Total player IDs to filter:', draftedPlayerIds.size);
+        console.log('🚫 Player names to filter:', draftedPlayerNames.size);
+        
+        // Filter out drafted/rostered players
         const availablePlayers = players.filter(player => {
-            // Check by player ID first
+            // Check by player ID first (most reliable)
             if (draftedPlayerIds.has(player.player_id)) {
                 console.log(`🚫 Filtered out by ID: ${player.full_name} (${player.player_id})`);
                 return false;
@@ -1024,9 +1089,9 @@ class DraftHandlers {
             return true;
         });
         
-        const draftedCount = players.length - availablePlayers.length;
-        if (draftedCount > 0) {
-            console.log(`🚫 Filtered out ${draftedCount} drafted players (${availablePlayers.length} available)`);
+        const filteredCount = players.length - availablePlayers.length;
+        if (filteredCount > 0) {
+            console.log(`🚫 Filtered out ${filteredCount} drafted/rostered players (${availablePlayers.length} available)`);
         } else {
             console.log(`📋 No players filtered - all ${players.length} players still available`);
         }
@@ -1035,18 +1100,18 @@ class DraftHandlers {
     }
     
     /**
-     * Refresh the player list after draft picks change
+     * Refresh the player list after draft picks or roster changes
      */
     refreshPlayersAfterDraft() {
         if (this.state.players && this.state.players.length > 0) {
-            // Re-filter the current players
+            // Re-filter the current players (includes both draft picks and rosters)
             const filteredPlayers = this.filterDraftedPlayers(this.state.players);
             this.state.filteredPlayers = filteredPlayers;
             
             // Re-render the players
             this.renderPlayers();
             
-            console.log('🔄 Refreshed player list after draft picks change');
+            console.log('🔄 Refreshed player list after draft/roster changes');
         }
     }
     
