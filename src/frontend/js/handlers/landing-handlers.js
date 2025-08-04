@@ -99,8 +99,6 @@ class LandingHandlers {
                 loadButton: !!loadButton
             });
         }
-            }
-        }
     }
 
     /**

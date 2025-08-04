@@ -99,7 +99,7 @@ class SimpleApp {
                 console.log('🔄 Auto-triggering search for:', { username, season });
                 this.landingHandlers.handleUserSearch(username, season);
             } else {
-                console.log('⚠️ Username input not found, retrying in 1 second...');
+                console.log('⚠️ Form elements not found, retrying in 1 second...');
                 // Retry after a short delay if elements aren't ready
                 setTimeout(() => {
                     if (!this.autoLoadAttempted) {
@@ -142,22 +142,6 @@ class SimpleApp {
         
         console.log('ℹ️ No auto-load pattern found in URL');
     }
-            } else {
-                console.error('❌ Form elements not found, retrying in 1000ms...');
-                // Retry after a longer delay in case elements aren't ready
-                setTimeout(() => {
-                    if (!this.autoLoadAttempted) {
-                        this.checkUrlForAutoLoad();
-                    }
-                }, 1000);
-            }
-            return;
-        }
-        
-        // Check if we're on a draft page: /sleeper/league/{league_id}/draft/{draft_id}
-        const draftMatch = path.match(/^\/sleeper\/league\/([^\/]+)\/draft\/([^\/]+)$/);
-        if (draftMatch) {
-            const [, leagueId, draftId] = draftMatch;
             console.log('🎯 Found draft URL:', { leagueId, draftId });
             
             // Mark as attempted
