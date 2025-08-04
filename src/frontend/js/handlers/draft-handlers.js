@@ -1084,23 +1084,32 @@ class DraftHandlers {
                 return false;
             }
             
-            // Try to map CSV player name to Sleeper ID
+            // Try to map CSV player name to Sleeper ID using multiple variations
             if (this.state.sleeperPlayerMap && this.state.sleeperPlayerMap.size > 0) {
-                const normalizedName = this.normalizePlayerName(player.full_name);
-                const sleeperId = this.state.sleeperPlayerMap.get(normalizedName);
+                const nameVariations = this.generateNameVariations(player.full_name);
                 
-                if (sleeperId && draftedPlayerIds.has(sleeperId)) {
-                    console.log(`🚫 Filtered out by mapped ID: ${player.full_name} -> ${sleeperId}`);
-                    return false;
+                for (const variation of nameVariations) {
+                    const sleeperId = this.state.sleeperPlayerMap.get(variation);
+                    if (sleeperId && draftedPlayerIds.has(sleeperId)) {
+                        console.log(`🚫 Filtered out by mapped ID: ${player.full_name} (${variation}) -> ${sleeperId}`);
+                        return false;
+                    }
                 }
             }
             
-            // Check by name (fallback for CSV players)
-            const normalizedPlayerName = this.normalizePlayerName(player.full_name);
+            // Check by name variations (fallback)
+            const playerNameVariations = this.generateNameVariations(player.full_name);
             for (const draftedName of draftedPlayerNames) {
-                if (normalizedPlayerName === this.normalizePlayerName(draftedName)) {
-                    console.log(`🚫 Filtered out by normalized name: ${player.full_name}`);
-                    return false;
+                const draftedNameVariations = this.generateNameVariations(draftedName);
+                
+                // Check if any variation of the player name matches any variation of drafted names
+                for (const playerVar of playerNameVariations) {
+                    for (const draftedVar of draftedNameVariations) {
+                        if (playerVar === draftedVar) {
+                            console.log(`🚫 Filtered out by name variation: ${player.full_name} (${playerVar} = ${draftedVar})`);
+                            return false;
+                        }
+                    }
                 }
             }
             
@@ -1123,7 +1132,7 @@ class DraftHandlers {
     normalizePlayerName(name) {
         if (!name) return '';
         
-        return name
+        let normalized = name
             .toLowerCase()
             .trim()
             // Remove common suffixes
@@ -1131,18 +1140,138 @@ class DraftHandlers {
             // Remove periods and apostrophes
             .replace(/[.']/g, '')
             // Replace multiple spaces with single space
-            .replace(/\s+/g, ' ')
-            // Handle common name variations
-            .replace(/\bmike\b/g, 'michael')
-            .replace(/\bbob\b/g, 'robert')
-            .replace(/\bbill\b/g, 'william')
-            .replace(/\btom\b/g, 'thomas')
-            .replace(/\bjim\b/g, 'james')
-            .replace(/\bdave\b/g, 'david')
-            .replace(/\bchris\b/g, 'christopher')
-            .replace(/\bmatt\b/g, 'matthew')
-            .replace(/\bdan\b/g, 'daniel')
-            .replace(/\bsteve\b/g, 'steven');
+            .replace(/\s+/g, ' ');
+        
+        // Handle common nickname variations
+        const nicknameMap = {
+            // Common nicknames
+            'mike': 'michael',
+            'bob': 'robert',
+            'bill': 'william',
+            'tom': 'thomas',
+            'jim': 'james',
+            'dave': 'david',
+            'chris': 'christopher',
+            'matt': 'matthew',
+            'dan': 'daniel',
+            'steve': 'steven',
+            'joe': 'joseph',
+            'tony': 'anthony',
+            'rick': 'richard',
+            'rob': 'robert',
+            'tim': 'timothy',
+            'pat': 'patrick',
+            'nick': 'nicholas',
+            'alex': 'alexander',
+            'ben': 'benjamin',
+            'sam': 'samuel',
+            
+            // NFL-specific nickname mappings
+            'cam': 'cameron',
+            'hollywood': 'marquise',
+            'hollywood brown': 'marquise brown',
+            'marquise brown': 'hollywood brown', // Bidirectional
+            'cameron skattebo': 'cam skattebo', // Bidirectional
+            'cam skattebo': 'cameron skattebo',
+            
+            // Other common NFL nicknames
+            'ceedee': 'cedarian',
+            'dk': 'decaylin',
+            'aj': 'allen',
+            'tj': 'thomas',
+            'cj': 'calvin',
+            'dj': 'david',
+            'rj': 'ronald',
+            'jj': 'justin',
+            'oj': 'orenthal',
+            'pj': 'paul',
+            'kj': 'kevin',
+            'mj': 'michael',
+            'lj': 'larry',
+            'bj': 'bobby',
+            'jk': 'john',
+            'ck': 'calvin',
+            'dk metcalf': 'decaylin metcalf',
+            'ceedee lamb': 'cedarian lamb',
+            'aj brown': 'allen brown',
+            'dj moore': 'david moore',
+            'cj stroud': 'calvin stroud',
+            'tj watt': 'thomas watt'
+        };
+        
+        // Apply nickname mappings
+        for (const [nickname, fullName] of Object.entries(nicknameMap)) {
+            if (normalized === nickname) {
+                normalized = fullName;
+                break;
+            }
+            // Also check if the nickname is part of the name
+            if (normalized.includes(nickname)) {
+                normalized = normalized.replace(nickname, fullName);
+            }
+        }
+        
+        return normalized;
+    }
+    
+    /**
+     * Generate multiple name variations for better matching
+     */
+    generateNameVariations(name) {
+        if (!name) return [];
+        
+        const variations = new Set();
+        const normalized = this.normalizePlayerName(name);
+        
+        // Add the normalized version
+        variations.add(normalized);
+        
+        // Add the original (normalized basic)
+        variations.add(name.toLowerCase().trim());
+        
+        // Split name and try different combinations
+        const parts = normalized.split(' ');
+        if (parts.length >= 2) {
+            const firstName = parts[0];
+            const lastName = parts[parts.length - 1];
+            
+            // Try first + last only
+            variations.add(`${firstName} ${lastName}`);
+            
+            // Try common nickname variations for first name
+            const nicknameMap = {
+                'cameron': 'cam',
+                'cam': 'cameron',
+                'marquise': 'hollywood',
+                'hollywood': 'marquise',
+                'michael': 'mike',
+                'mike': 'michael',
+                'christopher': 'chris',
+                'chris': 'christopher',
+                'matthew': 'matt',
+                'matt': 'matthew',
+                'daniel': 'dan',
+                'dan': 'daniel',
+                'thomas': 'tom',
+                'tom': 'thomas',
+                'james': 'jim',
+                'jim': 'james',
+                'robert': 'bob',
+                'bob': 'robert',
+                'william': 'bill',
+                'bill': 'william',
+                'david': 'dave',
+                'dave': 'david',
+                'steven': 'steve',
+                'steve': 'steven'
+            };
+            
+            if (nicknameMap[firstName]) {
+                variations.add(`${nicknameMap[firstName]} ${lastName}`);
+            }
+        }
+        
+        return Array.from(variations);
     }
     
     /**
@@ -1158,25 +1287,39 @@ class DraftHandlers {
             if (response.ok) {
                 const players = await response.json();
                 
-                // Create name-to-ID mapping
+                // Create name-to-ID mapping with multiple variations
                 const nameToIdMap = new Map();
                 
                 Object.entries(players).forEach(([playerId, playerData]) => {
+                    const names = [];
+                    
+                    // Collect all possible names
                     if (playerData.full_name) {
-                        const normalizedName = this.normalizePlayerName(playerData.full_name);
-                        nameToIdMap.set(normalizedName, playerId);
+                        names.push(playerData.full_name);
                     }
                     
-                    // Also try first_name + last_name
                     if (playerData.first_name && playerData.last_name) {
-                        const fullName = `${playerData.first_name} ${playerData.last_name}`;
-                        const normalizedName = this.normalizePlayerName(fullName);
-                        nameToIdMap.set(normalizedName, playerId);
+                        names.push(`${playerData.first_name} ${playerData.last_name}`);
                     }
+                    
+                    // Generate variations for each name
+                    names.forEach(name => {
+                        const variations = this.generateNameVariations(name);
+                        variations.forEach(variation => {
+                            nameToIdMap.set(variation, playerId);
+                        });
+                    });
                 });
                 
                 this.state.sleeperPlayerMap = nameToIdMap;
-                console.log('✅ Sleeper player database loaded:', nameToIdMap.size, 'players mapped');
+                console.log('✅ Sleeper player database loaded:', nameToIdMap.size, 'name variations mapped');
+                
+                // Log some specific mappings for debugging
+                console.log('🔍 Sample mappings:');
+                console.log('  cam skattebo ->', nameToIdMap.get('cam skattebo'));
+                console.log('  cameron skattebo ->', nameToIdMap.get('cameron skattebo'));
+                console.log('  hollywood brown ->', nameToIdMap.get('hollywood brown'));
+                console.log('  marquise brown ->', nameToIdMap.get('marquise brown'));
                 
                 return nameToIdMap;
             } else {
