@@ -22,10 +22,27 @@ from .api.user import user_bp
 from .api.draft import draft_bp
 from .api.custom_rankings import custom_rankings_bp
 from .rankings_api import rankings_bp
-from .rankings_api_v2 import rankings_bp_v2
 
-# Import rankings initialization
-from .services.rankings_initializer import initialize_rankings, ensure_rankings_directory
+# Try to import new rankings system
+try:
+    from .rankings_api_v2 import rankings_bp_v2
+    from .services.rankings_initializer import initialize_rankings, ensure_rankings_directory
+    NEW_RANKINGS_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Full rankings system not available, trying fallback: {e}")
+    try:
+        from .rankings_api_v2 import rankings_bp_v2
+        from .services.simple_rankings_fallback import initialize_simple_rankings
+        initialize_rankings = initialize_simple_rankings
+        ensure_rankings_directory = lambda x: os.makedirs(x, exist_ok=True)
+        NEW_RANKINGS_AVAILABLE = True
+        print("✅ Fallback rankings system available")
+    except ImportError as e2:
+        print(f"❌ No rankings system available: {e2}")
+        rankings_bp_v2 = None
+        initialize_rankings = None
+        ensure_rankings_directory = None
+        NEW_RANKINGS_AVAILABLE = False
 
 # Try to import rankings (optional)
 try:
@@ -109,17 +126,26 @@ def create_app(debug: bool = False) -> Flask:
     # Get static file path
     static_path = get_static_path()
     
-    # Initialize rankings system
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
-    ensure_rankings_directory(data_dir)
-    initialize_rankings(data_dir)
+    # Initialize rankings system if available
+    if NEW_RANKINGS_AVAILABLE and initialize_rankings and ensure_rankings_directory:
+        try:
+            data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
+            ensure_rankings_directory(data_dir)
+            initialize_rankings(data_dir)
+            print("🏈 New rankings system initialized")
+        except Exception as e:
+            print(f"⚠️ Failed to initialize new rankings system: {e}")
     
     # Register API blueprints
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(draft_bp, url_prefix='/api')
     app.register_blueprint(custom_rankings_bp, url_prefix='/api')
     app.register_blueprint(rankings_bp)  # Legacy rankings API
-    app.register_blueprint(rankings_bp_v2, url_prefix='/api/rankings')  # New rankings API
+    
+    # Register new rankings API if available
+    if NEW_RANKINGS_AVAILABLE and rankings_bp_v2:
+        app.register_blueprint(rankings_bp_v2, url_prefix='/api/rankings')
+        print("🏈 New rankings API v2 registered")
     
     if RANKINGS_AVAILABLE and init_rankings_routes:
         init_rankings_routes(app)
