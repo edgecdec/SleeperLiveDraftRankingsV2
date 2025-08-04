@@ -117,7 +117,7 @@ def list_rankings():
                     filepath = os.path.join(CUSTOM_RANKINGS_DIR, filename)
                     
                     ranking_info = {
-                        'id': f"custom_{filename.replace('.csv', '')}",
+                        'id': filename.replace('.csv', ''),  # Use filename without .csv as ID
                         'name': filename.replace('.csv', '').replace('_', ' '),
                         'filename': filename,
                         'type': 'custom',
@@ -154,14 +154,22 @@ def get_ranking_data(ranking_id):
     """Get ranking data for a specific ranking file"""
     try:
         # Determine file path based on ranking ID
+        logger.info(f"Looking for ranking ID: {ranking_id}")
+        
         if ranking_id.startswith('custom_'):
-            filename = ranking_id.replace('custom_', '') + '.csv'
+            # Handle both old format (custom_name) and new format (custom_name_timestamp)
+            filename = ranking_id + '.csv'
             filepath = os.path.join(CUSTOM_RANKINGS_DIR, filename)
+            logger.info(f"Custom file path: {filepath}")
         else:
             filename = ranking_id + '.csv'
             filepath = os.path.join(RANKINGS_DIR, filename)
+            logger.info(f"Built-in file path: {filepath}")
+        
+        logger.info(f"File exists: {os.path.exists(filepath)}")
         
         if not os.path.exists(filepath):
+            logger.error(f"File not found: {filepath}")
             return jsonify({
                 'status': 'error',
                 'message': f'Ranking file not found: {ranking_id}'
@@ -307,7 +315,7 @@ def upload_ranking():
             'status': 'success',
             'message': 'Ranking file uploaded successfully',
             'ranking': {
-                'id': f"custom_{filename.replace('.csv', '')}",
+                'id': filename.replace('.csv', ''),  # Use filename without .csv as ID
                 'name': ranking_name or original_name,
                 'filename': filename,
                 'type': 'custom',
@@ -335,7 +343,7 @@ def delete_ranking(ranking_id):
                 'message': 'Only custom rankings can be deleted'
             }), 400
         
-        filename = ranking_id.replace('custom_', '') + '.csv'
+        filename = ranking_id + '.csv'
         filepath = os.path.join(CUSTOM_RANKINGS_DIR, filename)
         
         if not os.path.exists(filepath):

@@ -208,41 +208,47 @@ input[type="file"]:focus {
     transform: translateY(-1px);
 }
 
-/* Position-based player name colors */
+/* Position-based player name colors - Enhanced */
 .player-name-card.QB {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border-color: #f59e0b;
-    color: #92400e;
+    background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%);
+    border-color: #ca8a04;
+    color: #713f12;
+    box-shadow: 0 2px 4px rgba(234, 179, 8, 0.3);
 }
 
 .player-name-card.RB {
-    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-    border-color: #10b981;
-    color: #065f46;
+    background: linear-gradient(135deg, #86efac 0%, #22c55e 50%, #16a34a 100%);
+    border-color: #15803d;
+    color: #14532d;
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
 }
 
 .player-name-card.WR {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    border-color: #3b82f6;
-    color: #1e40af;
+    background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 50%, #2563eb 100%);
+    border-color: #1d4ed8;
+    color: #1e3a8a;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .player-name-card.TE {
-    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-    border-color: #8b5cf6;
-    color: #5b21b6;
+    background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 50%, #7c3aed 100%);
+    border-color: #6d28d9;
+    color: #4c1d95;
+    box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
 }
 
 .player-name-card.K {
-    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-    border-color: #ec4899;
-    color: #be185d;
+    background: linear-gradient(135deg, #f9a8d4 0%, #ec4899 50%, #db2777 100%);
+    border-color: #be185d;
+    color: #831843;
+    box-shadow: 0 2px 4px rgba(236, 72, 153, 0.3);
 }
 
-.player-name-card.DEF {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    border-color: #64748b;
-    color: #334155;
+.player-name-card.DEF, .player-name-card.DST {
+    background: linear-gradient(135deg, #cbd5e1 0%, #64748b 50%, #475569 100%);
+    border-color: #334155;
+    color: #0f172a;
+    box-shadow: 0 2px 4px rgba(100, 116, 139, 0.3);
 }
 
 /* Position styling with colors */
@@ -255,29 +261,48 @@ input[type="file"]:focus {
     white-space: nowrap;
 }
 
-/* Position colors */
+/* Position colors - Enhanced to match */
 .player-position.QB {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #f59e0b;
+    background: linear-gradient(135deg, #fef08a 0%, #facc15 100%);
+    color: #713f12;
+    border: 1px solid #ca8a04;
+    box-shadow: 0 1px 2px rgba(234, 179, 8, 0.2);
 }
 
 .player-position.RB {
-    background: #dcfce7;
-    color: #065f46;
-    border: 1px solid #10b981;
+    background: linear-gradient(135deg, #86efac 0%, #22c55e 100%);
+    color: #14532d;
+    border: 1px solid #15803d;
+    box-shadow: 0 1px 2px rgba(34, 197, 94, 0.2);
 }
 
 .player-position.WR {
-    background: #dbeafe;
-    color: #1e40af;
-    border: 1px solid #3b82f6;
+    background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%);
+    color: #1e3a8a;
+    border: 1px solid #1d4ed8;
+    box-shadow: 0 1px 2px rgba(59, 130, 246, 0.2);
 }
 
 .player-position.TE {
-    background: #f3e8ff;
-    color: #5b21b6;
-    border: 1px solid #8b5cf6;
+    background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%);
+    color: #4c1d95;
+    border: 1px solid #6d28d9;
+    box-shadow: 0 1px 2px rgba(139, 92, 246, 0.2);
+}
+
+.player-position.K {
+    background: linear-gradient(135deg, #f9a8d4 0%, #ec4899 100%);
+    color: #831843;
+    border: 1px solid #be185d;
+    box-shadow: 0 1px 2px rgba(236, 72, 153, 0.2);
+}
+
+.player-position.DEF, .player-position.DST {
+    background: linear-gradient(135deg, #cbd5e1 0%, #64748b 100%);
+    color: #0f172a;
+    border: 1px solid #334155;
+    box-shadow: 0 1px 2px rgba(100, 116, 139, 0.2);
+}
 }
 
 .player-position.K {
