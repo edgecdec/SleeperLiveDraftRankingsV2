@@ -885,7 +885,7 @@ class DraftHandlers {
         
         console.log('🏈 Creating players from CSV rankings...');
         
-        const players = [];
+        let players = [];
         const rankingsData = this.rankingsService.getCurrentRankingsData();
         
         if (!rankingsData || !rankingsData.length) {
@@ -894,7 +894,6 @@ class DraftHandlers {
         }
         
         // Create player objects directly from CSV data
-        let players = [];
         rankingsData.forEach((rankingEntry, index) => {
             const player = {
                 player_id: `csv_player_${index + 1}`,

@@ -208,25 +208,25 @@ input[type="file"]:focus {
     transform: translateY(-1px);
 }
 
-/* Position-based row coloring */
+/* Position-based row coloring - Sleeper Standard Colors */
 .player-row.position-QB {
-    background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
-    border-left: 4px solid #f59e0b;
+    background: linear-gradient(135deg, #fef3e2 0%, #fed7aa 100%);
+    border-left: 4px solid #ea580c;
 }
 
 .player-row.position-RB {
-    background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
-    border-left: 4px solid #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
+    border-left: 4px solid #059669;
 }
 
 .player-row.position-WR {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    border-left: 4px solid #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #bfdbfe 100%);
+    border-left: 4px solid #2563eb;
 }
 
 .player-row.position-TE {
-    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-    border-left: 4px solid #8b5cf6;
+    background: linear-gradient(135deg, #fef7ff 0%, #f3e8ff 100%);
+    border-left: 4px solid #9333ea;
 }
 
 .player-row.position-K {
@@ -235,33 +235,33 @@ input[type="file"]:focus {
 }
 
 .player-row.position-DEF, .player-row.position-DST, .player-row.position-D/ST {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     border-left: 4px solid #64748b;
 }
 
-/* Hover effects for position rows */
+/* Hover effects for position rows - Sleeper Colors */
 .player-row.position-QB:hover {
-    background: linear-gradient(135deg, #fef08a 0%, #fde68a 100%);
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.2);
+    box-shadow: 0 4px 8px rgba(234, 88, 12, 0.2);
 }
 
 .player-row.position-RB:hover {
-    background: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%);
+    background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
 }
 
 .player-row.position-WR:hover {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
 }
 
 .player-row.position-TE:hover {
     background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 4px 8px rgba(147, 51, 234, 0.2);
 }
 
 .player-row.position-K:hover {
@@ -271,7 +271,7 @@ input[type="file"]:focus {
 }
 
 .player-row.position-DEF:hover, .player-row.position-DST:hover, .player-row.position-D/ST:hover {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(100, 116, 139, 0.2);
 }
@@ -327,45 +327,45 @@ input[type="file"]:focus {
     white-space: nowrap;
 }
 
-/* Position colors - Enhanced to match */
+/* Position colors - Sleeper Standard Colors */
 .player-position.QB {
-    background: linear-gradient(135deg, #fef08a 0%, #facc15 100%);
-    color: #713f12;
-    border: 1px solid #ca8a04;
-    box-shadow: 0 1px 2px rgba(234, 179, 8, 0.2);
+    background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+    color: white;
+    border: 1px solid #b91c1c;
+    box-shadow: 0 1px 2px rgba(234, 88, 12, 0.2);
 }
 
 .player-position.RB {
-    background: linear-gradient(135deg, #86efac 0%, #22c55e 100%);
-    color: #14532d;
-    border: 1px solid #15803d;
-    box-shadow: 0 1px 2px rgba(34, 197, 94, 0.2);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: white;
+    border: 1px solid #065f46;
+    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
 }
 
 .player-position.WR {
-    background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%);
-    color: #1e3a8a;
-    border: 1px solid #1d4ed8;
-    box-shadow: 0 1px 2px rgba(59, 130, 246, 0.2);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border: 1px solid #1e40af;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
 }
 
 .player-position.TE {
-    background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%);
-    color: #4c1d95;
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    color: white;
     border: 1px solid #6d28d9;
-    box-shadow: 0 1px 2px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 1px 2px rgba(147, 51, 234, 0.2);
 }
 
 .player-position.K {
-    background: linear-gradient(135deg, #f9a8d4 0%, #ec4899 100%);
-    color: #831843;
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+    color: white;
     border: 1px solid #be185d;
     box-shadow: 0 1px 2px rgba(236, 72, 153, 0.2);
 }
 
 .player-position.DEF, .player-position.DST, .player-position.D/ST {
-    background: linear-gradient(135deg, #cbd5e1 0%, #64748b 100%);
-    color: #0f172a;
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    color: white;
     border: 1px solid #334155;
     box-shadow: 0 1px 2px rgba(100, 116, 139, 0.2);
 }
