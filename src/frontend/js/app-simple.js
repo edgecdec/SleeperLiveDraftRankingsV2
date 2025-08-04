@@ -6,7 +6,20 @@ class SimpleApp {
     constructor() {
         this.apiService = new ApiService();
         this.landingHandlers = new LandingHandlers(this.apiService, null);
+        this.draftHandlers = new DraftHandlers(this.apiService, null);
         this.autoLoadAttempted = false; // Prevent multiple auto-load attempts
+        
+        // Set up cross-references
+        this.landingHandlers.setDraftHandlers(this.draftHandlers);
+        this.draftHandlers.setLandingHandlers(this.landingHandlers);
+        
+        // Global state
+        this.state = {
+            currentUser: null,
+            userLeagues: [],
+            selectedLeague: null,
+            selectedDraft: null
+        };
         
         // Initialize when ready
         this.init();

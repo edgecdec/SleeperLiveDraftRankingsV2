@@ -550,29 +550,23 @@ class LandingHandlers {
                 window.app.state.selectedDraft = draft;
             }
             
-            // Emit league and draft selected events
-            this.emitLeagueSelected(league);
-            this.emitDraftSelected(draft);
-            
-            // Show loading overlay
-            this.uiUtils.showLoadingOverlay('Loading draft data...');
-            
-            // Load draft data
-            const draftData = await this.apiService.request(`/draft/${draft.draft_id}`);
-            
-            if (draftData.status === 'success') {
-                // The draft handlers will handle the rest via the emitted events
-                console.log('✅ Draft data loaded successfully');
-                
-            } else {
-                this.uiUtils.showNotification('Failed to load draft data: ' + draftData.message, 'danger');
+            // Store in draft handlers state
+            if (this.draftHandlers) {
+                this.draftHandlers.state.currentLeague = league;
+                this.draftHandlers.state.currentDraft = draft;
             }
+            
+            // Emit draft selected event with both league and draft data
+            this.emitDraftSelected({
+                ...draft,
+                league: league
+            });
+            
+            console.log('✅ Draft selection handled successfully');
             
         } catch (error) {
             console.error('❌ Failed to select draft:', error);
-            this.uiUtils.showNotification('Failed to load draft. Please try again.', 'danger');
-        } finally {
-            this.uiUtils.hideLoadingOverlay();
+            this.showError('Failed to load draft. Please try again.');
         }
     }
 
