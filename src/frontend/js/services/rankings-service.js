@@ -146,7 +146,8 @@ class RankingsService {
             overall_rank: player.overall_rank,
             position_rank: player.position_rank,
             tier: player.tier,
-            bye_week: player.bye_week
+            bye_week: player.bye_week,
+            value: player.value || 0 // Default to 0 if no value in CSV
         }));
     }
     

@@ -627,25 +627,36 @@ class DraftHandlers {
             const tierDisplay = ranking.tier ? `T${ranking.tier}` : '';
             const byeDisplay = ranking.bye_week ? `${ranking.bye_week}` : '';
             
-            // Value shows the same as rank since we're using CSV rankings
-            const valueDisplay = ranking.overall_rank;
+            // Value shows 0 if no value specified in CSV
+            const valueDisplay = ranking.value || ranking.overall_rank || 0;
+            
+            // Position display with rank in same line and color
+            const positionDisplay = posRankDisplay ? 
+                `${player.position} ${posRankDisplay}` : 
+                player.position;
+            
+            // Status shows "Bye Week" if player is on bye, otherwise availability
+            const statusDisplay = byeDisplay && byeDisplay !== '' ? 
+                'Bye Week' : 
+                (player.status === 'available' ? 'Available' : 'Drafted');
             
             return `
                 <div class="player-row ${player.status}" data-player-id="${player.player_id}">
                     <div class="player-rank">${rankDisplay}</div>
                     <div class="player-name">
-                        ${player.full_name}${injuryStatus}
-                        ${tierDisplay ? `<span class="tier-badge">${tierDisplay}</span>` : ''}
+                        <div class="player-name-card ${player.position}">
+                            ${player.full_name}${injuryStatus}
+                            ${tierDisplay ? `<span class="tier-badge">${tierDisplay}</span>` : ''}
+                        </div>
                     </div>
-                    <div class="player-position ${positionClass}" data-position="${player.position}">
-                        ${player.position}
-                        ${posRankDisplay ? `<span class="pos-rank">${posRankDisplay}</span>` : ''}
+                    <div class="player-position ${player.position}" data-position="${player.position}">
+                        ${positionDisplay}
                     </div>
                     <div class="player-team">${player.team}</div>
                     <div class="player-value">${valueDisplay}</div>
                     <div class="player-bye">${byeDisplay}</div>
                     <div class="player-status">
-                        <span class="status-${player.status}">${player.status === 'available' ? 'Available' : 'Drafted'}</span>
+                        <span class="status-${player.status}">${statusDisplay}</span>
                     </div>
                 </div>
             `;
@@ -877,7 +888,8 @@ class DraftHandlers {
                     overall_rank: rankingEntry.overall_rank,
                     position_rank: rankingEntry.position_rank,
                     tier: rankingEntry.tier,
-                    bye_week: rankingEntry.bye_week
+                    bye_week: rankingEntry.bye_week,
+                    value: rankingEntry.value || 0 // Default to 0 if no value specified
                 }
             };
             
