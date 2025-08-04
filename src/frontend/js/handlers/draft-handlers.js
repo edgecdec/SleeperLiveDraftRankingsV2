@@ -61,6 +61,14 @@ class DraftHandlers {
             });
         }
         
+        // Refresh roster button
+        const refreshRosterBtn = document.getElementById('refresh-roster-btn');
+        if (refreshRosterBtn) {
+            refreshRosterBtn.addEventListener('click', () => {
+                this.refreshRosterData();
+            });
+        }
+        
         // Listen for draft selection events
         document.addEventListener('draftSelected', (event) => {
             this.handleDraftSelected(event.detail);
@@ -488,6 +496,11 @@ class DraftHandlers {
                     console.log('🔍 Sample Sleeper pick:', picks[0]);
                     // Refresh the player list with new draft picks
                     this.refreshPlayersAfterDraft();
+                    
+                    // Update roster sidebar if it's visible
+                    if (this.state.isRosterVisible) {
+                        this.populateRosterSidebar();
+                    }
                 }
             } else {
                 console.log('⚠️ Failed to load draft picks from Sleeper API');
@@ -543,6 +556,11 @@ class DraftHandlers {
                 
                 // Refresh the player list with roster filtering
                 this.refreshPlayersAfterDraft();
+                
+                // Update roster sidebar if it's visible
+                if (this.state.isRosterVisible) {
+                    this.populateRosterSidebar();
+                }
                 
             } else {
                 console.log('⚠️ Failed to load roster data from Sleeper API');
@@ -1011,6 +1029,9 @@ class DraftHandlers {
             if (toggleText) {
                 toggleText.textContent = 'Hide Roster';
             }
+            
+            // Populate the roster when showing
+            this.populateRosterSidebar();
         }
     }
     
@@ -1028,6 +1049,323 @@ class DraftHandlers {
             
             if (toggleText) {
                 toggleText.textContent = 'Show Roster';
+            }
+        }
+    }
+    
+    /**
+     * Populate the roster sidebar with dynasty players and draft picks
+     */
+    populateRosterSidebar() {
+        try {
+            console.log('🏈 Populating roster sidebar...');
+            
+            // Get all roster players (dynasty + drafted)
+            const rosterPlayers = this.getRosterPlayers();
+            
+            // Clear existing roster slots
+            this.clearRosterSlots();
+            
+            // Organize players by position
+            const playersByPosition = this.organizePlayersByPosition(rosterPlayers);
+            
+            // Populate each position
+            this.populatePositionSlots('QB', playersByPosition.QB || [], 1);
+            this.populatePositionSlots('RB', playersByPosition.RB || [], 2);
+            this.populatePositionSlots('WR', playersByPosition.WR || [], 2);
+            this.populatePositionSlots('TE', playersByPosition.TE || [], 1);
+            this.populatePositionSlots('K', playersByPosition.K || [], 1);
+            this.populatePositionSlots('DEF', playersByPosition.DEF || [], 1);
+            
+            // Handle FLEX position (RB/WR/TE eligible)
+            const flexEligible = [
+                ...(playersByPosition.RB || []).slice(2), // Extra RBs
+                ...(playersByPosition.WR || []).slice(2), // Extra WRs  
+                ...(playersByPosition.TE || []).slice(1)  // Extra TEs
+            ];
+            this.populatePositionSlots('FLEX', flexEligible, 1);
+            
+            // Put remaining players on bench
+            const benchPlayers = this.getBenchPlayers(rosterPlayers, playersByPosition);
+            this.populatePositionSlots('BENCH', benchPlayers, 5);
+            
+            console.log(`✅ Roster populated with ${rosterPlayers.length} players`);
+            
+        } catch (error) {
+            console.error('❌ Error populating roster sidebar:', error);
+        }
+    }
+    
+    /**
+     * Get all roster players (dynasty + drafted)
+     */
+    getRosterPlayers() {
+        const rosterPlayers = [];
+        
+        // Add dynasty roster players
+        if (this.state.rosteredPlayerIds && this.state.rosteredPlayerIds.size > 0) {
+            this.state.rosteredPlayerIds.forEach(playerId => {
+                const player = this.findPlayerById(playerId);
+                if (player) {
+                    rosterPlayers.push({
+                        ...player,
+                        source: 'dynasty',
+                        status: 'rostered'
+                    });
+                }
+            });
+        }
+        
+        // Add drafted players from current draft
+        if (this.state.draftPicks && this.state.draftPicks.length > 0) {
+            this.state.draftPicks.forEach(pick => {
+                // Only add picks for the current user
+                if (pick.picked_by === this.state.currentDraft?.user_id) {
+                    const player = this.findPlayerByName(pick.player_name);
+                    if (player) {
+                        rosterPlayers.push({
+                            ...player,
+                            source: 'drafted',
+                            status: 'drafted',
+                            round: pick.round,
+                            pick_number: pick.pick_number
+                        });
+                    }
+                }
+            });
+        }
+        
+        console.log(`📋 Found ${rosterPlayers.length} roster players (dynasty + drafted)`);
+        return rosterPlayers;
+    }
+    
+    /**
+     * Find player by Sleeper ID
+     */
+    findPlayerById(playerId) {
+        // Check in current players list
+        if (this.state.players) {
+            const player = this.state.players.find(p => p.player_id === playerId);
+            if (player) return player;
+        }
+        
+        // Check in filtered players list
+        if (this.state.filteredPlayers) {
+            const player = this.state.filteredPlayers.find(p => p.player_id === playerId);
+            if (player) return player;
+        }
+        
+        // Check in Sleeper player map
+        if (this.state.sleeperPlayerMap && this.state.sleeperPlayerMap.has(playerId)) {
+            return this.state.sleeperPlayerMap.get(playerId);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Find player by name (for draft picks)
+     */
+    findPlayerByName(playerName) {
+        if (!playerName) return null;
+        
+        const normalizedName = playerName.toLowerCase().trim();
+        
+        // Check in current players list
+        if (this.state.players) {
+            const player = this.state.players.find(p => 
+                p.full_name && p.full_name.toLowerCase().trim() === normalizedName
+            );
+            if (player) return player;
+        }
+        
+        // Check in filtered players list  
+        if (this.state.filteredPlayers) {
+            const player = this.state.filteredPlayers.find(p =>
+                p.full_name && p.full_name.toLowerCase().trim() === normalizedName
+            );
+            if (player) return player;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Organize players by position
+     */
+    organizePlayersByPosition(players) {
+        const organized = {};
+        
+        players.forEach(player => {
+            const position = player.position || 'BENCH';
+            
+            // Handle multi-position players (e.g., "RB/WR")
+            const positions = position.split('/');
+            const primaryPosition = positions[0];
+            
+            if (!organized[primaryPosition]) {
+                organized[primaryPosition] = [];
+            }
+            
+            organized[primaryPosition].push(player);
+        });
+        
+        // Sort players within each position by ranking/ADP
+        Object.keys(organized).forEach(pos => {
+            organized[pos].sort((a, b) => {
+                const aRank = a.ranking?.overall_rank || a.rank || 999;
+                const bRank = b.ranking?.overall_rank || b.rank || 999;
+                return aRank - bRank;
+            });
+        });
+        
+        return organized;
+    }
+    
+    /**
+     * Clear all roster slots
+     */
+    clearRosterSlots() {
+        const positions = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DEF', 'BENCH'];
+        
+        positions.forEach(position => {
+            const slots = document.querySelectorAll(`[data-position="${position}"] .roster-slot`);
+            slots.forEach(slot => {
+                slot.className = 'roster-slot empty';
+                slot.innerHTML = 'Empty';
+            });
+        });
+    }
+    
+    /**
+     * Populate position slots with players
+     */
+    populatePositionSlots(position, players, maxSlots) {
+        const slotsContainer = document.querySelector(`[data-position="${position}"]`);
+        if (!slotsContainer) return;
+        
+        const slots = slotsContainer.querySelectorAll('.roster-slot');
+        
+        // Fill slots with players
+        for (let i = 0; i < Math.min(players.length, maxSlots, slots.length); i++) {
+            const player = players[i];
+            const slot = slots[i];
+            
+            if (slot && player) {
+                slot.className = `roster-slot filled ${player.source}`;
+                slot.innerHTML = this.createRosterPlayerHTML(player);
+            }
+        }
+    }
+    
+    /**
+     * Create HTML for a roster player
+     */
+    createRosterPlayerHTML(player) {
+        const sourceIcon = player.source === 'dynasty' ? '👑' : '🆕';
+        const sourceText = player.source === 'dynasty' ? 'Dynasty' : `R${player.round || '?'}`;
+        
+        return `
+            <div class="roster-player">
+                <div class="player-name">${player.full_name || player.name || 'Unknown'}</div>
+                <div class="player-details">
+                    <span class="player-position">${player.position || 'N/A'}</span>
+                    <span class="player-team">${player.team || 'N/A'}</span>
+                </div>
+                <div class="player-source">
+                    <span class="source-icon">${sourceIcon}</span>
+                    <span class="source-text">${sourceText}</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Get players for bench (remaining players not in starting lineup)
+     */
+    getBenchPlayers(allPlayers, playersByPosition) {
+        const startingPlayers = new Set();
+        
+        // Add starting lineup players to set
+        ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'].forEach(pos => {
+            const posPlayers = playersByPosition[pos] || [];
+            const maxStarters = this.getMaxStarters(pos);
+            
+            for (let i = 0; i < Math.min(posPlayers.length, maxStarters); i++) {
+                startingPlayers.add(posPlayers[i].player_id || posPlayers[i].full_name);
+            }
+        });
+        
+        // Add FLEX player
+        const flexEligible = [
+            ...(playersByPosition.RB || []).slice(2),
+            ...(playersByPosition.WR || []).slice(2), 
+            ...(playersByPosition.TE || []).slice(1)
+        ];
+        if (flexEligible.length > 0) {
+            startingPlayers.add(flexEligible[0].player_id || flexEligible[0].full_name);
+        }
+        
+        // Return players not in starting lineup
+        return allPlayers.filter(player => {
+            const playerId = player.player_id || player.full_name;
+            return !startingPlayers.has(playerId);
+        });
+    }
+    
+    /**
+     * Get maximum starters for a position
+     */
+    getMaxStarters(position) {
+        const maxStarters = {
+            'QB': 1,
+            'RB': 2, 
+            'WR': 2,
+            'TE': 1,
+            'K': 1,
+            'DEF': 1
+        };
+        
+        return maxStarters[position] || 0;
+    }
+    
+    /**
+     * Refresh roster data (dynasty + draft picks)
+     */
+    async refreshRosterData() {
+        try {
+            console.log('🔄 Refreshing roster data...');
+            
+            // Show loading state on refresh button
+            const refreshBtn = document.getElementById('refresh-roster-btn');
+            if (refreshBtn) {
+                refreshBtn.style.opacity = '0.5';
+                refreshBtn.disabled = true;
+            }
+            
+            // Reload dynasty roster data
+            if (this.state.currentDraft?.league_info) {
+                await this.loadRosterData(this.state.currentDraft.league_info);
+            }
+            
+            // Reload draft picks
+            await this.loadDraftPicksFromSleeper();
+            
+            // Update roster sidebar if visible
+            if (this.state.isRosterVisible) {
+                this.populateRosterSidebar();
+            }
+            
+            console.log('✅ Roster data refreshed');
+            
+        } catch (error) {
+            console.error('❌ Error refreshing roster data:', error);
+        } finally {
+            // Reset refresh button state
+            const refreshBtn = document.getElementById('refresh-roster-btn');
+            if (refreshBtn) {
+                refreshBtn.style.opacity = '1';
+                refreshBtn.disabled = false;
             }
         }
     }
@@ -1699,7 +2037,12 @@ class DraftHandlers {
             // Re-render the players
             this.renderPlayers();
             
-            console.log('🔄 Refreshed player list after draft/roster changes');
+            // Update roster sidebar if it's visible
+            if (this.state.isRosterVisible) {
+                this.populateRosterSidebar();
+            }
+            
+            console.log('🔄 Refreshed player list and roster after draft/roster changes');
         }
     }
     

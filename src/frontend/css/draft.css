@@ -747,6 +747,30 @@ input[type="file"]:focus {
     margin: 0;
 }
 
+.roster-header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.refresh-roster-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.refresh-roster-btn:hover {
+    color: #374151;
+    background: #e5e7eb;
+}
+
 .close-roster-btn {
     background: none;
     border: none;
@@ -812,6 +836,71 @@ input[type="file"]:focus {
     border-color: #3b82f6;
     color: #1f2937;
     font-weight: 500;
+}
+
+/* Roster Player Styling */
+.roster-player {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.roster-player .player-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    color: #1f2937;
+}
+
+.roster-player .player-details {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.roster-player .player-position {
+    font-weight: 500;
+    color: #374151;
+}
+
+.roster-player .player-team {
+    color: #6b7280;
+}
+
+.roster-player .player-source {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    margin-top: 0.125rem;
+}
+
+.roster-player .source-icon {
+    font-size: 0.875rem;
+}
+
+.roster-player .source-text {
+    font-weight: 500;
+}
+
+/* Dynasty vs Drafted styling */
+.roster-slot.dynasty {
+    background: #fef3c7;
+    border-color: #f59e0b;
+}
+
+.roster-slot.dynasty .player-source {
+    color: #92400e;
+}
+
+.roster-slot.drafted {
+    background: #dcfce7;
+    border-color: #22c55e;
+}
+
+.roster-slot.drafted .player-source {
+    color: #166534;
 }
 
 /* Loading States */
