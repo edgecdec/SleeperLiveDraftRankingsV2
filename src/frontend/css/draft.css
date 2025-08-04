@@ -206,6 +206,19 @@ input[type="file"]:focus {
     color: #374151;
 }
 
+.player-value {
+    text-align: center;
+    font-weight: 500;
+    color: #374151;
+}
+
+.player-bye {
+    text-align: center;
+    font-weight: 500;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
 .player-rank {
     text-align: center;
     font-weight: 700;
@@ -348,7 +361,7 @@ input[type="file"]:focus {
 
 .players-header {
     display: grid;
-    grid-template-columns: 60px 1fr 60px 80px 80px 100px;
+    grid-template-columns: 60px 1fr 60px 80px 80px 80px 100px;
     gap: 1rem;
     padding: 1rem;
     background: white;
@@ -366,7 +379,7 @@ input[type="file"]:focus {
 
 .player-row {
     display: grid;
-    grid-template-columns: 60px 1fr 60px 80px 80px 100px;
+    grid-template-columns: 60px 1fr 60px 80px 80px 80px 100px;
     gap: 1rem;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid #f3f4f6;
@@ -663,7 +676,7 @@ input[type="file"]:focus {
     
     .players-header,
     .player-row {
-        grid-template-columns: 40px 1fr 40px 60px 60px 80px;
+        grid-template-columns: 40px 1fr 40px 60px 60px 60px 80px;
         font-size: 0.75rem;
     }
     

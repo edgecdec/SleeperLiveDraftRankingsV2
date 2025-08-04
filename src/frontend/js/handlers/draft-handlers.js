@@ -625,10 +625,10 @@ class DraftHandlers {
             const rankDisplay = ranking.overall_rank;
             const posRankDisplay = ranking.position_rank;
             const tierDisplay = ranking.tier ? `T${ranking.tier}` : '';
-            const byeDisplay = ranking.bye_week ? `Bye ${ranking.bye_week}` : '';
+            const byeDisplay = ranking.bye_week ? `${ranking.bye_week}` : '';
             
-            // ADP shows the same as rank since we're using CSV rankings
-            const adpDisplay = ranking.overall_rank;
+            // Value shows the same as rank since we're using CSV rankings
+            const valueDisplay = ranking.overall_rank;
             
             return `
                 <div class="player-row ${player.status}" data-player-id="${player.player_id}">
@@ -642,10 +642,8 @@ class DraftHandlers {
                         ${posRankDisplay ? `<span class="pos-rank">${posRankDisplay}</span>` : ''}
                     </div>
                     <div class="player-team">${player.team}</div>
-                    <div class="player-adp">
-                        ${adpDisplay}
-                        ${byeDisplay ? `<div class="bye-week">${byeDisplay}</div>` : ''}
-                    </div>
+                    <div class="player-value">${valueDisplay}</div>
+                    <div class="player-bye">${byeDisplay}</div>
                     <div class="player-status">
                         <span class="status-${player.status}">${player.status === 'available' ? 'Available' : 'Drafted'}</span>
                     </div>
@@ -847,59 +845,73 @@ class DraftHandlers {
     }
     
     /**
-     * Update players with ranking data
+     * Create players from CSV rankings data
+     */
+    createPlayersFromRankings() {
+        if (!this.state.currentRankings) {
+            console.warn('⚠️ No rankings loaded, cannot create players');
+            return [];
+        }
+        
+        console.log('🏈 Creating players from CSV rankings...');
+        
+        const players = [];
+        const rankingsData = this.rankingsService.getCurrentRankingsData();
+        
+        if (!rankingsData || !rankingsData.length) {
+            console.warn('⚠️ No rankings data available');
+            return [];
+        }
+        
+        // Create player objects directly from CSV data
+        rankingsData.forEach((rankingEntry, index) => {
+            const player = {
+                player_id: `csv_player_${index + 1}`,
+                full_name: rankingEntry.player_name,
+                position: rankingEntry.position,
+                team: rankingEntry.team || 'UNK', // Some CSVs might not have team
+                rank: rankingEntry.overall_rank,
+                adp: rankingEntry.overall_rank.toString(),
+                status: 'available',
+                ranking: {
+                    overall_rank: rankingEntry.overall_rank,
+                    position_rank: rankingEntry.position_rank,
+                    tier: rankingEntry.tier,
+                    bye_week: rankingEntry.bye_week
+                }
+            };
+            
+            players.push(player);
+        });
+        
+        // Sort by overall rank
+        players.sort((a, b) => a.ranking.overall_rank - b.ranking.overall_rank);
+        
+        console.log(`✅ Created ${players.length} players from CSV rankings`);
+        return players;
+    }
+    
+    /**
+     * Update players with ranking data (legacy method - now creates from CSV)
      */
     updatePlayersWithRankings() {
-        if (!this.state.currentRankings || !this.state.players) {
+        if (!this.state.currentRankings) {
             return;
         }
         
-        console.log('🏈 Updating players with ranking data...');
+        console.log('🏈 Creating players from CSV rankings...');
         
-        // Add ranking data to each player and filter to only ranked players
-        const rankedPlayers = [];
+        // Create players directly from CSV instead of matching mock players
+        const csvPlayers = this.createPlayersFromRankings();
         
-        this.state.players.forEach(player => {
-            const ranking = this.rankingsService.getPlayerRanking(
-                player.full_name || player.first_name + ' ' + player.last_name,
-                player.position
-            );
-            
-            if (ranking) {
-                // Only include players that have ranking data
-                player.ranking = {
-                    overall_rank: ranking.overall_rank,
-                    position_rank: ranking.position_rank,
-                    tier: ranking.tier,
-                    bye_week: ranking.bye_week
-                };
-                
-                // Update the player's rank and ADP to match CSV rankings
-                player.rank = ranking.overall_rank;
-                player.adp = ranking.overall_rank.toString();
-                
-                rankedPlayers.push(player);
-            }
-            // Skip players without ranking data - they won't be displayed
-        });
-        
-        console.log(`🏈 Filtered to ${rankedPlayers.length} players with ranking data (from ${this.state.players.length} total)`);
-        
-        // Sort players by CSV ranking (overall_rank)
-        rankedPlayers.sort((a, b) => {
-            const aRank = a.ranking?.overall_rank || 9999;
-            const bRank = b.ranking?.overall_rank || 9999;
-            return aRank - bRank;
-        });
-        
-        // Update state to only include ranked players
-        this.state.players = rankedPlayers;
-        this.state.filteredPlayers = [...rankedPlayers];
+        // Update state with CSV-generated players
+        this.state.players = csvPlayers;
+        this.state.filteredPlayers = [...csvPlayers];
         
         // Re-filter and display players
         this.filterByPosition(this.state.currentPosition);
         
-        console.log('✅ Players updated with ranking data and filtered to CSV-only players');
+        console.log('✅ Players created from CSV rankings and displayed');
     }
     
     /**

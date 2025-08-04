@@ -131,6 +131,26 @@ class RankingsService {
     }
     
     /**
+     * Get current rankings data (all players)
+     */
+    getCurrentRankingsData() {
+        if (!this.currentRankings || !this.currentRankings.players) {
+            return [];
+        }
+        
+        // Return the raw player data from CSV with normalized field names
+        return this.currentRankings.players.map(player => ({
+            player_name: player.name,
+            position: player.position,
+            team: player.team,
+            overall_rank: player.overall_rank,
+            position_rank: player.position_rank,
+            tier: player.tier,
+            bye_week: player.bye_week
+        }));
+    }
+    
+    /**
      * Get player ranking by name and position
      */
     getPlayerRanking(playerName, position) {
