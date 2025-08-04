@@ -159,6 +159,9 @@ class DraftHandlers {
         // Update page title
         document.title = 'Fantasy Draft Assistant';
         
+        // Auto-populate league selection if we have user data
+        this.autoPopulateLeagueSelection();
+        
         // Reset state
         this.state.currentDraft = null;
         this.state.currentLeague = null;
@@ -166,6 +169,68 @@ class DraftHandlers {
         this.state.filteredPlayers = [];
         
         console.log('✅ Returned to league selection');
+    }
+    
+    /**
+     * Auto-populate league selection when returning from draft view
+     */
+    async autoPopulateLeagueSelection() {
+        console.log('🔄 Auto-populating league selection...');
+        
+        try {
+            // Check if we have current user data in global state
+            let currentUser = null;
+            let selectedSeason = '2025';
+            
+            // Try to get user data from global app state
+            if (window.app && window.app.state) {
+                currentUser = window.app.state.currentUser;
+                selectedSeason = window.app.state.selectedSeason || '2025';
+                console.log('📊 Found user data in global state:', currentUser?.username);
+            }
+            
+            // Try to get user data from landing handlers state
+            if (!currentUser && this.landingHandlers && this.landingHandlers.state) {
+                currentUser = this.landingHandlers.state.currentUser;
+                selectedSeason = this.landingHandlers.state.selectedSeason || '2025';
+                console.log('📊 Found user data in landing handlers state:', currentUser?.username);
+            }
+            
+            // If we have user data, trigger league reload
+            if (currentUser && currentUser.username && this.landingHandlers) {
+                console.log('✅ Auto-populating leagues for user:', currentUser.username, 'season:', selectedSeason);
+                
+                // Call the landing handlers to reload the user's leagues
+                await this.landingHandlers.handleUserSearch(currentUser.username, selectedSeason);
+                
+                console.log('✅ League selection auto-populated successfully');
+            } else {
+                console.log('ℹ️ No user data available for auto-population');
+                
+                // Show the user setup section if no user data is available
+                const userSetupSection = document.getElementById('user-setup-section');
+                const leaguesSection = document.getElementById('leagues-section');
+                
+                if (userSetupSection) {
+                    userSetupSection.style.display = 'block';
+                    console.log('✅ Showing user setup section');
+                }
+                
+                if (leaguesSection) {
+                    leaguesSection.style.display = 'none';
+                    console.log('✅ Hiding leagues section');
+                }
+            }
+            
+        } catch (error) {
+            console.error('❌ Error auto-populating league selection:', error);
+            
+            // Fallback: show user setup section
+            const userSetupSection = document.getElementById('user-setup-section');
+            if (userSetupSection) {
+                userSetupSection.style.display = 'block';
+            }
+        }
     }
     
     /**
