@@ -6,6 +6,7 @@ class SimpleApp {
     constructor() {
         this.apiService = new ApiService();
         this.landingHandlers = new LandingHandlers(this.apiService, null);
+        this.autoLoadAttempted = false; // Prevent multiple auto-load attempts
         
         // Initialize when ready
         this.init();
@@ -35,6 +36,12 @@ class SimpleApp {
      * Check URL for auto-loading user data
      */
     checkUrlForAutoLoad() {
+        // Prevent multiple attempts
+        if (this.autoLoadAttempted) {
+            console.log('⚠️ Auto-load already attempted, skipping');
+            return;
+        }
+        
         const path = window.location.pathname;
         console.log('🔍 Checking URL path:', path);
         
@@ -48,18 +55,46 @@ class SimpleApp {
             const urlParams = new URLSearchParams(window.location.search);
             const season = urlParams.get('season') || '2025';
             
-            // Fill in the form and trigger search
+            console.log('📋 Auto-load parameters:', { username, season });
+            
+            // Fill in the form elements
             const usernameInput = document.getElementById('username-input');
             const seasonSelect = document.getElementById('season-select');
             
+            console.log('🔍 Form elements found:', {
+                usernameInput: !!usernameInput,
+                seasonSelect: !!seasonSelect,
+                usernameInputValue: usernameInput?.value,
+                seasonSelectValue: seasonSelect?.value
+            });
+            
             if (usernameInput && seasonSelect) {
+                // Mark as attempted
+                this.autoLoadAttempted = true;
+                
+                // Set the values
                 usernameInput.value = username;
                 seasonSelect.value = season;
+                
+                console.log('✅ Form values set:', {
+                    username: usernameInput.value,
+                    season: seasonSelect.value
+                });
                 
                 // Trigger the search automatically
                 console.log('🔄 Auto-triggering search for:', { username, season });
                 this.landingHandlers.handleUserSearch(username, season);
+            } else {
+                console.error('❌ Form elements not found, retrying in 1000ms...');
+                // Retry after a longer delay in case elements aren't ready
+                setTimeout(() => {
+                    if (!this.autoLoadAttempted) {
+                        this.checkUrlForAutoLoad();
+                    }
+                }, 1000);
             }
+        } else {
+            console.log('ℹ️ Not a user page, no auto-load needed');
         }
     }
     
@@ -110,9 +145,37 @@ class SimpleApp {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎨 DOM loaded, waiting for Shoelace...');
     
-    // Wait for Shoelace components to be ready
-    setTimeout(() => {
-        console.log('🚀 Starting Simple App...');
-        window.app = new SimpleApp();
-    }, 1000);
+    // Check if Shoelace components are defined
+    const checkShoelace = () => {
+        const slButton = customElements.get('sl-button');
+        const slInput = customElements.get('sl-input');
+        const slSelect = customElements.get('sl-select');
+        
+        console.log('🔍 Checking Shoelace component definitions...');
+        console.log('sl-button defined:', !!slButton);
+        console.log('sl-input defined:', !!slInput);
+        console.log('sl-select defined:', !!slSelect);
+        
+        if (slButton && slInput && slSelect) {
+            console.log('✅ Shoelace components ready, starting app...');
+            window.app = new SimpleApp();
+            return true;
+        }
+        return false;
+    };
+    
+    // Try immediately
+    if (!checkShoelace()) {
+        // If not ready, wait a bit longer
+        console.log('⏳ Shoelace not ready, waiting...');
+        setTimeout(() => {
+            if (!checkShoelace()) {
+                // Final attempt after longer delay
+                setTimeout(() => {
+                    console.log('🚀 Starting app anyway (final attempt)...');
+                    window.app = new SimpleApp();
+                }, 2000);
+            }
+        }, 1000);
+    }
 });
