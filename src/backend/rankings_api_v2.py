@@ -1,21 +1,19 @@
 """
-Rankings API v2 - Enhanced rankings system with runtime Fantasy Pros generation
+Rankings API v2 - Unified rankings system with Fantasy Pros scraping and persistent uploads
 """
 
 import logging
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 
-# Import services
+# Import unified rankings manager
 try:
-    from .services.fantasy_pros_provider import fantasy_pros_provider
-    from .services.simple_rankings_fallback import simple_in_memory
-    SERVICES_AVAILABLE = True
+    from .services.rankings_manager import rankings_manager
+    RANKINGS_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Rankings services not available: {e}")
-    fantasy_pros_provider = None
-    simple_in_memory = None
-    SERVICES_AVAILABLE = False
+    print(f"⚠️ Rankings manager not available: {e}")
+    rankings_manager = None
+    RANKINGS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +26,7 @@ def health_check():
     return jsonify({
         'status': 'success',
         'message': 'Rankings API v2 is running',
-        'services_available': SERVICES_AVAILABLE,
+        'rankings_available': RANKINGS_AVAILABLE,
         'timestamp': datetime.now().isoformat()
     })
 
@@ -38,63 +36,27 @@ def list_rankings():
     try:
         logger.info("📋 Fetching available rankings...")
         
-        if not SERVICES_AVAILABLE:
+        if not RANKINGS_AVAILABLE or not rankings_manager:
             return jsonify({
                 'status': 'error',
-                'message': 'Rankings services not available'
+                'message': 'Rankings manager not available'
             }), 503
         
-        # Get Fantasy Pros rankings
-        fantasy_pros_rankings = fantasy_pros_provider.get_available_rankings() if fantasy_pros_provider else []
+        # Get all rankings from unified manager
+        all_rankings = rankings_manager.get_all_rankings()
         
-        # Get uploaded rankings
-        uploaded_rankings = simple_in_memory.get_available_rankings() if simple_in_memory else []
+        # Count by type
+        fantasy_pros_count = len([r for r in all_rankings if r['type'] == 'built-in'])
+        uploaded_count = len([r for r in all_rankings if r['type'] == 'custom'])
         
-        # Convert Fantasy Pros rankings to frontend-expected format
-        formatted_fantasy_pros = []
-        for ranking in fantasy_pros_rankings:
-            formatted_fantasy_pros.append({
-                'id': ranking['id'],
-                'name': ranking['name'],
-                'type': 'built-in',  # Frontend expects 'built-in' for Fantasy Pros
-                'scoring': ranking['scoring'].upper(),
-                'format': ranking['format'].title(),
-                'source': ranking['source'],
-                'category': 'FantasyPros',
-                'metadata': {
-                    'total_players': ranking.get('total_players', 0),
-                    'last_updated': ranking.get('last_updated')
-                }
-            })
-        
-        # Convert uploaded rankings to frontend-expected format
-        formatted_uploaded = []
-        for ranking in uploaded_rankings:
-            formatted_uploaded.append({
-                'id': ranking['id'],
-                'name': ranking['name'],
-                'type': 'custom',  # Frontend expects 'custom' for uploads
-                'scoring': 'Custom',
-                'format': 'Custom',
-                'source': ranking['source'],
-                'category': 'Custom Upload',
-                'metadata': {
-                    'total_players': ranking.get('total_players', 0),
-                    'upload_time': ranking.get('upload_time')
-                }
-            })
-        
-        # Combine all rankings
-        all_rankings = formatted_fantasy_pros + formatted_uploaded
-        
-        logger.info(f"✅ Found {len(all_rankings)} total rankings ({len(formatted_fantasy_pros)} Fantasy Pros, {len(formatted_uploaded)} uploaded)")
+        logger.info(f"✅ Found {len(all_rankings)} total rankings ({fantasy_pros_count} Fantasy Pros, {uploaded_count} uploaded)")
         
         return jsonify({
             'status': 'success',
             'rankings': all_rankings,
             'total': len(all_rankings),
-            'fantasy_pros_count': len(formatted_fantasy_pros),
-            'uploaded_count': len(formatted_uploaded)
+            'fantasy_pros_count': fantasy_pros_count,
+            'uploaded_count': uploaded_count
         })
         
     except Exception as e:
@@ -110,43 +72,30 @@ def get_ranking_data(ranking_id):
     try:
         logger.info(f"📊 Fetching ranking data for: {ranking_id}")
         
-        if not SERVICES_AVAILABLE:
+        if not RANKINGS_AVAILABLE or not rankings_manager:
             return jsonify({
                 'status': 'error',
-                'message': 'Rankings services not available'
+                'message': 'Rankings manager not available'
             }), 503
         
-        # Try Fantasy Pros provider first
-        if fantasy_pros_provider:
-            data = fantasy_pros_provider.get_ranking_data(ranking_id)
-            if data:
-                return jsonify({
-                    'status': 'success',
-                    'ranking_id': ranking_id,
-                    'players': data['players'],
-                    'total_players': data['total_players'],
-                    'last_updated': data.get('last_updated'),
-                    'source': 'Fantasy Pros'
-                })
+        # Get ranking data from unified manager
+        data = rankings_manager.get_ranking_data(ranking_id)
         
-        # Try uploaded rankings
-        if simple_in_memory:
-            data = simple_in_memory.get_ranking_data(ranking_id)
-            if data:
-                return jsonify({
-                    'status': 'success',
-                    'ranking_id': ranking_id,
-                    'players': data['players'],
-                    'total_players': data['total_players'],
-                    'upload_time': data.get('upload_time'),
-                    'source': 'User Upload'
-                })
-        
-        # Not found
-        return jsonify({
-            'status': 'error',
-            'message': f'Ranking {ranking_id} not found'
-        }), 404
+        if data:
+            return jsonify({
+                'status': 'success',
+                'ranking_id': ranking_id,
+                'players': data['players'],
+                'total_players': data['total_players'],
+                'last_updated': data.get('last_updated'),
+                'upload_time': data.get('upload_time'),
+                'source': data.get('source', 'Unknown')
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Ranking {ranking_id} not found'
+            }), 404
         
     except Exception as e:
         logger.error(f"❌ Error getting ranking data: {e}")
@@ -161,22 +110,23 @@ def refresh_rankings():
     try:
         logger.info("🔄 Force refreshing Fantasy Pros rankings...")
         
-        if not SERVICES_AVAILABLE or not fantasy_pros_provider:
+        if not RANKINGS_AVAILABLE or not rankings_manager:
             return jsonify({
                 'status': 'error',
-                'message': 'Fantasy Pros provider not available'
+                'message': 'Rankings manager not available'
             }), 503
         
-        # Force refresh
-        fantasy_pros_provider.force_refresh()
+        # Force refresh Fantasy Pros
+        rankings_manager.force_refresh_fantasy_pros()
         
-        # Get updated count
-        rankings = fantasy_pros_provider.get_available_rankings()
+        # Get updated rankings
+        all_rankings = rankings_manager.get_all_rankings()
+        fantasy_pros_count = len([r for r in all_rankings if r['type'] == 'built-in'])
         
         return jsonify({
             'status': 'success',
-            'message': 'Rankings refreshed successfully',
-            'total_rankings': len(rankings),
+            'message': 'Fantasy Pros rankings refreshed successfully',
+            'fantasy_pros_count': fantasy_pros_count,
             'timestamp': datetime.now().isoformat()
         })
         
@@ -189,14 +139,14 @@ def refresh_rankings():
 
 @rankings_bp_v2.route('/upload', methods=['POST'])
 def upload_ranking():
-    """Upload a custom ranking file"""
+    """Upload a custom ranking file with persistence"""
     try:
         logger.info("📤 Processing ranking upload...")
         
-        if not SERVICES_AVAILABLE or not simple_in_memory:
+        if not RANKINGS_AVAILABLE or not rankings_manager:
             return jsonify({
                 'status': 'error',
-                'message': 'Upload service not available'
+                'message': 'Rankings manager not available'
             }), 503
         
         # Check if file was uploaded
@@ -220,8 +170,8 @@ def upload_ranking():
             'format': request.form.get('format', 'Custom')
         }
         
-        # Process upload
-        result = simple_in_memory.upload_ranking(
+        # Process upload with persistence
+        result = rankings_manager.upload_custom_ranking(
             file.read(),
             file.filename,
             metadata
@@ -231,7 +181,7 @@ def upload_ranking():
         
         return jsonify({
             'status': 'success',
-            'message': 'Ranking uploaded successfully',
+            'message': 'Ranking uploaded and saved successfully',
             'ranking': result
         })
         
@@ -248,10 +198,10 @@ def delete_ranking(ranking_id):
     try:
         logger.info(f"🗑️ Deleting ranking: {ranking_id}")
         
-        if not SERVICES_AVAILABLE or not simple_in_memory:
+        if not RANKINGS_AVAILABLE or not rankings_manager:
             return jsonify({
                 'status': 'error',
-                'message': 'Delete service not available'
+                'message': 'Rankings manager not available'
             }), 503
         
         # Only allow deletion of custom rankings
@@ -261,7 +211,7 @@ def delete_ranking(ranking_id):
                 'message': 'Cannot delete built-in rankings'
             }), 400
         
-        success = simple_in_memory.delete_ranking(ranking_id)
+        success = rankings_manager.delete_custom_ranking(ranking_id)
         
         if success:
             return jsonify({
@@ -285,23 +235,13 @@ def delete_ranking(ranking_id):
 def get_stats():
     """Get rankings system statistics"""
     try:
-        stats = {
-            'fantasy_pros_rankings': 0,
-            'uploaded_rankings': 0,
-            'total_uploaded_players': 0,
-            'memory_usage_mb': 0.1
-        }
+        if not RANKINGS_AVAILABLE or not rankings_manager:
+            return jsonify({
+                'status': 'error',
+                'message': 'Rankings manager not available'
+            }), 503
         
-        if fantasy_pros_provider:
-            fp_stats = fantasy_pros_provider.get_stats()
-            stats['fantasy_pros_rankings'] = fp_stats.get('total_rankings', 0)
-            stats['memory_usage_mb'] += fp_stats.get('cache_size_mb', 0)
-        
-        if simple_in_memory:
-            mem_stats = simple_in_memory.get_ranking_stats()
-            stats['uploaded_rankings'] = mem_stats.get('total_rankings', 0)
-            stats['total_uploaded_players'] = mem_stats.get('total_players', 0)
-            stats['memory_usage_mb'] += mem_stats.get('memory_usage_mb', 0)
+        stats = rankings_manager.get_stats()
         
         return jsonify({
             'status': 'success',
