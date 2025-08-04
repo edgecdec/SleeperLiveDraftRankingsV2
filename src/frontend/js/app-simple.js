@@ -106,9 +106,68 @@ class SimpleApp {
                     }
                 }, 1000);
             }
-        } else {
-            console.log('ℹ️ Not a user page, no auto-load needed');
+            return;
         }
+        
+        // Check if we're on a draft page: /sleeper/league/{league_id}/draft/{draft_id}
+        const draftMatch = path.match(/^\/sleeper\/league\/([^\/]+)\/draft\/([^\/]+)$/);
+        if (draftMatch) {
+            const [, leagueId, draftId] = draftMatch;
+            console.log('🎯 Found draft URL:', { leagueId, draftId });
+            
+            // Mark as attempted
+            this.autoLoadAttempted = true;
+            
+            // Load draft directly
+            this.loadDraftFromUrl(leagueId, draftId);
+            return;
+        }
+        
+        console.log('ℹ️ Not a recognized page, no auto-load needed');
+    }
+    
+    /**
+     * Load draft directly from URL parameters
+     */
+    async loadDraftFromUrl(leagueId, draftId) {
+        console.log('🚀 Loading draft from URL:', { leagueId, draftId });
+        
+        try {
+            // Create mock league and draft objects for direct access
+            const mockLeague = {
+                league_id: leagueId,
+                name: 'Loading...',
+                total_rosters: 12,
+                season: '2025'
+            };
+            
+            const mockDraft = {
+                draft_id: draftId,
+                type: 'snake',
+                status: 'drafting',
+                league: mockLeague
+            };
+            
+            // Trigger draft selection directly
+            console.log('🎯 Triggering direct draft selection');
+            this.draftHandlers.handleDraftSelected(mockDraft);
+            
+        } catch (error) {
+            console.error('❌ Error loading draft from URL:', error);
+            // Fall back to showing the landing page
+            this.showLandingPage();
+        }
+    }
+    
+    /**
+     * Show the landing page (fallback)
+     */
+    showLandingPage() {
+        const userSetupPage = document.getElementById('user-setup-page');
+        const draftSection = document.getElementById('draft-section');
+        
+        if (userSetupPage) userSetupPage.style.display = 'block';
+        if (draftSection) draftSection.style.display = 'none';
     }
     
     setupEventHandlers() {

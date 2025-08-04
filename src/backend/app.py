@@ -143,6 +143,20 @@ def create_app(debug: bool = False) -> Flask:
                 'help': 'Make sure frontend files are built and in the correct location'
             }), 404
     
+    # SPA route for draft pages
+    @app.route('/sleeper/league/<league_id>/draft/<draft_id>')
+    def serve_draft_page(league_id, draft_id):
+        """Serve the main HTML file for draft pages"""
+        print(f"🎯 Draft page requested for league: {league_id}, draft: {draft_id}")
+        try:
+            return send_from_directory(static_path, 'index.html')
+        except FileNotFoundError:
+            return jsonify({
+                'error': 'Frontend files not found',
+                'path': static_path,
+                'help': 'Make sure frontend files are built and in the correct location'
+            }), 404
+    
     # Serve static assets
     @app.route('/js/<path:filename>')
     def serve_js(filename):

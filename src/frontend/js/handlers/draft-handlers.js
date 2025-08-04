@@ -150,12 +150,22 @@ class DraftHandlers {
             if (response.status === 'success') {
                 const draftData = response.draft;
                 
+                // Store draft data
+                this.state.currentDraft = draftData;
+                
+                // If we have league data in the draft response, use it
+                if (draftData.league) {
+                    this.state.currentLeague = draftData.league;
+                    console.log('✅ League data found in draft response:', draftData.league);
+                }
+                
                 // Update draft title
                 this.updateDraftTitle(draftData);
                 
-                // Load draft picks
+                // Load draft picks if available
                 if (draftData.picks) {
                     this.state.draftPicks = draftData.picks;
+                    console.log('✅ Draft picks loaded:', draftData.picks.length, 'picks');
                 }
                 
                 console.log('✅ Draft data loaded:', draftData);
@@ -175,21 +185,71 @@ class DraftHandlers {
     async loadPlayerRankings() {
         console.log('📡 Loading player rankings...');
         
+        if (!this.state.currentDraft || !this.state.currentDraft.draft_id) {
+            console.error('❌ No draft ID available for loading players');
+            this.loadMockPlayers();
+            return;
+        }
+        
         try {
-            // For now, we'll use mock data. In a real implementation,
-            // this would load from the rankings API
-            const mockPlayers = this.generateMockPlayers();
+            const draftId = this.state.currentDraft.draft_id;
+            console.log('🎯 Loading available players for draft:', draftId);
             
-            this.state.players = mockPlayers;
-            this.state.filteredPlayers = mockPlayers;
+            // Load available players from the draft-specific endpoint
+            const response = await this.apiService.request(`/draft/${draftId}/available-players`);
             
-            // Render players
-            this.renderPlayers();
-            
-            console.log('✅ Player rankings loaded:', mockPlayers.length, 'players');
+            if (response.status === 'success' && response.available_players) {
+                console.log('✅ Available players API response:', response.available_players.length, 'players');
+                console.log('🏈 League format detected:', response.league_format);
+                
+                // Transform API data to match our player format
+                const players = response.available_players.map((player, index) => ({
+                    player_id: player.player_id,
+                    full_name: player.name,
+                    position: player.position,
+                    team: player.team,
+                    rank: player.rank !== 999 ? player.rank : index + 1, // Use API rank or fallback to index
+                    adp: player.rank !== 999 ? player.rank.toString() : (index + 1).toString(),
+                    status: 'available',
+                    // Additional data
+                    tier: player.tier,
+                    bye_week: player.bye_week,
+                    injury_status: player.injury_status,
+                    years_exp: player.years_exp
+                }));
+                
+                this.state.players = players;
+                this.state.filteredPlayers = players;
+                
+                // Render players
+                this.renderPlayers();
+                
+                console.log('✅ Player rankings loaded:', players.length, 'players');
+            } else {
+                console.warn('⚠️ Available players API failed, response:', response);
+                this.loadMockPlayers();
+            }
         } catch (error) {
             console.error('❌ Error loading player rankings:', error);
+            console.warn('⚠️ Falling back to mock data');
+            this.loadMockPlayers();
         }
+    }
+    
+    /**
+     * Load mock players as fallback
+     */
+    loadMockPlayers() {
+        console.log('📡 Loading mock player data...');
+        
+        const mockPlayers = this.generateMockPlayers();
+        this.state.players = mockPlayers;
+        this.state.filteredPlayers = mockPlayers;
+        
+        // Render players
+        this.renderPlayers();
+        
+        console.log('✅ Mock player data loaded:', mockPlayers.length, 'players');
     }
     
     /**
