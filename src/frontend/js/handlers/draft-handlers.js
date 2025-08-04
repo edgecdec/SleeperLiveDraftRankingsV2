@@ -68,7 +68,11 @@ class DraftHandlers {
         const rankingsSelect = document.getElementById('rankings-select');
         if (rankingsSelect) {
             rankingsSelect.addEventListener('sl-change', (event) => {
-                this.handleRankingSelection(event.target.value);
+                try {
+                    this.handleRankingSelection(event.target.value);
+                } catch (error) {
+                    console.error('❌ Error handling ranking selection:', error);
+                }
             });
         }
         
@@ -250,6 +254,7 @@ class DraftHandlers {
                 this.state.filteredPlayers = players;
                 
                 // Initialize rankings selector
+                await this.waitForShoelaceComponents();
                 await this.initializeRankingsSelector();
                 
                 // Render players
@@ -278,6 +283,7 @@ class DraftHandlers {
         this.state.filteredPlayers = mockPlayers;
         
         // Initialize rankings selector
+        await this.waitForShoelaceComponents();
         await this.initializeRankingsSelector();
         
         // Render players
@@ -720,6 +726,23 @@ class DraftHandlers {
     }
     
     /**
+     * Wait for Shoelace components to be fully loaded
+     */
+    async waitForShoelaceComponents() {
+        return new Promise((resolve) => {
+            // Check if Shoelace components are defined
+            const checkComponents = () => {
+                if (customElements.get('sl-select') && customElements.get('sl-option')) {
+                    resolve();
+                } else {
+                    setTimeout(checkComponents, 50);
+                }
+            };
+            checkComponents();
+        });
+    }
+    
+    /**
      * Initialize rankings selector
      */
     async initializeRankingsSelector() {
@@ -735,14 +758,11 @@ class DraftHandlers {
             // Load available rankings
             const rankings = await this.rankingsService.getAvailableRankings();
             
-            // Clear existing options
+            // Clear existing options by setting innerHTML
             rankingsSelect.innerHTML = '';
             
-            // Add default option
-            const defaultOption = document.createElement('sl-option');
-            defaultOption.value = '';
-            defaultOption.textContent = 'Select Rankings';
-            rankingsSelect.appendChild(defaultOption);
+            // Create options HTML string instead of DOM manipulation
+            let optionsHTML = '<sl-option value="">Select Rankings</sl-option>';
             
             // Group rankings by type
             const builtInRankings = rankings.filter(r => r.type === 'built-in');
@@ -750,37 +770,35 @@ class DraftHandlers {
             
             // Add built-in rankings
             if (builtInRankings.length > 0) {
-                const builtInGroup = document.createElement('sl-option-group');
-                builtInGroup.label = 'Built-in Rankings';
-                
+                optionsHTML += '<sl-option-group label="Built-in Rankings">';
                 builtInRankings.forEach(ranking => {
-                    const option = document.createElement('sl-option');
-                    option.value = ranking.id;
-                    option.textContent = `${ranking.name} (${ranking.scoring} - ${ranking.format})`;
-                    builtInGroup.appendChild(option);
+                    const displayName = `${ranking.name} (${ranking.scoring} - ${ranking.format})`;
+                    optionsHTML += `<sl-option value="${ranking.id}">${displayName}</sl-option>`;
                 });
-                
-                rankingsSelect.appendChild(builtInGroup);
+                optionsHTML += '</sl-option-group>';
             }
             
             // Add custom rankings
             if (customRankings.length > 0) {
-                const customGroup = document.createElement('sl-option-group');
-                customGroup.label = 'Custom Rankings';
-                
+                optionsHTML += '<sl-option-group label="Custom Rankings">';
                 customRankings.forEach(ranking => {
-                    const option = document.createElement('sl-option');
-                    option.value = ranking.id;
-                    option.textContent = ranking.name;
-                    customGroup.appendChild(option);
+                    optionsHTML += `<sl-option value="${ranking.id}">${ranking.name}</sl-option>`;
                 });
-                
-                rankingsSelect.appendChild(customGroup);
+                optionsHTML += '</sl-option-group>';
             }
+            
+            // Set the HTML and let Shoelace handle the component updates
+            rankingsSelect.innerHTML = optionsHTML;
+            
+            // Wait for Shoelace to process the new options
+            await new Promise(resolve => setTimeout(resolve, 100));
             
             // Auto-select first built-in ranking if available
             if (builtInRankings.length > 0) {
                 rankingsSelect.value = builtInRankings[0].id;
+                
+                // Trigger the change event manually since we set the value programmatically
+                await new Promise(resolve => setTimeout(resolve, 100));
                 await this.handleRankingSelection(builtInRankings[0].id);
             }
             
