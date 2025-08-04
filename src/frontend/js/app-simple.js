@@ -41,7 +41,7 @@ class SimpleApp {
             this.setupHistoryNavigation();
             
             // Check for URL parameters and auto-load user
-            this.checkUrlForAutoLoad();
+            await this.checkUrlForAutoLoad();
             
             console.log('✅ Simple app initialized successfully');
         } catch (error) {
@@ -52,7 +52,7 @@ class SimpleApp {
     /**
      * Check URL for auto-loading user data
      */
-    checkUrlForAutoLoad() {
+    async checkUrlForAutoLoad() {
         // Prevent multiple attempts
         if (this.autoLoadAttempted) {
             console.log('⚠️ Auto-load already attempted, skipping');
@@ -104,9 +104,9 @@ class SimpleApp {
             } else {
                 console.log('⚠️ Form elements not found, retrying in 1 second...');
                 // Retry after a short delay if elements aren't ready
-                setTimeout(() => {
+                setTimeout(async () => {
                     if (!this.autoLoadAttempted) {
-                        this.checkUrlForAutoLoad();
+                        await this.checkUrlForAutoLoad();
                     }
                 }, 1000);
             }
@@ -268,7 +268,7 @@ class SimpleApp {
      * Setup browser history navigation
      */
     setupHistoryNavigation() {
-        window.addEventListener('popstate', (event) => {
+        window.addEventListener('popstate', async (event) => {
             console.log('🔙 Browser back/forward navigation detected:', event.state);
             
             if (event.state) {
@@ -287,7 +287,7 @@ class SimpleApp {
                 }
             } else {
                 // No state, check URL
-                this.checkUrlForAutoLoad();
+                await this.checkUrlForAutoLoad();
             }
         });
         
