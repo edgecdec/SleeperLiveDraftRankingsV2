@@ -1114,20 +1114,20 @@ class EventHandlers {
             // Fetch user data
             const userData = await this.apiService.request(`/user/${username}`);
             
-            if (userData.success) {
+            if (userData.status === 'success' && userData.user) {
                 // Display user info
                 this.displayUserInfo(userData.user);
                 
                 // Fetch leagues for the season
                 const leaguesData = await this.apiService.request(`/user/${username}/leagues?season=${season}`);
                 
-                if (leaguesData.success) {
+                if (leaguesData.status === 'success' && leaguesData.leagues) {
                     this.displayLeagues(leaguesData.leagues, season);
                 } else {
-                    this.showError(leaguesData.message || 'Failed to load leagues');
+                    this.showError(leaguesData.error || 'Failed to load leagues');
                 }
             } else {
-                this.showError(userData.message || 'User not found');
+                this.showError(userData.error || 'User not found');
             }
             
         } catch (error) {

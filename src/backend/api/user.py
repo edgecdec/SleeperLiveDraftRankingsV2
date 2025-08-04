@@ -60,7 +60,7 @@ def get_user(username):
 @user_bp.route('/user/<username>/leagues')
 def get_user_leagues(username):
     """
-    Get all leagues for a user
+    Get all leagues for a user with draft information
     
     Args:
         username: Sleeper username
@@ -93,6 +93,20 @@ def get_user_leagues(username):
         
         # Get leagues for the user
         leagues = SleeperAPI.get_user_leagues(user_id, season)
+        
+        # Add draft information to each league
+        for league in leagues:
+            league_id = league.get('league_id')
+            if league_id:
+                try:
+                    # Get drafts for this league
+                    drafts = SleeperAPI.get_league_drafts(league_id)
+                    league['drafts'] = drafts
+                except Exception as e:
+                    print(f"⚠️ Failed to get drafts for league {league_id}: {e}")
+                    league['drafts'] = []
+            else:
+                league['drafts'] = []
         
         return jsonify({
             'user': {
