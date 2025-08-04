@@ -148,28 +148,32 @@ class DraftHandlers {
             const response = await this.apiService.request(`/draft/${draftId}`);
             
             if (response.status === 'success') {
-                const draftData = response.draft;
+                // The API response has draft data at the root level, not nested under 'draft'
+                console.log('✅ Draft API response keys:', Object.keys(response));
                 
-                // Store draft data
-                this.state.currentDraft = draftData;
+                // Store draft data - the response itself contains the draft info
+                this.state.currentDraft = {
+                    draft_id: response.draft_id,
+                    ...response.draft_info
+                };
                 
-                // If we have league data in the draft response, use it
-                if (draftData.league) {
-                    this.state.currentLeague = draftData.league;
-                    console.log('✅ League data found in draft response:', draftData.league);
+                // If we have league data in the response, use it
+                if (response.league_info) {
+                    this.state.currentLeague = response.league_info;
+                    console.log('✅ League data found in draft response:', response.league_info);
                 }
                 
                 // Update draft title
-                this.updateDraftTitle(draftData);
+                this.updateDraftTitle(this.state.currentDraft);
                 
                 // Load draft picks if available
-                if (draftData.picks) {
-                    this.state.draftPicks = draftData.picks;
-                    console.log('✅ Draft picks loaded:', draftData.picks.length, 'picks');
+                if (response.draft_info && response.draft_info.picks) {
+                    this.state.draftPicks = response.draft_info.picks;
+                    console.log('✅ Draft picks loaded:', response.draft_info.picks.length, 'picks');
                 }
                 
-                console.log('✅ Draft data loaded:', draftData);
-                return draftData;
+                console.log('✅ Draft data loaded:', this.state.currentDraft);
+                return this.state.currentDraft;
             } else {
                 throw new Error(response.message || 'Failed to load draft data');
             }
@@ -286,12 +290,16 @@ class DraftHandlers {
         const titleElement = document.getElementById('draft-title');
         const subtitleElement = document.getElementById('draft-subtitle');
         
-        if (titleElement && this.state.currentLeague) {
-            titleElement.textContent = this.state.currentLeague.name || 'Draft Board';
+        if (titleElement) {
+            if (this.state.currentLeague && this.state.currentLeague.name) {
+                titleElement.textContent = this.state.currentLeague.name;
+            } else {
+                titleElement.textContent = 'Draft Board';
+            }
         }
         
-        if (subtitleElement) {
-            const draftType = draftData.type === 'snake' ? 'Snake Draft' : draftData.type;
+        if (subtitleElement && draftData) {
+            const draftType = draftData.type === 'snake' ? 'Snake Draft' : (draftData.type || 'Draft');
             const status = draftData.status || 'Unknown';
             subtitleElement.textContent = `${draftType} • Status: ${status}`;
         }

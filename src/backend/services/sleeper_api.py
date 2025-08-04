@@ -397,6 +397,52 @@ class SleeperAPI:
             return []
     
     @staticmethod
+    def is_dynasty_or_keeper_league(league_info: dict) -> bool:
+        """
+        Determine if a league is dynasty or keeper based on league settings
+        
+        Args:
+            league_info: League information from Sleeper API
+            
+        Returns:
+            True if dynasty/keeper league, False if redraft
+        """
+        print(f"🔍 Checking dynasty status for league...")
+        
+        if not league_info or 'settings' not in league_info:
+            print(f"❌ No league info or settings found")
+            return False
+            
+        settings = league_info['settings']
+        print(f"📊 League settings: type={settings.get('type')}, max_keepers={settings.get('max_keepers')}, taxi_slots={settings.get('taxi_slots')}")
+        
+        # Check for dynasty/keeper indicators
+        # Type 2 typically indicates dynasty
+        if settings.get('type') == 2:
+            print(f"✅ Dynasty detected: type=2")
+            return True
+            
+        # Check for keeper settings
+        max_keepers = settings.get('max_keepers', 0)
+        if max_keepers > 0:
+            print(f"✅ Keeper league detected: max_keepers={max_keepers}")
+            return True
+            
+        # Check for taxi squad (dynasty feature)
+        taxi_slots = settings.get('taxi_slots', 0)
+        if taxi_slots > 0:
+            print(f"✅ Dynasty detected: taxi_slots={taxi_slots}")
+            return True
+            
+        # Check for previous league ID (indicates continuing league)
+        if league_info.get('previous_league_id'):
+            print(f"✅ Continuing league detected: previous_league_id={league_info.get('previous_league_id')}")
+            return True
+            
+        print(f"❌ Redraft league detected")
+        return False
+    
+    @staticmethod
     def get_all_unavailable_players(draft_id: str, league_id: str = None) -> Tuple[List[str], bool]:
         """
         Get all unavailable players (drafted + rostered for dynasty)

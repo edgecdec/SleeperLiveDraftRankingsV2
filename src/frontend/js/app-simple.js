@@ -149,8 +149,16 @@ class SimpleApp {
             };
             
             // Trigger draft selection directly
-            console.log('🎯 Triggering direct draft selection');
-            this.draftHandlers.handleDraftSelected(mockDraft);
+            console.log('🎯 Triggering direct draft selection with:', mockDraft);
+            
+            // Make sure draft handlers exist
+            if (!this.draftHandlers) {
+                console.error('❌ Draft handlers not initialized!');
+                this.showLandingPage();
+                return;
+            }
+            
+            await this.draftHandlers.handleDraftSelected(mockDraft);
             
         } catch (error) {
             console.error('❌ Error loading draft from URL:', error);
