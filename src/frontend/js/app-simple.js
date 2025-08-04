@@ -136,7 +136,7 @@ class SimpleApp {
             
             // Trigger direct draft selection
             console.log('🎯 Triggering direct draft selection with:', mockDraft);
-            this.draftHandlers.selectDraft(mockDraft);
+            this.draftHandlers.handleDraftSelected(mockDraft);
             return;
         }
         

@@ -224,24 +224,20 @@ class LandingHandlers {
         console.log('🎨 Displaying user info for:', user);
         
         try {
-            const userInfoDiv = document.getElementById('user-info');
-            const avatarImg = document.getElementById('user-avatar-img');
-            const avatarIcon = document.getElementById('user-avatar-icon');
+            // Updated to match refactored HTML structure
+            const userInfoDiv = document.querySelector('.user-info');
+            const userAvatar = document.getElementById('user-avatar');
             const displayName = document.getElementById('user-display-name');
             const username = document.getElementById('user-username');
             
             console.log('🔍 Found elements:', {
                 userInfoDiv: !!userInfoDiv,
-                avatarImg: !!avatarImg,
-                avatarIcon: !!avatarIcon,
+                userAvatar: !!userAvatar,
                 displayName: !!displayName,
                 username: !!username
             });
             
-            if (userInfoDiv && displayName && username) {
-                // Show user info
-                userInfoDiv.style.display = 'block';
-                
+            if (displayName && username) {
                 // Set user details
                 displayName.textContent = user.display_name || user.username;
                 username.textContent = `@${user.username}`;
@@ -251,16 +247,11 @@ class LandingHandlers {
                     username: username.textContent
                 });
                 
-                // Handle avatar
-                if (user.avatar && avatarImg && avatarIcon) {
-                    avatarImg.src = `https://sleepercdn.com/avatars/thumbs/${user.avatar}`;
-                    avatarImg.style.display = 'block';
-                    avatarIcon.style.display = 'none';
-                    console.log('✅ Set avatar image');
-                } else if (avatarIcon) {
-                    avatarIcon.style.display = 'block';
-                    if (avatarImg) avatarImg.style.display = 'none';
-                    console.log('✅ Set avatar icon');
+                // Handle avatar (sl-avatar component)
+                if (user.avatar && userAvatar) {
+                    const avatarUrl = `https://sleepercdn.com/avatars/thumbs/${user.avatar}`;
+                    userAvatar.image = avatarUrl;
+                    console.log('✅ Set avatar image:', avatarUrl);
                 }
                 
                 // Store user data
