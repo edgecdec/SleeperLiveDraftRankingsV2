@@ -138,7 +138,59 @@ class DraftHandlers {
         // Update page title
         document.title = 'Fantasy Draft Assistant - Draft Board';
         
+        // Update URL to match the new user-based format
+        this.updateDraftUrl();
+        
         console.log('✅ Draft view displayed');
+    }
+    
+    /**
+     * Update the URL to use the new user-based draft format
+     */
+    updateDraftUrl() {
+        try {
+            const currentDraft = this.state.currentDraft;
+            if (!currentDraft) {
+                console.log('⚠️ No current draft data for URL update');
+                return;
+            }
+            
+            // Get current user from various sources
+            let currentUser = null;
+            if (window.app && window.app.state && window.app.state.currentUser) {
+                currentUser = window.app.state.currentUser;
+            } else if (this.landingHandlers && this.landingHandlers.state && this.landingHandlers.state.currentUser) {
+                currentUser = this.landingHandlers.state.currentUser;
+            }
+            
+            if (currentUser && currentUser.username && currentDraft.draft_id) {
+                // Get league ID from draft data
+                const leagueId = currentDraft.league?.league_id || currentDraft.league_id;
+                
+                if (leagueId) {
+                    const newUrl = `/user/${currentUser.username}/draft/${leagueId}/${currentDraft.draft_id}`;
+                    console.log('🔗 Updating draft URL to:', newUrl);
+                    
+                    // Update URL without triggering navigation
+                    history.replaceState({
+                        page: 'draft',
+                        user: currentUser,
+                        league: currentDraft.league || { league_id: leagueId },
+                        draft: currentDraft,
+                        backUrl: `/user/${currentUser.username}`
+                    }, '', newUrl);
+                    
+                    console.log('✅ Draft URL updated successfully');
+                } else {
+                    console.log('⚠️ No league ID available for URL update');
+                }
+            } else {
+                console.log('⚠️ Missing user or draft data for URL update');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error updating draft URL:', error);
+        }
     }
     
     /**
