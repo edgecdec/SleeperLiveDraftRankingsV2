@@ -182,17 +182,28 @@ class DraftHandlers {
             let currentUser = null;
             let selectedSeason = '2025';
             
+            // Try to get season from UI first
+            const seasonSelect = document.getElementById('season-select');
+            if (seasonSelect && seasonSelect.value) {
+                selectedSeason = seasonSelect.value;
+                console.log('📅 Using season from UI:', selectedSeason);
+            }
+            
             // Try to get user data from global app state
             if (window.app && window.app.state) {
                 currentUser = window.app.state.currentUser;
-                selectedSeason = window.app.state.selectedSeason || '2025';
+                if (!seasonSelect?.value && window.app.state.selectedSeason) {
+                    selectedSeason = window.app.state.selectedSeason;
+                }
                 console.log('📊 Found user data in global state:', currentUser?.username);
             }
             
             // Try to get user data from landing handlers state
             if (!currentUser && this.landingHandlers && this.landingHandlers.state) {
                 currentUser = this.landingHandlers.state.currentUser;
-                selectedSeason = this.landingHandlers.state.selectedSeason || '2025';
+                if (!seasonSelect?.value && this.landingHandlers.state.selectedSeason) {
+                    selectedSeason = this.landingHandlers.state.selectedSeason;
+                }
                 console.log('📊 Found user data in landing handlers state:', currentUser?.username);
             }
             
