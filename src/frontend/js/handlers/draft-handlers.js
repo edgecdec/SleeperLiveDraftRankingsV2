@@ -290,23 +290,107 @@ class DraftHandlers {
      * Generate mock player data (replace with real API call)
      */
     generateMockPlayers() {
-        const positions = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
-        const teams = ['BUF', 'MIA', 'NE', 'NYJ', 'BAL', 'CIN', 'CLE', 'PIT', 'HOU', 'IND', 'JAX', 'TEN'];
+        // Use real player names for better testing of rankings integration
+        const realPlayers = [
+            // QBs
+            { name: 'Josh Allen', position: 'QB', team: 'BUF' },
+            { name: 'Lamar Jackson', position: 'QB', team: 'BAL' },
+            { name: 'Jayden Daniels', position: 'QB', team: 'WAS' },
+            { name: 'Jalen Hurts', position: 'QB', team: 'PHI' },
+            { name: 'Joe Burrow', position: 'QB', team: 'CIN' },
+            { name: 'Dak Prescott', position: 'QB', team: 'DAL' },
+            { name: 'Tua Tagovailoa', position: 'QB', team: 'MIA' },
+            { name: 'Anthony Richardson', position: 'QB', team: 'IND' },
+            
+            // RBs
+            { name: 'Saquon Barkley', position: 'RB', team: 'PHI' },
+            { name: 'Bijan Robinson', position: 'RB', team: 'ATL' },
+            { name: 'Breece Hall', position: 'RB', team: 'NYJ' },
+            { name: 'Jonathan Taylor', position: 'RB', team: 'IND' },
+            { name: 'Derrick Henry', position: 'RB', team: 'BAL' },
+            { name: 'Josh Jacobs', position: 'RB', team: 'GB' },
+            { name: 'Kenneth Walker III', position: 'RB', team: 'SEA' },
+            { name: 'De\'Von Achane', position: 'RB', team: 'MIA' },
+            { name: 'Jahmyr Gibbs', position: 'RB', team: 'DET' },
+            { name: 'Alvin Kamara', position: 'RB', team: 'NO' },
+            
+            // WRs
+            { name: 'Ja\'Marr Chase', position: 'WR', team: 'CIN' },
+            { name: 'Justin Jefferson', position: 'WR', team: 'MIN' },
+            { name: 'CeeDee Lamb', position: 'WR', team: 'DAL' },
+            { name: 'Tyreek Hill', position: 'WR', team: 'MIA' },
+            { name: 'A.J. Brown', position: 'WR', team: 'PHI' },
+            { name: 'Amon-Ra St. Brown', position: 'WR', team: 'DET' },
+            { name: 'Puka Nacua', position: 'WR', team: 'LAR' },
+            { name: 'DK Metcalf', position: 'WR', team: 'SEA' },
+            { name: 'Garrett Wilson', position: 'WR', team: 'NYJ' },
+            { name: 'Chris Olave', position: 'WR', team: 'NO' },
+            { name: 'DeVonta Smith', position: 'WR', team: 'PHI' },
+            { name: 'Jaylen Waddle', position: 'WR', team: 'MIA' },
+            
+            // TEs
+            { name: 'Travis Kelce', position: 'TE', team: 'KC' },
+            { name: 'Mark Andrews', position: 'TE', team: 'BAL' },
+            { name: 'Sam LaPorta', position: 'TE', team: 'DET' },
+            { name: 'Trey McBride', position: 'TE', team: 'ARI' },
+            { name: 'George Kittle', position: 'TE', team: 'SF' },
+            { name: 'Evan Engram', position: 'TE', team: 'JAX' },
+            { name: 'Kyle Pitts', position: 'TE', team: 'ATL' },
+            { name: 'T.J. Hockenson', position: 'TE', team: 'MIN' },
+            
+            // Kickers
+            { name: 'Justin Tucker', position: 'K', team: 'BAL' },
+            { name: 'Harrison Butker', position: 'K', team: 'KC' },
+            { name: 'Tyler Bass', position: 'K', team: 'BUF' },
+            { name: 'Brandon McManus', position: 'K', team: 'JAX' },
+            
+            // Defense
+            { name: 'San Francisco 49ers', position: 'DEF', team: 'SF' },
+            { name: 'Dallas Cowboys', position: 'DEF', team: 'DAL' },
+            { name: 'Buffalo Bills', position: 'DEF', team: 'BUF' },
+            { name: 'Pittsburgh Steelers', position: 'DEF', team: 'PIT' }
+        ];
+        
+        // Create players array with realistic data
         const players = [];
         
-        // Generate sample players
-        for (let i = 1; i <= 200; i++) {
+        // Add all real players first
+        realPlayers.forEach((playerData, index) => {
+            players.push({
+                player_id: `player_${index + 1}`,
+                full_name: playerData.name,
+                position: playerData.position,
+                team: playerData.team,
+                rank: index + 1,
+                adp: (index * 3 + Math.random() * 10 + 1).toFixed(1),
+                status: 'available',
+                tier: Math.ceil((index + 1) / 12), // Group into tiers
+                bye_week: Math.floor(Math.random() * 8) + 5, // Bye weeks 5-12
+                injury_status: Math.random() > 0.9 ? 'Questionable' : null,
+                years_exp: Math.floor(Math.random() * 10) + 1
+            });
+        });
+        
+        // Fill remaining slots with generic players if needed
+        const positions = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
+        const teams = ['BUF', 'MIA', 'NE', 'NYJ', 'BAL', 'CIN', 'CLE', 'PIT', 'HOU', 'IND', 'JAX', 'TEN'];
+        
+        for (let i = players.length; i < 200; i++) {
             const position = positions[Math.floor(Math.random() * positions.length)];
             const team = teams[Math.floor(Math.random() * teams.length)];
             
             players.push({
-                player_id: `player_${i}`,
-                full_name: `Player ${i}`,
+                player_id: `player_${i + 1}`,
+                full_name: `${position} Player ${i + 1 - realPlayers.length}`,
                 position: position,
                 team: team,
-                rank: i,
-                adp: (Math.random() * 200 + 1).toFixed(1),
-                status: 'available'
+                rank: i + 1,
+                adp: (Math.random() * 200 + realPlayers.length).toFixed(1),
+                status: 'available',
+                tier: Math.ceil((i + 1) / 12),
+                bye_week: Math.floor(Math.random() * 8) + 5,
+                injury_status: Math.random() > 0.95 ? 'Questionable' : null,
+                years_exp: Math.floor(Math.random() * 10) + 1
             });
         }
         
@@ -765,7 +849,7 @@ class DraftHandlers {
         });
         
         // Re-filter and display players
-        this.filterPlayersByPosition(this.state.currentPosition);
+        this.filterByPosition(this.state.currentPosition);
         
         console.log('✅ Players updated with ranking data');
     }
