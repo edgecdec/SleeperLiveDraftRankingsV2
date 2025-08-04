@@ -250,6 +250,9 @@ class DraftHandlers {
                     years_exp: player.years_exp
                 }));
                 
+                // Filter out drafted players
+                players = this.filterDraftedPlayers(players);
+                
                 this.state.players = players;
                 this.state.filteredPlayers = players;
                 
@@ -278,7 +281,11 @@ class DraftHandlers {
     async loadMockPlayers() {
         console.log('📡 Loading mock player data...');
         
-        const mockPlayers = this.generateMockPlayers();
+        let mockPlayers = this.generateMockPlayers();
+        
+        // Filter out drafted players
+        mockPlayers = this.filterDraftedPlayers(mockPlayers);
+        
         this.state.players = mockPlayers;
         this.state.filteredPlayers = mockPlayers;
         
@@ -897,8 +904,73 @@ class DraftHandlers {
         // Sort by overall rank
         players.sort((a, b) => a.ranking.overall_rank - b.ranking.overall_rank);
         
+        // Filter out drafted players
+        players = this.filterDraftedPlayers(players);
+        
         console.log(`✅ Created ${players.length} players from CSV rankings`);
         return players;
+    }
+    
+    /**
+     * Filter out players who have already been drafted
+     */
+    filterDraftedPlayers(players) {
+        if (!this.state.draftPicks || this.state.draftPicks.length === 0) {
+            console.log('📋 No draft picks to filter against');
+            return players;
+        }
+        
+        // Get list of drafted player IDs and names
+        const draftedPlayerIds = new Set();
+        const draftedPlayerNames = new Set();
+        
+        this.state.draftPicks.forEach(pick => {
+            if (pick.player_id) {
+                draftedPlayerIds.add(pick.player_id);
+            }
+            if (pick.metadata && pick.metadata.first_name && pick.metadata.last_name) {
+                const fullName = `${pick.metadata.first_name} ${pick.metadata.last_name}`;
+                draftedPlayerNames.add(fullName.toLowerCase());
+            }
+        });
+        
+        // Filter out drafted players
+        const availablePlayers = players.filter(player => {
+            // Check by player ID first
+            if (draftedPlayerIds.has(player.player_id)) {
+                return false;
+            }
+            
+            // Check by name (for CSV players that might not have matching IDs)
+            if (draftedPlayerNames.has(player.full_name.toLowerCase())) {
+                return false;
+            }
+            
+            return true;
+        });
+        
+        const draftedCount = players.length - availablePlayers.length;
+        if (draftedCount > 0) {
+            console.log(`🚫 Filtered out ${draftedCount} drafted players (${availablePlayers.length} available)`);
+        }
+        
+        return availablePlayers;
+    }
+    
+    /**
+     * Refresh the player list after draft picks change
+     */
+    refreshPlayersAfterDraft() {
+        if (this.state.players && this.state.players.length > 0) {
+            // Re-filter the current players
+            const filteredPlayers = this.filterDraftedPlayers(this.state.players);
+            this.state.filteredPlayers = filteredPlayers;
+            
+            // Re-render the players
+            this.renderPlayers();
+            
+            console.log('🔄 Refreshed player list after draft picks change');
+        }
     }
     
     /**
