@@ -377,6 +377,13 @@ class DraftHandlers {
                 rank: index + 1,
                 adp: (index * 3 + Math.random() * 10 + 1).toFixed(1),
                 status: 'available',
+                ranking: {
+                    overall_rank: index + 1,
+                    position_rank: Math.floor(index / 5) + 1,
+                    tier: Math.ceil((index + 1) / 12),
+                    bye_week: Math.floor(Math.random() * 8) + 5,
+                    value: index + 1
+                },
                 tier: Math.ceil((index + 1) / 12), // Group into tiers
                 bye_week: Math.floor(Math.random() * 8) + 5, // Bye weeks 5-12
                 injury_status: Math.random() > 0.9 ? 'Questionable' : null,
@@ -400,6 +407,13 @@ class DraftHandlers {
                 rank: i + 1,
                 adp: (Math.random() * 200 + realPlayers.length).toFixed(1),
                 status: 'available',
+                ranking: {
+                    overall_rank: i + 1,
+                    position_rank: Math.floor((i - realPlayers.length) / 5) + 1,
+                    tier: Math.ceil((i + 1) / 12),
+                    bye_week: Math.floor(Math.random() * 8) + 5,
+                    value: i + 1
+                },
                 tier: Math.ceil((i + 1) / 12),
                 bye_week: Math.floor(Math.random() * 8) + 5,
                 injury_status: Math.random() > 0.95 ? 'Questionable' : null,
@@ -880,6 +894,7 @@ class DraftHandlers {
         }
         
         // Create player objects directly from CSV data
+        let players = [];
         rankingsData.forEach((rankingEntry, index) => {
             const player = {
                 player_id: `csv_player_${index + 1}`,
