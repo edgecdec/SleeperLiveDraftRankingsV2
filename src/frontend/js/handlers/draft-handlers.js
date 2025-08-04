@@ -641,13 +641,11 @@ class DraftHandlers {
                 (player.status === 'available' ? 'Available' : 'Drafted');
             
             return `
-                <div class="player-row ${player.status}" data-player-id="${player.player_id}">
+                <div class="player-row position-${player.position} ${player.status}" data-player-id="${player.player_id}">
                     <div class="player-rank">${rankDisplay}</div>
                     <div class="player-name">
-                        <div class="player-name-card ${player.position}">
-                            ${player.full_name}${injuryStatus}
-                            ${tierDisplay ? `<span class="tier-badge">${tierDisplay}</span>` : ''}
-                        </div>
+                        ${player.full_name}${injuryStatus}
+                        ${tierDisplay ? `<span class="tier-badge">${tierDisplay}</span>` : ''}
                     </div>
                     <div class="player-position ${player.position}" data-position="${player.position}">
                         ${positionDisplay}

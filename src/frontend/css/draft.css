@@ -208,7 +208,73 @@ input[type="file"]:focus {
     transform: translateY(-1px);
 }
 
-/* Position-based player name colors - Enhanced */
+/* Position-based row coloring */
+.player-row.position-QB {
+    background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+    border-left: 4px solid #f59e0b;
+}
+
+.player-row.position-RB {
+    background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
+    border-left: 4px solid #10b981;
+}
+
+.player-row.position-WR {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-left: 4px solid #3b82f6;
+}
+
+.player-row.position-TE {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border-left: 4px solid #8b5cf6;
+}
+
+.player-row.position-K {
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+    border-left: 4px solid #ec4899;
+}
+
+.player-row.position-DEF, .player-row.position-DST {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-left: 4px solid #64748b;
+}
+
+/* Hover effects for position rows */
+.player-row.position-QB:hover {
+    background: linear-gradient(135deg, #fef08a 0%, #fde68a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.2);
+}
+
+.player-row.position-RB:hover {
+    background: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+}
+
+.player-row.position-WR:hover {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.player-row.position-TE:hover {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+}
+
+.player-row.position-K:hover {
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(236, 72, 153, 0.2);
+}
+
+.player-row.position-DEF:hover, .player-row.position-DST:hover {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(100, 116, 139, 0.2);
+}
 .player-name-card.QB {
     background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%);
     border-color: #ca8a04;
@@ -505,6 +571,11 @@ input[type="file"]:focus {
     grid-template-columns: 60px 1fr 60px 80px 80px 80px 100px;
     gap: 1rem;
     padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    margin-bottom: 2px;
+}
     border-bottom: 1px solid #f3f4f6;
     transition: all 0.2s ease;
     cursor: pointer;
