@@ -37,6 +37,9 @@ class SimpleApp {
             // Setup event handlers
             this.setupEventHandlers();
             
+            // Setup browser history navigation
+            this.setupHistoryNavigation();
+            
             // Check for URL parameters and auto-load user
             this.checkUrlForAutoLoad();
             
@@ -110,7 +113,25 @@ class SimpleApp {
             return;
         }
         
-        // Check for draft URLs: /sleeper/league/{league_id}/draft/{draft_id}
+        // Check for user-based draft URLs: /user/{username}/draft/{league_id}/{draft_id}
+        const userDraftMatch = path.match(/^\/user\/([^\/]+)\/draft\/([^\/]+)\/([^\/]+)$/);
+        if (userDraftMatch) {
+            const username = userDraftMatch[1];
+            const leagueId = userDraftMatch[2];
+            const draftId = userDraftMatch[3];
+            
+            console.log('🎯 Found user-based draft URL:', { username, leagueId, draftId });
+            
+            // Mark as attempted
+            this.autoLoadAttempted = true;
+            
+            // Load user data first, then navigate to draft
+            console.log('🔄 Loading user data before draft navigation');
+            await this.loadUserThenDraft(username, leagueId, draftId);
+            return;
+        }
+        
+        // Check for legacy draft URLs: /sleeper/league/{league_id}/draft/{draft_id}
         const draftMatch = path.match(/^\/sleeper\/league\/([^\/]+)\/draft\/([^\/]+)$/);
         if (draftMatch) {
             const leagueId = draftMatch[1];
@@ -182,6 +203,95 @@ class SimpleApp {
             // Fall back to showing the landing page
             this.showLandingPage();
         }
+    }
+    
+    /**
+     * Load user data first, then navigate to specific draft
+     */
+    async loadUserThenDraft(username, leagueId, draftId) {
+        console.log('🔄 Loading user data then navigating to draft:', { username, leagueId, draftId });
+        
+        try {
+            // Get season from URL params or default to 2025
+            const urlParams = new URLSearchParams(window.location.search);
+            const season = urlParams.get('season') || '2025';
+            
+            // Load user data first
+            console.log('📡 Loading user leagues for:', username, 'season:', season);
+            await this.landingHandlers.handleUserSearch(username, season);
+            
+            // Wait a moment for the leagues to load
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Find the specific league and draft
+            const userLeagues = this.state.userLeagues || [];
+            const targetLeague = userLeagues.find(league => league.league_id === leagueId);
+            
+            if (targetLeague) {
+                const targetDraft = targetLeague.drafts?.find(draft => draft.draft_id === draftId);
+                
+                if (targetDraft) {
+                    console.log('✅ Found target league and draft, navigating...');
+                    await this.landingHandlers.handleDraftSelect(targetLeague, targetDraft);
+                } else {
+                    console.warn('⚠️ Draft not found in league, creating mock draft');
+                    const mockDraft = {
+                        draft_id: draftId,
+                        type: 'snake',
+                        status: 'drafting'
+                    };
+                    await this.landingHandlers.handleDraftSelect(targetLeague, mockDraft);
+                }
+            } else {
+                console.warn('⚠️ League not found in user leagues, creating mock objects');
+                const mockLeague = {
+                    league_id: leagueId,
+                    name: 'Loading...',
+                    total_rosters: 12,
+                    season: season
+                };
+                const mockDraft = {
+                    draft_id: draftId,
+                    type: 'snake',
+                    status: 'drafting'
+                };
+                await this.landingHandlers.handleDraftSelect(mockLeague, mockDraft);
+            }
+            
+        } catch (error) {
+            console.error('❌ Error loading user then draft:', error);
+            this.showLandingPage();
+        }
+    }
+    
+    /**
+     * Setup browser history navigation
+     */
+    setupHistoryNavigation() {
+        window.addEventListener('popstate', (event) => {
+            console.log('🔙 Browser back/forward navigation detected:', event.state);
+            
+            if (event.state) {
+                if (event.state.page === 'user') {
+                    // Navigate back to user page
+                    console.log('📍 Navigating to user page');
+                    this.draftHandlers.performBackNavigation();
+                    
+                } else if (event.state.page === 'draft') {
+                    // Navigate to draft page
+                    console.log('📍 Navigating to draft page');
+                    const { league, draft } = event.state;
+                    if (league && draft) {
+                        this.landingHandlers.handleDraftSelect(league, draft);
+                    }
+                }
+            } else {
+                // No state, check URL
+                this.checkUrlForAutoLoad();
+            }
+        });
+        
+        console.log('✅ Browser history navigation setup complete');
     }
     
     /**

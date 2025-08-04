@@ -145,6 +145,49 @@ class DraftHandlers {
      * Show league selection and hide draft view
      */
     showLeagueSelection() {
+        console.log('🔙 Back button clicked - using browser history navigation');
+        
+        // Check if we have history state with back URL
+        if (history.state && history.state.backUrl) {
+            console.log('✅ Found back URL in history state:', history.state.backUrl);
+            
+            // Use browser's back navigation to return to the user page
+            window.history.back();
+            
+        } else {
+            // Fallback: construct back URL from current user data
+            console.log('⚠️ No back URL in history state, using fallback navigation');
+            
+            let backUrl = '/';
+            
+            // Try to get current user from various sources
+            let currentUser = null;
+            if (window.app && window.app.state && window.app.state.currentUser) {
+                currentUser = window.app.state.currentUser;
+            } else if (this.landingHandlers && this.landingHandlers.state && this.landingHandlers.state.currentUser) {
+                currentUser = this.landingHandlers.state.currentUser;
+            }
+            
+            if (currentUser && currentUser.username) {
+                backUrl = `/user/${currentUser.username}`;
+                console.log('✅ Constructed back URL:', backUrl);
+            }
+            
+            // Navigate to the back URL
+            history.pushState({
+                page: 'user',
+                user: currentUser
+            }, '', backUrl);
+            
+            // Show the landing page and auto-populate
+            this.performBackNavigation();
+        }
+    }
+    
+    /**
+     * Perform the actual back navigation (show landing page and auto-populate)
+     */
+    performBackNavigation() {
         if (this.navigationHandlers) {
             this.navigationHandlers.showLandingPage();
         } else {
@@ -168,7 +211,7 @@ class DraftHandlers {
         this.state.players = [];
         this.state.filteredPlayers = [];
         
-        console.log('✅ Returned to league selection');
+        console.log('✅ Back navigation completed');
     }
     
     /**

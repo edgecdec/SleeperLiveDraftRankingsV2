@@ -561,6 +561,21 @@ class LandingHandlers {
                 this.draftHandlers.state.currentDraft = draft;
             }
             
+            // Update URL for draft page with back navigation support
+            const currentUser = this.state.currentUser;
+            if (currentUser) {
+                const draftUrl = `/user/${currentUser.username}/draft/${league.league_id}/${draft.draft_id}`;
+                console.log('🔗 Updating URL to:', draftUrl);
+                
+                history.pushState({
+                    page: 'draft',
+                    user: currentUser,
+                    league: league,
+                    draft: draft,
+                    backUrl: `/user/${currentUser.username}`
+                }, '', draftUrl);
+            }
+            
             // Emit draft selected event with both league and draft data
             this.emitDraftSelected({
                 ...draft,
