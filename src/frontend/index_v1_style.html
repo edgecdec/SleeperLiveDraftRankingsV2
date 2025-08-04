@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Fantasy Football Draft Assistant V2</title>
+    
+    <!-- Shoelace CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        .card {
+            @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+        }
+        
+        .tab-btn.active {
+            @apply bg-blue-600 text-white shadow-sm;
+        }
+        
+        .tab-btn {
+            @apply text-gray-600 hover:text-gray-900;
+        }
+        
+        .league-card {
+            @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-300 hover:shadow-md;
+        }
+        
+        .league-card.draft-active {
+            @apply border-2 border-red-500;
+            animation: draft-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes draft-pulse {
+            0%, 100% {
+                border-color: rgb(239 68 68);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                border-color: rgb(220 38 38);
+                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+            }
+        }
+        
+        .draft-item {
+            @apply flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors duration-200;
+        }
+        
+        .badge {
+            @apply px-2 py-1 rounded-full text-xs font-medium;
+        }
+        
+        .badge.redraft {
+            @apply bg-green-100 text-green-800;
+        }
+        
+        .badge.dynasty {
+            @apply bg-purple-100 text-purple-800;
+        }
+        
+        .badge.pre_draft {
+            @apply bg-yellow-100 text-yellow-800;
+        }
+        
+        .badge.drafting {
+            @apply bg-blue-100 text-blue-800;
+        }
+        
+        .badge.complete {
+            @apply bg-green-100 text-green-800;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- V1-Style User Setup Page -->
+    <div id="user-setup-page" class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div class="max-w-6xl w-full">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <sl-icon name="trophy-fill" style="font-size: 3rem; color: #3b82f6;"></sl-icon>
+                    <h1 class="text-3xl font-bold text-gray-900">Fantasy Draft Assistant</h1>
+                </div>
+                <p class="text-gray-600">Manage your drafts, upload custom rankings, and connect to mock drafts</p>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex justify-center mb-8">
+                <div class="flex bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+                    <button id="leagues-tab-btn" class="tab-btn active flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-all duration-200">
+                        <sl-icon name="people-fill"></sl-icon>
+                        <span>My Leagues</span>
+                    </button>
+                    <button id="mock-draft-tab-btn" class="tab-btn flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-all duration-200">
+                        <sl-icon name="target"></sl-icon>
+                        <span>Mock Draft</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content">
+                <!-- My Leagues Tab -->
+                <div id="leagues-tab-content" class="tab-panel space-y-6">
+                    <!-- Search Form -->
+                    <div class="card">
+                        <form id="user-search-form" class="space-y-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-1">
+                                    <label for="username-input" class="block text-sm font-medium text-gray-700 mb-2">Sleeper Username</label>
+                                    <div class="relative">
+                                        <sl-icon name="person-fill" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"></sl-icon>
+                                        <sl-input id="username-input" placeholder="Enter your Sleeper username" style="padding-left: 2.5rem;"></sl-input>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="season-select" class="block text-sm font-medium text-gray-700 mb-2">Season</label>
+                                    <sl-select id="season-select" value="2025">
+                                        <sl-option value="2025">2025</sl-option>
+                                        <sl-option value="2024">2024</sl-option>
+                                        <sl-option value="2023">2023</sl-option>
+                                    </sl-select>
+                                </div>
+                                <div class="pt-7">
+                                    <sl-button id="load-user-btn" type="submit" variant="primary" size="large">
+                                        <sl-icon slot="prefix" name="search"></sl-icon>
+                                        Search
+                                    </sl-button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="user-error" class="bg-red-50 border border-red-200 rounded-md p-4" style="display: none;">
+                        <div class="flex items-center">
+                            <sl-icon name="exclamation-triangle-fill" class="text-red-400 mr-2"></sl-icon>
+                            <p id="user-error-text" class="text-red-700"></p>
+                        </div>
+                    </div>
+
+                    <!-- User Info -->
+                    <div id="user-info" class="card" style="display: none;">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                <img id="user-avatar-img" class="w-16 h-16 rounded-full" style="display: none;">
+                                <sl-icon id="user-avatar-icon" name="person-fill" class="w-8 h-8 text-blue-600"></sl-icon>
+                            </div>
+                            <div>
+                                <h2 id="user-display-name" class="text-xl font-semibold text-gray-900"></h2>
+                                <p id="user-username" class="text-gray-600"></p>
+                                <p id="user-league-count" class="text-sm text-gray-500"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leagues List -->
+                    <div id="leagues-container" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Select a League & Draft</h3>
+                        <div id="leagues-list" class="space-y-4">
+                            <!-- League cards will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="leagues-empty" class="card text-center py-8" style="display: none;">
+                        <sl-icon name="trophy" class="w-12 h-12 text-gray-300 mx-auto mb-4"></sl-icon>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Leagues Found</h3>
+                        <p id="empty-message" class="text-gray-600"></p>
+                        <p class="text-sm text-gray-500 mt-2">Try selecting a different season or check your Sleeper account.</p>
+                    </div>
+                </div>
+
+                <!-- Mock Draft Tab -->
+                <div id="mock-draft-tab-content" class="tab-panel" style="display: none;">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="card">
+                            <div class="text-center mb-6">
+                                <sl-icon name="target" class="w-12 h-12 text-blue-600 mx-auto mb-4"></sl-icon>
+                                <h2 class="text-2xl font-bold text-gray-900 mb-2">Connect to Mock Draft</h2>
+                                <p class="text-gray-600">Enter a Sleeper mock draft ID to connect and track the draft in real-time</p>
+                            </div>
+                            <form id="mock-draft-form" class="space-y-6">
+                                <sl-input id="mock-draft-id" label="Mock Draft ID" placeholder="e.g., 123456789" help-text="Find this in your Sleeper mock draft URL" size="large"></sl-input>
+                                <sl-button id="connect-mock-draft-btn" type="submit" variant="primary" size="large" style="width: 100%;">
+                                    <sl-icon slot="prefix" name="target"></sl-icon>
+                                    Connect to Mock Draft
+                                </sl-button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draft View (Hidden initially) -->
+    <div id="draft-section" style="display: none;">
+        <!-- Draft view content will go here -->
+    </div>
+
+    <!-- Shoelace JS -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace-autoloader.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="js/api-service.js"></script>
+    <script src="js/ui-utils.js"></script>
+    <script src="js/handlers/landing-handlers.js"></script>
+    <script src="js/app-main.js"></script>
+</body>
+</html>

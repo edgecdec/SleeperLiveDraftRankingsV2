@@ -86,29 +86,55 @@ class UIUtils {
      */
     showNotification(message, variant = 'primary', duration = 5000) {
         const container = this.elements.notificationContainer;
-        if (!container) return;
+        if (!container) {
+            console.warn('⚠️ Notification container not found, falling back to console');
+            console.log(`📢 ${variant.toUpperCase()}: ${message}`);
+            return;
+        }
         
-        const alert = document.createElement('sl-alert');
-        alert.variant = variant;
-        alert.closable = true;
-        alert.duration = duration;
-        
-        // Add appropriate icon
-        const iconName = this.getIconForVariant(variant);
-        alert.innerHTML = `
-            <sl-icon slot="icon" name="${iconName}"></sl-icon>
-            ${message}
-        `;
-        
-        container.appendChild(alert);
-        alert.show();
-        
-        // Auto-remove after duration
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
-        }, duration);
+        try {
+            const alert = document.createElement('sl-alert');
+            alert.variant = variant;
+            alert.closable = true;
+            alert.duration = duration;
+            
+            // Add appropriate icon
+            const iconName = this.getIconForVariant(variant);
+            alert.innerHTML = `
+                <sl-icon slot="icon" name="${iconName}"></sl-icon>
+                ${message}
+            `;
+            
+            container.appendChild(alert);
+            
+            // Wait for the component to be ready before showing
+            setTimeout(() => {
+                try {
+                    if (alert.show && typeof alert.show === 'function') {
+                        alert.show();
+                    } else {
+                        // Fallback: just make it visible
+                        alert.style.display = 'block';
+                        alert.open = true;
+                    }
+                } catch (showError) {
+                    console.warn('⚠️ Error showing alert, using fallback:', showError);
+                    alert.style.display = 'block';
+                    alert.open = true;
+                }
+            }, 10);
+            
+            // Auto-remove after duration
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, duration);
+            
+        } catch (error) {
+            console.error('❌ Error creating notification:', error);
+            console.log(`📢 ${variant.toUpperCase()}: ${message}`);
+        }
     }
 
     /**

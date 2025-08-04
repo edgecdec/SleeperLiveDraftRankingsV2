@@ -113,6 +113,13 @@ class ApiService {
     async getDraftBoard(draftId) {
         return await this.request(`/draft/${draftId}/board`);
     }
+
+    /**
+     * Get base URL for API info display
+     */
+    getBaseUrl() {
+        return this.apiBase;
+    }
 }
 
 // Export for use in other modules

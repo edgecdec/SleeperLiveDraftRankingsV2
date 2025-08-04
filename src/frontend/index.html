@@ -8,451 +8,536 @@
     <!-- Shoelace CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/mobile.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>">
+    <!-- Custom CSS -->
+    <style>
+        /* Base styles with better colors */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Card styles with better shadows and colors */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Tab button styles with better colors */
+        .tab-btn {
+            color: #6b7280;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+        }
+        
+        .tab-btn:hover {
+            color: #374151;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+        }
+        
+        /* League card styles with attractive colors */
+        .league-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .league-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+        }
+        
+        .league-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #3b82f6;
+        }
+        
+        .league-card.draft-active {
+            border: 2px solid #ef4444;
+            animation: draft-pulse 2s ease-in-out infinite, draft-glow 3s ease-in-out infinite;
+        }
+        
+        .league-card.draft-active::before {
+            background: linear-gradient(90deg, #ef4444, #dc2626, #b91c1c);
+            height: 6px;
+        }
+        
+        /* Enhanced draft animations */
+        @keyframes draft-pulse {
+            0%, 100% {
+                border-color: #ef4444;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                border-color: #dc2626;
+                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+            }
+        }
+        
+        @keyframes draft-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), 0 0 40px rgba(239, 68, 68, 0.1);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(239, 68, 68, 0.5), 0 0 60px rgba(239, 68, 68, 0.2);
+            }
+        }
+        
+        /* Draft item styles with better colors */
+        .draft-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+        
+        .draft-item:hover {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            transform: translateX(4px);
+        }
+        
+        /* Badge styles with vibrant colors */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .badge.redraft {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .badge.dynasty {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
+        
+        .badge.pre_draft {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .badge.drafting {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        .badge.complete {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        /* Form improvements with better styling */
+        sl-input {
+            --sl-input-border-radius-medium: 8px;
+            --sl-input-border-color: #d1d5db;
+            --sl-input-border-color-focus: #3b82f6;
+            --sl-input-background-color: white;
+        }
+        
+        sl-select {
+            --sl-input-border-radius-medium: 8px;
+            --sl-input-border-color: #d1d5db;
+            --sl-input-border-color-focus: #3b82f6;
+            --sl-input-background-color: white;
+        }
+        
+        sl-button[variant="primary"] {
+            --sl-color-primary-600: #3b82f6;
+            --sl-color-primary-700: #1d4ed8;
+            --sl-border-radius-medium: 8px;
+        }
+        
+        /* Header improvements with better colors */
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .page-title h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .page-subtitle {
+            color: #1f2937;
+            font-size: 1.125rem;
+            opacity: 0.8;
+        }
+        
+        /* League list improvements */
+        .leagues-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .leagues-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+        
+        /* User info card improvements */
+        .user-info-card {
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+        
+        .user-avatar-container {
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .user-avatar-img {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .user-details h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-details .username {
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-details .league-count {
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+        
+        /* League card header improvements */
+        .league-header {
+            margin-bottom: 1rem;
+        }
+        
+        .league-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .league-title-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .league-title-left h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .league-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .league-description {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        /* Draft section improvements */
+        .drafts-section h5 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.75rem;
+        }
+        
+        .draft-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .draft-status-icon {
+            font-size: 1.25rem;
+        }
+        
+        .draft-details h6 {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+        
+        .draft-time {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .draft-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Empty state improvements */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+        
+        .empty-state sl-icon {
+            margin: 0 auto 1rem;
+            color: #d1d5db;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-state p {
+            color: #6b7280;
+        }
+        
+        /* Search form improvements */
+        .search-form {
+            margin: 0;
+        }
+        
+        .form-row {
+            display: flex;
+            align-items: end;
+            gap: 1rem;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .season-group {
+            min-width: 120px;
+            flex: none;
+        }
+        
+        .search-button-group {
+            flex: none;
+        }
+        
+        /* Tab navigation container */
+        .tab-nav-container {
+            background: white;
+            border-radius: 12px;
+            padding: 0.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
 </head>
-<body>
-    <div id="app">
-        <!-- Header -->
-        <header class="app-header">
-            <sl-card class="header-card">
-                <div slot="header" class="header-content">
-                    <h1>🏈 Fantasy Football Draft Assistant V2</h1>
-                    <div class="header-actions">
-                        <sl-button id="shortcuts-help-btn" variant="text" size="small" title="Keyboard Shortcuts (Press ? or h)">
-                            <sl-icon slot="prefix" name="keyboard"></sl-icon>
-                            Shortcuts
-                        </sl-button>
-                        <sl-badge id="status-indicator" variant="neutral" pulse>
-                            <sl-icon name="wifi"></sl-icon>
-                            Connecting...
-                        </sl-badge>
-                    </div>
+<body class="bg-gray-50">
+    <!-- V1-Style User Setup Page -->
+    <div id="user-setup-page" class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div class="max-w-6xl w-full">
+            <!-- Header -->
+            <div class="page-header">
+                <div class="page-title">
+                    <sl-icon name="trophy-fill" style="font-size: 3rem; color: #3b82f6;"></sl-icon>
+                    <h1>Fantasy Draft Assistant</h1>
                 </div>
-            </sl-card>
-        </header>
-
-        <!-- Main Content -->
-        <main class="app-main">
-            <!-- Landing Page -->
-            <section id="welcome-section" class="section">
-                <div class="landing-container">
-                    <div class="landing-content">
-                        <!-- Header -->
-                        <div class="landing-header">
-                            <div class="landing-title">
-                                <sl-icon name="trophy-fill" style="font-size: 3rem; color: #3b82f6;"></sl-icon>
-                                <h1>Fantasy Draft Assistant</h1>
-                            </div>
-                            <p class="landing-subtitle">Manage your drafts, upload custom rankings, and connect to mock drafts</p>
-                        </div>
-
-                        <!-- Tab Navigation -->
-                        <div class="tab-navigation">
-                            <div class="tab-nav-container">
-                                <button id="leagues-tab" class="tab-button active">
-                                    <sl-icon name="people-fill"></sl-icon>
-                                    <span>My Leagues</span>
-                                </button>
-                                <button id="mock-draft-tab" class="tab-button">
-                                    <sl-icon name="target"></sl-icon>
-                                    <span>Mock Draft</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Tab Content -->
-                        <div class="tab-content">
-                            <!-- My Leagues Tab -->
-                            <div id="leagues-tab-content" class="tab-panel">
-                                <div class="landing-card">
-                                    <div class="card-header">
-                                        <h2>Connect to Sleeper</h2>
-                                        <p>Enter your Sleeper username to load your leagues and drafts</p>
-                                    </div>
-                                    <div class="card-content">
-                                        <!-- Search Form -->
-                                        <form id="user-search-form" class="search-form">
-                                            <div class="form-group">
-                                                <label for="username-input">Sleeper Username</label>
-                                                <sl-input 
-                                                    id="username-input" 
-                                                    placeholder="Enter your username"
-                                                    help-text="This is your Sleeper app username"
-                                                    clearable>
-                                                    <sl-icon slot="prefix" name="person-fill"></sl-icon>
-                                                </sl-input>
-                                            </div>
-                                            
-                                            <div class="form-group season-select">
-                                                <label for="season-select">Season</label>
-                                                <sl-select id="season-select" value="2025">
-                                                    <sl-option value="2025">2025</sl-option>
-                                                    <sl-option value="2024">2024</sl-option>
-                                                    <sl-option value="2023">2023</sl-option>
-                                                </sl-select>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <sl-button id="load-user-btn" type="submit" variant="primary" size="large" class="search-button">
-                                                    <sl-icon slot="prefix" name="search"></sl-icon>
-                                                    Search
-                                                </sl-button>
-                                            </div>
-                                        </form>
-
-                                        <!-- Error Message -->
-                                        <div id="user-error" class="error-card" style="display: none;">
-                                            <div class="error-content">
-                                                <sl-icon name="exclamation-triangle-fill"></sl-icon>
-                                                <p id="user-error-text"></p>
-                                            </div>
-                                        </div>
-
-                                        <!-- User Info -->
-                                        <div id="user-info" class="user-info-card landing-card" style="display: none;">
-                                            <div class="card-content">
-                                                <div class="user-info-content">
-                                                    <div class="user-avatar">
-                                                        <img id="user-avatar-img" style="display: none;" />
-                                                        <sl-icon id="user-avatar-icon" name="person-fill"></sl-icon>
-                                                    </div>
-                                                    <div class="user-details">
-                                                        <h3 id="user-display-name"></h3>
-                                                        <p id="user-username" class="username"></p>
-                                                        <p id="user-league-count" class="league-count"></p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Leagues List -->
-                                        <div id="leagues-section" style="display: none;">
-                                            <div class="leagues-section">
-                                                <h3>Select a League & Draft</h3>
-                                                <div id="leagues-list">
-                                                    <!-- Leagues will be populated here -->
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Empty State -->
-                                        <div id="leagues-empty" class="empty-state" style="display: none;">
-                                            <sl-icon name="trophy"></sl-icon>
-                                            <h3>No Leagues Found</h3>
-                                            <p id="empty-message">No leagues found for this user in the selected season.</p>
-                                            <p class="help-text">Try selecting a different season or check your Sleeper account.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Mock Draft Tab -->
-                            <div id="mock-draft-tab-content" class="tab-panel" style="display: none;">
-                                <div class="mock-draft-container">
-                                    <div class="landing-card">
-                                        <div class="card-content">
-                                            <div class="mock-draft-header">
-                                                <sl-icon name="target"></sl-icon>
-                                                <h2>Connect to Mock Draft</h2>
-                                                <p>Enter a Sleeper mock draft ID to connect and track the draft in real-time</p>
-                                            </div>
-
-                                            <form id="mock-draft-form" class="mock-draft-form">
-                                                <sl-input 
-                                                    id="mock-draft-id" 
-                                                    label="Mock Draft ID"
-                                                    placeholder="e.g., 123456789"
-                                                    help-text="Find this in your Sleeper mock draft URL"
-                                                    size="large">
-                                                </sl-input>
-
-                                                <!-- Error Message -->
-                                                <div id="mock-draft-error" class="error-card" style="display: none;">
-                                                    <div class="error-content">
-                                                        <sl-icon name="exclamation-triangle-fill"></sl-icon>
-                                                        <p id="mock-draft-error-text"></p>
-                                                    </div>
-                                                </div>
-
-                                                <sl-button id="connect-mock-draft-btn" type="submit" variant="primary" size="large" style="width: 100%;">
-                                                    <sl-icon slot="prefix" name="target"></sl-icon>
-                                                    Connect to Mock Draft
-                                                </sl-button>
-                                            </form>
-
-                                            <div class="mock-draft-help">
-                                                <h3>How to find your Mock Draft ID:</h3>
-                                                <ol>
-                                                    <li>Go to your Sleeper mock draft</li>
-                                                    <li>Look at the URL in your browser</li>
-                                                    <li>Copy the numbers at the end of the URL</li>
-                                                    <li>Paste them in the field above</li>
-                                                </ol>
-                                                <p class="note"><strong>Note:</strong> This only works with Sleeper mock drafts, not live league drafts.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- User Setup Section (Hidden - Legacy) -->
-            <section id="user-setup-section" class="section" style="display: none;">
-                <sl-card class="setup-card">
-                    <div slot="header">
-                        <h2>Connect to Sleeper</h2>
-                        <p>Enter your Sleeper username to load your leagues and drafts</p>
-                    </div>
-                    
-                    <div class="setup-form">
-                        <sl-input 
-                            id="username-input-legacy" 
-                            label="Sleeper Username" 
-                            placeholder="Enter your username"
-                            help-text="This is your Sleeper app username"
-                            clearable>
-                            <sl-icon slot="prefix" name="person-fill"></sl-icon>
-                        </sl-input>
-                        
-                        <div class="form-actions">
-                            <sl-button id="load-user-btn-legacy" variant="primary" loading>
-                                <sl-icon slot="prefix" name="download"></sl-icon>
-                                Load My Leagues
-                            </sl-button>
-                            <sl-button id="back-to-welcome-btn" variant="neutral">
-                                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                                Back
-                            </sl-button>
-                        </div>
-                    </div>
-                </sl-card>
-            </section>
-
-            <!-- League Selection Section (Hidden - Legacy) -->
-            <section id="league-select-section" class="section" style="display: none;">
-                <sl-card class="league-select-card">
-                    <div slot="header">
-                        <h2>Select Your League</h2>
-                        <p id="league-select-subtitle">Choose a league to view its draft</p>
-                    </div>
-                    
-                    <div class="league-list-container">
-                        <div id="league-list" class="league-list">
-                            <!-- Leagues will be populated here -->
-                        </div>
-                        
-                        <div class="league-actions">
-                            <sl-button variant="default" id="back-to-user-btn">
-                                <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-                                Back to User Setup
-                            </sl-button>
-                            
-                            <sl-button variant="primary" id="refresh-leagues-btn">
-                                <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                                Refresh Leagues
-                            </sl-button>
-                        </div>
-                    </div>
-                </sl-card>
-            </section>
-
-            <!-- Draft View -->
-            <section id="draft-section" class="section" style="display: none;">
-                <div class="draft-view">
-                    <!-- Draft Header -->
-                    <header class="draft-header">
-                        <div class="draft-header-content">
-                            <div class="draft-header-left">
-                                <div class="draft-title">
-                                    <sl-icon name="trophy-fill"></sl-icon>
-                                    <h1>Fantasy Draft Assistant</h1>
-                                </div>
-                                
-                                <div class="draft-info">
-                                    <div class="draft-user-info">
-                                        <sl-icon name="person-fill"></sl-icon>
-                                        <span id="draft-username">@username</span>
-                                    </div>
-                                    
-                                    <div id="draft-status" class="draft-status pre_draft">
-                                        <span id="draft-status-icon">⏳</span>
-                                        <span id="draft-status-text">pre draft</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="draft-stats">
-                                    <div class="draft-stat">
-                                        <sl-icon name="people-fill"></sl-icon>
-                                        <span id="available-count">0 available</span>
-                                    </div>
-                                    <div class="draft-stat">
-                                        <sl-icon name="zap-fill"></sl-icon>
-                                        <span id="drafted-count">0 drafted</span>
-                                    </div>
-                                    <div id="dynasty-indicator" class="draft-stat" style="display: none;">
-                                        <sl-icon name="crown"></sl-icon>
-                                        <span>Dynasty</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="draft-header-right">
-                                <sl-button id="draft-settings-btn" variant="neutral" size="small">
-                                    <sl-icon slot="prefix" name="gear"></sl-icon>
-                                    Settings
-                                </sl-button>
-                                
-                                <sl-button id="rankings-manager-btn" variant="neutral" size="small">
-                                    <sl-icon slot="prefix" name="list-ol"></sl-icon>
-                                    Rankings
-                                </sl-button>
-                                
-                                <sl-button id="refresh-draft-btn" variant="primary" size="small">
-                                    <sl-icon slot="prefix" name="arrow-clockwise"></sl-icon>
-                                    Refresh
-                                </sl-button>
-                                
-                                <!-- League Selector Dropdown -->
-                                <sl-dropdown id="league-selector-dropdown">
-                                    <sl-button slot="trigger" variant="neutral" size="small" caret>
-                                        <sl-icon slot="prefix" name="trophy"></sl-icon>
-                                        <span id="current-league-name">Select League</span>
-                                    </sl-button>
-                                    <sl-menu id="league-selector-menu">
-                                        <!-- League options will be populated here -->
-                                    </sl-menu>
-                                </sl-dropdown>
-                            </div>
-                        </div>
-                    </header>
-                    
-                    <!-- Roster Toggle Bar -->
-                    <div class="roster-toggle-bar">
-                        <div class="roster-toggle-content">
-                            <button id="roster-toggle-btn" class="roster-toggle-btn">
-                                <sl-icon name="people-fill"></sl-icon>
-                                <span id="roster-toggle-text">Show My Roster</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Roster Sidebar -->
-                    <aside id="roster-sidebar" class="roster-sidebar">
-                        <div class="roster-sidebar-header">
-                            <h2 class="roster-sidebar-title">My Roster</h2>
-                        </div>
-                        <div class="roster-sidebar-content">
-                            <div id="roster-content">
-                                <div class="loading-state">
-                                    <div class="loading-spinner"></div>
-                                    <p>Loading roster...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-                    
-                    <!-- Connection Status -->
-                    <div id="connection-status" class="connection-status" style="display: none;">
-                        <div class="connection-error">
-                            <sl-icon name="exclamation-triangle-fill"></sl-icon>
-                            <span id="connection-error-text">Connection error</span>
-                            <sl-button id="connection-retry-btn" variant="neutral" size="small">Retry</sl-button>
-                        </div>
-                    </div>
-                    
-                    <!-- Main Content -->
-                    <main id="draft-main-content" class="draft-main-content">
-                        <!-- Position Grid -->
-                        <div id="position-grid" class="position-grid">
-                            <!-- Position sections will be populated here -->
-                        </div>
-                        
-                        <!-- Draft Footer -->
-                        <footer class="draft-footer">
-                            <div class="draft-footer-content">
-                                <div class="draft-footer-left">
-                                    <span>Last updated: <span id="last-updated-time">Never</span></span>
-                                    <span>•</span>
-                                    <span>Auto-refresh: <span id="auto-refresh-countdown">30s</span></span>
-                                </div>
-                                <div class="draft-footer-right">
-                                    <sl-icon name="wifi"></sl-icon>
-                                    <span id="connection-status-text">Connected</span>
-                                </div>
-                            </div>
-                        </footer>
-                    </main>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="app-footer">
-            <sl-card class="footer-card">
-                <div class="footer-content">
-                    <p>&copy; 2025 Fantasy Football Draft Assistant V2</p>
-                    <div class="footer-links">
-                        <sl-badge id="version-info" variant="neutral">v2.0.0</sl-badge>
-                        <sl-button id="api-info-link" variant="text" size="small">
-                            <sl-icon name="info-circle"></sl-icon>
-                            API Info
-                        </sl-button>
-                    </div>
-                </div>
-            </sl-card>
-        </footer>
-    </div>
-
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay" style="display: none;">
-        <sl-card class="loading-card">
-            <div class="loading-content">
-                <sl-spinner style="font-size: 4rem;"></sl-spinner>
-                <h3 id="loading-text">Loading...</h3>
-                <sl-progress-bar id="loading-progress" indeterminate></sl-progress-bar>
+                <p class="page-subtitle">Manage your drafts, upload custom rankings, and connect to mock drafts</p>
             </div>
-        </sl-card>
+
+            <!-- Tab Navigation -->
+            <div class="flex justify-center mb-8">
+                <div class="tab-nav-container flex">
+                    <button id="leagues-tab-btn" class="tab-btn active flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-all duration-200">
+                        <sl-icon name="people-fill"></sl-icon>
+                        <span>My Leagues</span>
+                    </button>
+                    <button id="mock-draft-tab-btn" class="tab-btn flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-all duration-200">
+                        <sl-icon name="target"></sl-icon>
+                        <span>Mock Draft</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content">
+                <!-- My Leagues Tab -->
+                <div id="leagues-tab-content" class="tab-panel space-y-6">
+                    <!-- Search Form -->
+                    <div class="card">
+                        <form id="user-search-form" class="search-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="username-input">Sleeper Username</label>
+                                    <div class="relative">
+                                        <sl-icon name="person-fill" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" style="pointer-events: none;"></sl-icon>
+                                        <sl-input id="username-input" placeholder="Enter your Sleeper username" style="padding-left: 2.5rem;"></sl-input>
+                                    </div>
+                                </div>
+                                <div class="form-group season-group">
+                                    <label for="season-select">Season</label>
+                                    <sl-select id="season-select" value="2025">
+                                        <sl-option value="2025">2025</sl-option>
+                                        <sl-option value="2024">2024</sl-option>
+                                        <sl-option value="2023">2023</sl-option>
+                                    </sl-select>
+                                </div>
+                                <div class="search-button-group">
+                                    <sl-button id="load-user-btn" type="submit" variant="primary" size="large">
+                                        <sl-icon slot="prefix" name="search"></sl-icon>
+                                        Search
+                                    </sl-button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="user-error" class="bg-red-50 border border-red-200 rounded-md p-4" style="display: none;">
+                        <div class="flex items-center">
+                            <sl-icon name="exclamation-triangle-fill" class="text-red-400 mr-2"></sl-icon>
+                            <p id="user-error-text" class="text-red-700"></p>
+                        </div>
+                    </div>
+
+                    <!-- User Info -->
+                    <div id="user-info" class="card user-info-card" style="display: none;">
+                        <div class="flex items-center space-x-4">
+                            <div class="user-avatar-container">
+                                <img id="user-avatar-img" class="user-avatar-img" style="display: none;">
+                                <sl-icon id="user-avatar-icon" name="person-fill" class="w-8 h-8 text-blue-600"></sl-icon>
+                            </div>
+                            <div class="user-details">
+                                <h2 id="user-display-name"></h2>
+                                <p id="user-username" class="username"></p>
+                                <p id="user-league-count" class="league-count"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leagues List -->
+                    <div id="leagues-container" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Select a League & Draft</h3>
+                        <div id="leagues-list" class="leagues-grid">
+                            <!-- League cards will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="leagues-empty" class="card empty-state" style="display: none;">
+                        <sl-icon name="trophy" style="font-size: 3rem;"></sl-icon>
+                        <h3>No Leagues Found</h3>
+                        <p id="empty-message"></p>
+                        <p class="text-sm text-gray-500 mt-2">Try selecting a different season or check your Sleeper account.</p>
+                    </div>
+                </div>
+
+                <!-- Mock Draft Tab -->
+                <div id="mock-draft-tab-content" class="tab-panel" style="display: none;">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="card">
+                            <div class="text-center mb-6">
+                                <sl-icon name="target" class="w-12 h-12 text-blue-600 mx-auto mb-4"></sl-icon>
+                                <h2 class="text-2xl font-bold text-gray-900 mb-2">Connect to Mock Draft</h2>
+                                <p class="text-gray-600">Enter a Sleeper mock draft ID to connect and track the draft in real-time</p>
+                            </div>
+                            <form id="mock-draft-form" class="space-y-6">
+                                <sl-input id="mock-draft-id" label="Mock Draft ID" placeholder="e.g., 123456789" help-text="Find this in your Sleeper mock draft URL" size="large"></sl-input>
+                                <sl-button id="connect-mock-draft-btn" type="submit" variant="primary" size="large" style="width: 100%;">
+                                    <sl-icon slot="prefix" name="target"></sl-icon>
+                                    Connect to Mock Draft
+                                </sl-button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Player Details Modal -->
-    <sl-dialog id="player-details-modal" label="Player Details" class="player-details-modal">
-        <div id="player-details-content">
-            <!-- Player details will be inserted here -->
-        </div>
-        <div slot="footer">
-            <sl-button variant="neutral" id="close-player-details">Close</sl-button>
-            <sl-button variant="primary" id="add-to-queue">
-                <sl-icon slot="prefix" name="plus"></sl-icon>
-                Add to Queue
-            </sl-button>
-        </div>
-    </sl-dialog>
+    <!-- Draft View (Hidden initially) -->
+    <div id="draft-section" style="display: none;">
+        <!-- Draft view content will go here -->
+    </div>
 
-    <!-- Notification Container -->
-    <div id="notification-container" class="notification-container"></div>
-
-    <!-- Scripts -->
+    <!-- Shoelace JS -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace-autoloader.js"></script>
     
-    <!-- Modular JavaScript Files -->
-    <script src="js/url-manager.js"></script>
+    <!-- Application Scripts -->
     <script src="js/api-service.js"></script>
-    <script src="js/ui-utils.js"></script>
-    <script src="js/draft-board.js"></script>
-    <script src="js/queue-manager.js"></script>
-    <script src="js/team-analysis.js"></script>
-    <script src="js/custom-rankings.js"></script>
-    <script src="js/mobile-enhancements.js"></script>
-    <script src="js/keyboard-shortcuts.js"></script>
-    <script src="js/event-handlers.js"></script>
-    <script src="js/app-main.js"></script>
+    <script src="js/handlers/landing-handlers.js"></script>
+    <script src="js/app-simple.js"></script>
 </body>
 </html>

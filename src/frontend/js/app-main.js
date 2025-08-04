@@ -6,6 +6,14 @@
 
 class DraftAssistantApp {
     constructor() {
+        // Initialize application state
+        this.state = {
+            currentUser: null,
+            userLeagues: [],
+            selectedLeague: null,
+            selectedDraft: null
+        };
+        
         // Initialize services
         this.apiService = new ApiService();
         this.uiUtils = new UIUtils();
@@ -156,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         console.log('🚀 Initializing refactored main app...');
         try {
-            window.draftApp = new DraftAssistantApp();
+            window.app = new DraftAssistantApp();
             console.log('✅ Refactored app initialized successfully');
         } catch (error) {
             console.error('❌ Failed to initialize refactored app:', error);
