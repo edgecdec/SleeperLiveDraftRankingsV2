@@ -287,4 +287,29 @@ def create_app(debug: bool = False) -> Flask:
                 'status': 'error'
             })
 
+    # Simple test endpoint to verify SleeperAPI method
+    @app.route('/api/test/method')
+    def test_method():
+        """Test if the method exists"""
+        try:
+            from .services.sleeper_api import SleeperAPI
+            
+            # Check if method exists
+            has_method = hasattr(SleeperAPI, 'is_dynasty_or_keeper_league')
+            
+            # Get all methods
+            methods = [method for method in dir(SleeperAPI) if not method.startswith('_')]
+            
+            return jsonify({
+                'has_method': has_method,
+                'all_methods': methods,
+                'status': 'success'
+            })
+            
+        except Exception as e:
+            return jsonify({
+                'error': str(e),
+                'status': 'error'
+            })
+
     return app

@@ -454,6 +454,8 @@ class SleeperAPI:
         Returns:
             Tuple of (unavailable_player_ids, is_dynasty_league)
         """
+        print(f"🔍 DEBUG: get_all_unavailable_players called with draft_id={draft_id}, league_id={league_id}")
+        
         try:
             unavailable_players = set()
             
@@ -473,7 +475,16 @@ class SleeperAPI:
                 # Check if dynasty/keeper league
                 league_info = SleeperAPI.get_league_info(league_id)
                 if league_info:
-                    is_dynasty = SleeperAPI.is_dynasty_or_keeper_league(league_info)
+                    print(f"🔍 DEBUG: About to call is_dynasty_or_keeper_league method")
+                    print(f"🔍 DEBUG: Method exists: {hasattr(SleeperAPI, 'is_dynasty_or_keeper_league')}")
+                    
+                    # Try calling the method directly
+                    try:
+                        is_dynasty = SleeperAPI.is_dynasty_or_keeper_league(league_info)
+                        print(f"🔍 DEBUG: Dynasty detection result: {is_dynasty}")
+                    except Exception as method_error:
+                        print(f"❌ DEBUG: Error calling is_dynasty_or_keeper_league: {method_error}")
+                        is_dynasty = False
                     
                     if is_dynasty:
                         print(f"🏰 Dynasty/Keeper league detected - filtering rostered players")
