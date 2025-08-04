@@ -199,7 +199,7 @@ class SimpleRankingsManager:
                     df = df[df[position_col].str.upper() == position_filter.upper()]
             
             # Sort by rank if available
-            rank_columns = ['Rank', 'Overall', 'rank', 'overall']
+            rank_columns = ['Overall Rank', 'Rank', 'Overall', 'rank', 'overall', 'overall_rank']
             rank_col = None
             for col in rank_columns:
                 if col in df.columns:
@@ -225,6 +225,7 @@ class SimpleRankingsManager:
                     'position': self._get_player_position(row),
                     'team': self._get_player_team(row),
                     'rank': self._get_player_rank(row),
+                    'position_rank': self._get_player_position_rank(row),
                     'tier': self._get_player_tier(row),
                     'bye_week': self._get_player_bye(row)
                 }
@@ -316,7 +317,7 @@ class SimpleRankingsManager:
     
     def _get_player_rank(self, row) -> int:
         """Extract player rank from row"""
-        rank_columns = ['Rank', 'Overall', 'rank', 'overall']
+        rank_columns = ['Overall Rank', 'Rank', 'Overall', 'rank', 'overall', 'overall_rank']
         for col in rank_columns:
             if col in row and pd.notna(row[col]):
                 try:
@@ -404,3 +405,14 @@ class SimpleRankingsManager:
             'total_players': self.total_players,
             'data_path': self.data_path
         }
+    
+    def _get_player_position_rank(self, row) -> int:
+        """Extract player position rank from row"""
+        pos_rank_columns = ['Position Rank', 'Pos Rank', 'position_rank', 'pos_rank']
+        for col in pos_rank_columns:
+            if col in row and pd.notna(row[col]):
+                try:
+                    return int(row[col])
+                except (ValueError, TypeError):
+                    pass
+        return 999  # Default high rank

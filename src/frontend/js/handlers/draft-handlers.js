@@ -969,10 +969,21 @@ class DraftHandlers {
             const rankingData = await this.rankingsService.getRankingData(rankingId);
             this.state.currentRankings = rankingData;
             
+            // Debug: Show ranking info
+            console.log(`✅ Rankings loaded: ${rankingData.totalPlayers} players`);
+            console.log(`📊 Ranking ID: ${rankingId}`);
+            
+            // Show sample of players for debugging
+            const samplePlayers = this.rankingsService.getCurrentRankingsData().slice(0, 10);
+            console.log('🔍 Sample players from rankings:');
+            samplePlayers.forEach((player, index) => {
+                console.log(`  ${index + 1}. ${player.player_name} (${player.position}, ${player.team}) - Rank ${player.overall_rank}`);
+            });
+            
             // Update player list with rankings
             this.updatePlayersWithRankings();
             
-            console.log(`✅ Rankings loaded: ${rankingData.totalPlayers} players`);
+            console.log(`✅ Rankings applied: ${rankingId}`);
             
         } catch (error) {
             console.error('❌ Error loading rankings:', error);
@@ -1089,8 +1100,21 @@ class DraftHandlers {
         
         // Filter out drafted/rostered players
         const availablePlayers = players.filter(player => {
+            // Debug specific problematic players
+            const isProblematicPlayer = ['lamar jackson', 'dj moore', 'd.j. moore', 'david montgomery'].includes(player.full_name.toLowerCase());
+            
+            if (isProblematicPlayer) {
+                console.log(`🔍 Debugging ${player.full_name}:`);
+                console.log(`  Player ID: ${player.player_id}`);
+                console.log(`  Position: ${player.position}`);
+                console.log(`  Team: ${player.team}`);
+            }
+            
             // Check by player ID first (most reliable)
             if (draftedPlayerIds.has(player.player_id)) {
+                if (isProblematicPlayer) {
+                    console.log(`  ✅ Filtered by direct ID match: ${player.player_id}`);
+                }
                 console.log(`🚫 Filtered out by ID: ${player.full_name} (${player.player_id})`);
                 return false;
             }
@@ -1099,12 +1123,59 @@ class DraftHandlers {
             if (this.state.sleeperPlayerMap && this.state.sleeperPlayerMap.size > 0) {
                 const nameVariations = this.generateNameVariations(player.full_name);
                 
+                if (isProblematicPlayer) {
+                    console.log(`  Name variations:`, nameVariations);
+                }
+                
                 for (const variation of nameVariations) {
-                    const sleeperId = this.state.sleeperPlayerMap.get(variation);
-                    if (sleeperId && draftedPlayerIds.has(sleeperId)) {
-                        console.log(`🚫 Filtered out by mapped ID: ${player.full_name} (${variation}) -> ${sleeperId}`);
-                        return false;
+                    const playerMatches = this.state.sleeperPlayerMap.get(variation);
+                    if (playerMatches && playerMatches.length > 0) {
+                        if (isProblematicPlayer) {
+                            console.log(`  Found ${playerMatches.length} matches for ${variation}:`);
+                            playerMatches.forEach(match => {
+                                console.log(`    - ${match.full_name} (${match.position}, ${match.team}) [ID: ${match.id}]`);
+                            });
+                        }
+                        
+                        // Find the best match based on position and team
+                        let bestMatch = null;
+                        
+                        // First, try to match by position and team
+                        if (player.position && player.team) {
+                            bestMatch = playerMatches.find(match => 
+                                match.position === player.position && match.team === player.team
+                            );
+                        }
+                        
+                        // If no exact match, try position only
+                        if (!bestMatch && player.position) {
+                            bestMatch = playerMatches.find(match => match.position === player.position);
+                        }
+                        
+                        // If still no match, use the first one (fallback)
+                        if (!bestMatch) {
+                            bestMatch = playerMatches[0];
+                        }
+                        
+                        if (bestMatch) {
+                            if (isProblematicPlayer) {
+                                console.log(`  Best match: ${bestMatch.full_name} (${bestMatch.position}, ${bestMatch.team}) [ID: ${bestMatch.id}]`);
+                                console.log(`  Is ${bestMatch.id} in draftedPlayerIds?`, draftedPlayerIds.has(bestMatch.id));
+                            }
+                            
+                            if (draftedPlayerIds.has(bestMatch.id)) {
+                                if (isProblematicPlayer) {
+                                    console.log(`  ✅ Should be filtered by mapped ID!`);
+                                }
+                                console.log(`🚫 Filtered out by mapped ID: ${player.full_name} (${variation}) -> ${bestMatch.id} (${bestMatch.position}, ${bestMatch.team})`);
+                                return false;
+                            }
+                        }
                     }
+                }
+                
+                if (isProblematicPlayer) {
+                    console.log(`  ❌ No matching rostered ID found - player is available`);
                 }
             }
             
@@ -1117,11 +1188,18 @@ class DraftHandlers {
                 for (const playerVar of playerNameVariations) {
                     for (const draftedVar of draftedNameVariations) {
                         if (playerVar === draftedVar) {
+                            if (isProblematicPlayer) {
+                                console.log(`  ✅ Filtered by name variation: ${playerVar} = ${draftedVar}`);
+                            }
                             console.log(`🚫 Filtered out by name variation: ${player.full_name} (${playerVar} = ${draftedVar})`);
                             return false;
                         }
                     }
                 }
+            }
+            
+            if (isProblematicPlayer) {
+                console.log(`  ✅ Player passes all filters - showing as available`);
             }
             
             return true;
@@ -1258,10 +1336,11 @@ class DraftHandlers {
             
             // Handle specific NFL player mappings
             const specificMappings = {
-                // D.J. Moore variations
-                'dj moore': ['david moore', 'dj moore', 'd j moore'],
+                // D.J. Moore variations (the WR is actually "DJ Moore" in Sleeper)
+                'dj moore': ['david moore', 'dj moore', 'd j moore', 'dj moore'],
                 'david moore': ['dj moore', 'd j moore', 'david moore'],
                 'd j moore': ['dj moore', 'david moore', 'd j moore'],
+                'd.j. moore': ['dj moore', 'david moore', 'd j moore'],
                 
                 // Other common D.J./DJ players
                 'dj chark': ['david chark', 'dj chark', 'd j chark'],
@@ -1370,7 +1449,8 @@ class DraftHandlers {
                 const players = await response.json();
                 
                 // Create name-to-ID mapping with multiple variations
-                const nameToIdMap = new Map();
+                // Handle multiple players with same name by storing arrays of IDs
+                const nameToIdsMap = new Map();
                 
                 Object.entries(players).forEach(([playerId, playerData]) => {
                     const names = [];
@@ -1388,13 +1468,21 @@ class DraftHandlers {
                     names.forEach(name => {
                         const variations = this.generateNameVariations(name);
                         variations.forEach(variation => {
-                            nameToIdMap.set(variation, playerId);
+                            if (!nameToIdsMap.has(variation)) {
+                                nameToIdsMap.set(variation, []);
+                            }
+                            nameToIdsMap.get(variation).push({
+                                id: playerId,
+                                position: playerData.position,
+                                team: playerData.team,
+                                full_name: playerData.full_name || `${playerData.first_name} ${playerData.last_name}`
+                            });
                         });
                     });
                 });
                 
-                this.state.sleeperPlayerMap = nameToIdMap;
-                console.log('✅ Sleeper player database loaded:', nameToIdMap.size, 'name variations mapped');
+                this.state.sleeperPlayerMap = nameToIdsMap;
+                console.log('✅ Sleeper player database loaded:', nameToIdsMap.size, 'name variations mapped');
                 
                 // Debug specific problematic players
                 const problematicPlayers = [
@@ -1407,14 +1495,17 @@ class DraftHandlers {
                     console.log(`  ${name}:`, variations);
                     
                     variations.forEach(variation => {
-                        const id = nameToIdMap.get(variation);
-                        if (id) {
-                            console.log(`    ✅ ${variation} -> ${id}`);
+                        const playerMatches = nameToIdsMap.get(variation);
+                        if (playerMatches && playerMatches.length > 0) {
+                            console.log(`    ✅ ${variation} -> ${playerMatches.length} matches:`);
+                            playerMatches.forEach(match => {
+                                console.log(`      - ${match.full_name} (${match.position}, ${match.team}) [ID: ${match.id}]`);
+                            });
                         }
                     });
                 });
                 
-                return nameToIdMap;
+                return nameToIdsMap;
             } else {
                 console.log('⚠️ Failed to load Sleeper player database');
                 return new Map();
