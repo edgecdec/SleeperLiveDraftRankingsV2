@@ -322,24 +322,63 @@ class DraftHandlers {
             positions.add(player.position);
         });
         
-        // Define tab order with multi-position groups
-        const tabOrder = [
-            { key: 'ALL', label: 'All Players', filter: () => true },
-            { key: 'SUPER_FLEX', label: 'Super Flex', filter: (p) => ['QB', 'RB', 'WR', 'TE'].includes(p.position) },
-            { key: 'FLEX', label: 'Flex', filter: (p) => ['RB', 'WR', 'TE'].includes(p.position) },
-            { key: 'QB', label: 'QB', filter: (p) => p.position === 'QB' },
-            { key: 'RB', label: 'RB', filter: (p) => p.position === 'RB' },
-            { key: 'WR', label: 'WR', filter: (p) => p.position === 'WR' },
-            { key: 'TE', label: 'TE', filter: (p) => p.position === 'TE' },
-            { key: 'K', label: 'K', filter: (p) => p.position === 'K' },
-            { key: 'DEF', label: 'DEF', filter: (p) => p.position === 'DEF' }
+        console.log('🔍 Available positions in data:', Array.from(positions));
+        
+        // Define base tab order with multi-position groups
+        const baseTabOrder = [
+            { key: 'ALL', label: 'All Players', filter: () => true, priority: 0 },
+            { key: 'SUPER_FLEX', label: 'Super Flex', filter: (p) => ['QB', 'RB', 'WR', 'TE'].includes(p.position), priority: 1 },
+            { key: 'FLEX', label: 'Flex', filter: (p) => ['RB', 'WR', 'TE'].includes(p.position), priority: 2 }
         ];
         
+        // Add individual position tabs dynamically
+        const individualPositions = Array.from(positions).sort();
+        individualPositions.forEach((pos, index) => {
+            // Determine priority based on common position order
+            let priority = 10; // Default priority for uncommon positions
+            
+            if (pos === 'QB') priority = 3;
+            else if (pos === 'RB') priority = 4;
+            else if (pos === 'WR') priority = 5;
+            else if (pos === 'TE') priority = 6;
+            else if (pos === 'K') priority = 7;
+            else if (pos === 'DEF') priority = 8;
+            else if (pos.includes('/')) priority = 9; // Hybrid positions like WR/TE, RB/WR
+            
+            // Create human-readable label for hybrid positions
+            let label = pos;
+            if (pos.includes('/')) {
+                // Convert "WR/TE" to "WR/TE", "RB/WR" to "RB/WR", etc.
+                label = pos.split('/').join('/');
+            } else {
+                // Standard position labels
+                const positionLabels = {
+                    'QB': 'QB',
+                    'RB': 'RB', 
+                    'WR': 'WR',
+                    'TE': 'TE',
+                    'K': 'K',
+                    'DEF': 'DEF'
+                };
+                label = positionLabels[pos] || pos;
+            }
+            
+            baseTabOrder.push({
+                key: pos,
+                label: label,
+                filter: (p) => p.position === pos,
+                priority: priority
+            });
+        });
+        
         // Only show tabs that have players (except ALL which always shows)
-        const availableTabs = tabOrder.filter(tab => {
+        const availableTabs = baseTabOrder.filter(tab => {
             if (tab.key === 'ALL') return true;
             return this.state.players.some(tab.filter);
         });
+        
+        // Sort by priority
+        availableTabs.sort((a, b) => a.priority - b.priority);
         
         tabsContainer.innerHTML = availableTabs.map((tab, index) => `
             <button class="position-tab ${index === 0 ? 'active' : ''}" data-position="${tab.key}">
@@ -359,11 +398,11 @@ class DraftHandlers {
         this.state.currentPosition = 'ALL';
         this.state.filteredPlayers = this.state.players;
         
-        console.log('✅ Created position tabs:', availableTabs.map(t => t.key));
+        console.log('✅ Created position tabs:', availableTabs.map(t => `${t.key} (${t.label})`));
     }
     
     /**
-     * Filter players by position
+     * Filter players by position (enhanced for hybrid positions)
      */
     filterByPosition(position) {
         console.log('🔍 Filtering by position:', position);
@@ -390,9 +429,18 @@ class DraftHandlers {
                 );
                 break;
             default:
-                this.state.filteredPlayers = this.state.players.filter(player => 
-                    player.position === position
-                );
+                // Handle both standard positions and hybrid positions like WR/TE, RB/WR
+                if (position.includes('/')) {
+                    // For hybrid positions, show players that match the exact hybrid position
+                    this.state.filteredPlayers = this.state.players.filter(player => 
+                        player.position === position
+                    );
+                } else {
+                    // Standard single position filter
+                    this.state.filteredPlayers = this.state.players.filter(player => 
+                        player.position === position
+                    );
+                }
         }
         
         this.state.currentPosition = position;
@@ -433,11 +481,15 @@ class DraftHandlers {
         
         playersList.innerHTML = this.state.filteredPlayers.map(player => {
             const injuryStatus = player.injury_status ? ` (${player.injury_status})` : '';
+            
+            // Handle hybrid positions for CSS classes
+            const positionClass = player.position.replace('/', '-'); // WR/TE becomes WR-TE
+            
             return `
                 <div class="player-row ${player.status}" data-player-id="${player.player_id}">
                     <div class="player-rank">${player.rank}</div>
                     <div class="player-name">${player.full_name}${injuryStatus}</div>
-                    <div class="player-position ${player.position}">${player.position}</div>
+                    <div class="player-position ${positionClass}" data-position="${player.position}">${player.position}</div>
                     <div class="player-team">${player.team}</div>
                     <div class="player-adp">${player.adp}</div>
                     <div class="player-status">

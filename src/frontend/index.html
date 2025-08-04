@@ -633,6 +633,77 @@
         .player-position.K { color: #7c3aed; }
         .player-position.DEF { color: #0891b2; }
         
+        /* Hybrid position styling */
+        .player-position.WR-TE, 
+        .player-position.TE-WR { 
+            background: linear-gradient(90deg, #2563eb 50%, #ca8a04 50%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .player-position.RB-WR, 
+        .player-position.WR-RB { 
+            background: linear-gradient(90deg, #16a34a 50%, #2563eb 50%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .player-position.RB-TE, 
+        .player-position.TE-RB { 
+            background: linear-gradient(90deg, #16a34a 50%, #ca8a04 50%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .player-position.QB-RB,
+        .player-position.RB-QB {
+            background: linear-gradient(90deg, #dc2626 50%, #16a34a 50%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .player-position.QB-WR,
+        .player-position.WR-QB {
+            background: linear-gradient(90deg, #dc2626 50%, #2563eb 50%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .player-position.QB-TE,
+        .player-position.TE-QB {
+            background: linear-gradient(90deg, #dc2626 50%, #ca8a04 50%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        /* Generic hybrid position fallback for any other combinations */
+        .player-position[class*="-"] { 
+            background: #6b7280;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
         .player-team {
             color: #6b7280;
             text-align: center;

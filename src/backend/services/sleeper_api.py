@@ -423,9 +423,9 @@ class SleeperAPI:
             print(f"✅ Dynasty detected: type=2")
             return True
             
-        # Check for keeper settings
+        # Check for keeper settings (match frontend: > 1, not > 0)
         max_keepers = settings.get('max_keepers', 0)
-        if max_keepers > 0:
+        if max_keepers > 1:
             print(f"✅ Keeper league detected: max_keepers={max_keepers}")
             return True
             
@@ -484,7 +484,7 @@ class SleeperAPI:
                 if league_info:
                     print(f"🔍 DEBUG: Got league info, checking dynasty status...")
                     
-                    # DIRECT DYNASTY DETECTION (bypass method call issues)
+                    # DIRECT DYNASTY DETECTION (exactly match frontend logic)
                     settings = league_info.get('settings', {})
                     league_type = settings.get('type')
                     max_keepers = settings.get('max_keepers', 0)
@@ -493,10 +493,26 @@ class SleeperAPI:
                     
                     print(f"🔍 DEBUG: League settings - type={league_type}, max_keepers={max_keepers}, taxi_slots={taxi_slots}, previous_league={previous_league}")
                     
-                    # Dynasty detection logic (inline)
-                    if league_type == 2 or max_keepers > 0 or taxi_slots > 0 or previous_league:
+                    # Dynasty detection logic (exactly match frontend)
+                    is_dynasty = False
+                    
+                    if league_type == 2:
                         is_dynasty = True
-                        print(f"✅ DYNASTY DETECTED: type={league_type}, keepers={max_keepers}, taxi={taxi_slots}")
+                        print(f"✅ DYNASTY DETECTED: type=2")
+                    elif taxi_slots > 0:
+                        is_dynasty = True
+                        print(f"✅ DYNASTY DETECTED: taxi_slots={taxi_slots}")
+                    elif max_keepers > 1:
+                        is_dynasty = True
+                        print(f"✅ DYNASTY DETECTED: max_keepers={max_keepers}")
+                    elif previous_league:
+                        # Only dynasty if previous league AND has dynasty features
+                        if max_keepers > 1 or taxi_slots > 0 or league_type == 2:
+                            is_dynasty = True
+                            print(f"✅ DYNASTY DETECTED: continuing league with dynasty features")
+                        else:
+                            is_dynasty = False
+                            print(f"❌ REDRAFT: continuing league but no dynasty features")
                     else:
                         is_dynasty = False
                         print(f"❌ REDRAFT DETECTED")
