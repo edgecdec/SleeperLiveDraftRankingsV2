@@ -1,7 +1,6 @@
 /**
  * Simplified App for V1-Style User Search
  */
-
 class SimpleApp {
     constructor() {
         this.apiService = new ApiService();
@@ -30,6 +29,9 @@ class SimpleApp {
         console.log('🚀 Initializing Simple V1-Style App');
         
         try {
+            // Initialize route migration first
+            window.RouteMigration.init();
+            
             // Test API connection
             await this.apiService.testConnection();
             console.log('✅ API connection successful');
@@ -62,8 +64,8 @@ class SimpleApp {
         const path = window.location.pathname;
         console.log('🔍 Checking URL path:', path);
         
-        // Check if we're on a user page: /user/username
-        const userMatch = path.match(/^\/user\/([^\/]+)$/);
+        // Check if we're on a user page: /sleeper/user/username
+        const userMatch = path.match(/^\/sleeper\/user\/([^\/]+)$/);
         if (userMatch) {
             const username = userMatch[1];
             console.log('🎯 Found username in URL:', username);
@@ -113,8 +115,8 @@ class SimpleApp {
             return;
         }
         
-        // Check for user-based draft URLs: /user/{username}/draft/{league_id}/{draft_id}
-        const userDraftMatch = path.match(/^\/user\/([^\/]+)\/draft\/([^\/]+)\/([^\/]+)$/);
+        // Check for user-based draft URLs: /sleeper/user/{username}/league/{league_id}/draft/{draft_id}
+        const userDraftMatch = path.match(/^\/sleeper\/user\/([^\/]+)\/league\/([^\/]+)\/draft\/([^\/]+)$/);
         if (userDraftMatch) {
             const username = userDraftMatch[1];
             const leagueId = userDraftMatch[2];
@@ -315,8 +317,19 @@ class SimpleApp {
         // Setup global draft select handler
         window.handleDraftSelect = (leagueId, draftId) => {
             console.log('🎯 Draft selected:', { leagueId, draftId });
-            // Navigate to draft view
-            window.location.href = `/sleeper/league/${leagueId}/draft/${draftId}`;
+            
+            // Get current user to build proper URL
+            const currentUser = this.state.currentUser;
+            if (currentUser && currentUser.username) {
+                const userDraftUrl = window.RouteBuilder.userDraft(currentUser.username, leagueId, draftId);
+                console.log('✅ Navigating to user-based draft URL:', userDraftUrl);
+                window.location.href = userDraftUrl;
+            } else {
+                console.warn('⚠️ No current user available, cannot build user-based URL');
+                // Fallback to legacy URL (will be migrated by route migration)
+                console.log('🔄 Using legacy URL as fallback');
+                window.location.href = `/sleeper/league/${leagueId}/draft/${draftId}`;
+            }
         };
     }
     

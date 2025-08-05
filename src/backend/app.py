@@ -25,21 +25,24 @@ from .rankings_api import rankings_bp
 
 # Try to import new rankings system
 try:
-    from .rankings_api_v2 import rankings_bp_v2
-    from .services.rankings_initializer import initialize_rankings, ensure_rankings_directory
+    from .rankings_api_v2 import rankings_bp_new
+    from .services.simple_rankings_fallback import initialize_simple_rankings
+    initialize_rankings = initialize_simple_rankings
+    ensure_rankings_directory = lambda x: os.makedirs(x, exist_ok=True)
     NEW_RANKINGS_AVAILABLE = True
+    print("✅ Rankings system available")
 except ImportError as e:
-    print(f"⚠️ Full rankings system not available, trying fallback: {e}")
+    print(f"⚠️ Rankings system not available, trying fallback: {e}")
     try:
-        from .rankings_api_v2 import rankings_bp_v2
+        from .rankings_api_v2 import rankings_bp_new
         from .services.simple_rankings_fallback import initialize_simple_rankings
         initialize_rankings = initialize_simple_rankings
         ensure_rankings_directory = lambda x: os.makedirs(x, exist_ok=True)
         NEW_RANKINGS_AVAILABLE = True
-        print("✅ Fallback rankings system available")
+        print("✅ Rankings system available")
     except ImportError as e2:
         print(f"❌ No rankings system available: {e2}")
-        rankings_bp_v2 = None
+        rankings_bp_new = None
         initialize_rankings = None
         ensure_rankings_directory = None
         NEW_RANKINGS_AVAILABLE = False
@@ -141,10 +144,10 @@ def create_app(debug: bool = False) -> Flask:
     app.register_blueprint(draft_bp, url_prefix='/api')
     app.register_blueprint(custom_rankings_bp, url_prefix='/api')
     
-    # Register new rankings API v2 (primary system)
-    if NEW_RANKINGS_AVAILABLE and rankings_bp_v2:
-        app.register_blueprint(rankings_bp_v2, url_prefix='/api/rankings')
-        print("🏈 New rankings API v2 registered at /api/rankings/*")
+    # Register new rankings API (primary system)
+    if NEW_RANKINGS_AVAILABLE and rankings_bp_new:
+        app.register_blueprint(rankings_bp_new, url_prefix='/api/rankings')
+        print("🏈 New rankings API registered at /api/rankings/*")
     
     # Register legacy rankings API at different path to avoid conflicts
     app.register_blueprint(rankings_bp, url_prefix='/api/legacy')  # Changed from root to /api/legacy
@@ -169,25 +172,45 @@ def create_app(debug: bool = False) -> Flask:
                 'help': 'Make sure frontend files are built and in the correct location'
             }), 404
     
-    # SPA routes for frontend routing
-    @app.route('/user/<username>')
-    def serve_user_page(username):
-        """Serve the main HTML file for user pages"""
-        print(f"🎯 User page requested for: {username}")
+    # SPA route for user-based pages
+    @app.route('/sleeper/user/<username>')
+    def serve_sleeper_user_page(username):
+        """Serve the main HTML file for user-based pages"""
+        print(f"👤 User page requested for: {username}")
         try:
             return send_from_directory(static_path, 'index.html')
-        except FileNotFoundError:
-            return jsonify({
-                'error': 'Frontend files not found',
-                'path': static_path,
-                'help': 'Make sure frontend files are built and in the correct location'
-            }), 404
+        except Exception as e:
+            print(f"❌ Error serving user page: {e}")
+            return f"Error loading user page: {e}", 500
     
-    # SPA route for draft pages
+    # SPA route for user leagues page
+    @app.route('/sleeper/user/<username>/leagues')
+    def serve_user_leagues_page(username):
+        """Serve the main HTML file for user leagues pages"""
+        print(f"🏈 User leagues page requested for: {username}")
+        try:
+            return send_from_directory(static_path, 'index.html')
+        except Exception as e:
+            print(f"❌ Error serving user leagues page: {e}")
+            return f"Error loading leagues page: {e}", 500
+    
+    # SPA route for user-based draft pages
+    @app.route('/sleeper/user/<username>/league/<league_id>/draft/<draft_id>')
+    def serve_user_draft_page(username, league_id, draft_id):
+        """Serve the main HTML file for user-based draft pages"""
+        print(f"🎯 User draft page requested for user: {username}, league: {league_id}, draft: {draft_id}")
+        try:
+            return send_from_directory(static_path, 'index.html')
+        except Exception as e:
+            print(f"❌ Error serving user draft page: {e}")
+            return f"Error loading draft page: {e}", 500
+    
+    # Legacy route for backward compatibility (will be migrated by frontend)
     @app.route('/sleeper/league/<league_id>/draft/<draft_id>')
     def serve_draft_page(league_id, draft_id):
-        """Serve the main HTML file for draft pages"""
-        print(f"🎯 Draft page requested for league: {league_id}, draft: {draft_id}")
+        """Serve the main HTML file for draft pages (legacy route)"""
+        print(f"⚠️ Legacy draft page requested for league: {league_id}, draft: {draft_id}")
+        print(f"🔄 This should be migrated to /sleeper/user/USERNAME/league/{league_id}/draft/{draft_id}")
         try:
             return send_from_directory(static_path, 'index.html')
         except FileNotFoundError:
@@ -261,10 +284,16 @@ def create_app(debug: bool = False) -> Flask:
         }
         
         # Add rankings endpoints if available
+        if NEW_RANKINGS_AVAILABLE:
+            endpoints.update({
+                'rankings_list': '/api/rankings/list',
+                'rankings_data': '/api/rankings/data/<ranking_id>',
+                'rankings_upload': '/api/rankings/upload',
+                'rankings_health': '/api/rankings/health'
+            })
+        
         if RANKINGS_AVAILABLE:
             endpoints.update({
-                'available_players': '/api/draft/<draft_id>/available-players',
-                'best_available': '/api/draft/<draft_id>/best-available',
                 'rankings_formats': '/api/rankings/formats',
                 'rankings_status': '/api/rankings/status'
             })

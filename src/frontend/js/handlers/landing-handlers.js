@@ -3,7 +3,6 @@
  * 
  * Handles landing page interactions, user search, and league selection
  */
-
 class LandingHandlers {
     constructor(apiService, uiUtils) {
         this.apiService = apiService;
@@ -142,10 +141,38 @@ class LandingHandlers {
             const userData = await this.apiService.request(`/user/${username}`);
             
             console.log('📥 User data response:', userData);
+            console.log('🔍 User data keys:', userData.user ? Object.keys(userData.user) : 'no user object');
+            console.log('🔍 User ID in response:', userData.user?.user_id);
             
             if (userData.status === 'success' && userData.user) {
+                // Store user data with user_id
+                const user = {
+                    ...userData.user,
+                    user_id: userData.user.user_id // Ensure user_id is included
+                };
+                
+                console.log('✅ User data with ID:', user);
+                console.log('🔍 Final user_id value:', user.user_id);
+                
+                // Store user data
+                this.state.currentUser = user;
+                
+                // Store username for route migration
+                window.RouteMigration.storeUsername(user.username);
+                
+                // Update global app state (with safety check)
+                if (window.app && window.app.state) {
+                    window.app.state.currentUser = user;
+                    console.log('✅ Stored user in global state with ID:', user.user_id);
+                } else {
+                    console.warn('⚠️ window.app.state not available, creating it');
+                    if (!window.app) window.app = {};
+                    if (!window.app.state) window.app.state = {};
+                    window.app.state.currentUser = user;
+                }
+                
                 // Display user info
-                this.displayUserInfo(userData.user);
+                this.displayUserInfo(user);
                 
                 console.log('📡 Making leagues API request to:', `${this.apiService.apiBase}/user/${username}/leagues?season=${season}`);
                 
@@ -189,11 +216,13 @@ class LandingHandlers {
                         window.app.state.userLeagues = leaguesData.leagues;
                     }
                     
-                    // Update URL to match V1 pattern
-                    history.pushState({ 
+                    // Update URL to match new user-based pattern
+                    const userUrl = window.RouteBuilder.user(username);
+                    // Use replaceState to avoid creating extra history entries
+                    history.replaceState({ 
                         user: userData.user, 
                         leagues: leaguesData.leagues 
-                    }, '', `/user/${username}`);
+                    }, '', userUrl);
                     
                 } else {
                     console.error('❌ Leagues request failed:', leaguesData);
@@ -254,12 +283,19 @@ class LandingHandlers {
                     console.log('✅ Set avatar image:', avatarUrl);
                 }
                 
-                // Store user data
-                this.state.currentUser = user;
+                // Store user data (preserve user_id)
+                this.state.currentUser = {
+                    ...this.state.currentUser, // Preserve any existing data
+                    ...user // Add/update with new user data
+                };
                 
                 // Update global app state (with safety check)
                 if (window.app && window.app.state) {
-                    window.app.state.currentUser = user;
+                    window.app.state.currentUser = {
+                        ...window.app.state.currentUser, // Preserve any existing data
+                        ...user // Add/update with new user data
+                    };
+                    console.log('✅ Updated global state, user_id:', window.app.state.currentUser.user_id);
                 } else {
                     console.warn('⚠️ window.app.state not available, skipping global state update');
                 }
@@ -564,15 +600,16 @@ class LandingHandlers {
             // Update URL for draft page with back navigation support
             const currentUser = this.state.currentUser;
             if (currentUser) {
-                const draftUrl = `/user/${currentUser.username}/draft/${league.league_id}/${draft.draft_id}`;
+                const draftUrl = window.RouteBuilder.userDraft(currentUser.username, league.league_id, draft.draft_id);
                 console.log('🔗 Updating URL to:', draftUrl);
                 
-                history.pushState({
+                // Use replaceState to avoid creating extra history entries
+                history.replaceState({
                     page: 'draft',
                     user: currentUser,
                     league: league,
                     draft: draft,
-                    backUrl: `/user/${currentUser.username}`
+                    backUrl: window.RouteBuilder.user(currentUser.username)
                 }, '', draftUrl);
             }
             
