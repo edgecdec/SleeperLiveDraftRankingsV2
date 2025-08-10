@@ -133,6 +133,22 @@ class SimpleApp {
             return;
         }
         
+        // Check for mock draft URLs: /sleeper/mock/{draft_id}
+        const mockDraftMatch = path.match(/^\/sleeper\/mock\/([^\/]+)$/);
+        if (mockDraftMatch) {
+            const draftId = mockDraftMatch[1];
+            
+            console.log('🎭 Found mock draft URL:', { draftId });
+            
+            // Mark as attempted
+            this.autoLoadAttempted = true;
+            
+            // Load mock draft directly
+            console.log('🚀 Loading mock draft from URL:', { draftId });
+            await this.loadMockDraftFromUrl(draftId);
+            return;
+        }
+        
         // Check for legacy draft URLs: /sleeper/league/{league_id}/draft/{draft_id}
         const draftMatch = path.match(/^\/sleeper\/league\/([^\/]+)\/draft\/([^\/]+)$/);
         if (draftMatch) {
@@ -262,6 +278,50 @@ class SimpleApp {
             
         } catch (error) {
             console.error('❌ Error loading user then draft:', error);
+            this.showLandingPage();
+        }
+    }
+    
+    /**
+     * Load mock draft directly from URL parameters
+     */
+    async loadMockDraftFromUrl(draftId) {
+        console.log('🎭 Loading mock draft from URL:', { draftId });
+        
+        try {
+            // Create mock league and draft objects for mock draft
+            const mockLeague = {
+                league_id: 'mock',
+                name: `Mock Draft ${draftId}`,
+                total_rosters: 12,
+                season: '2025'
+            };
+            
+            const mockDraft = {
+                draft_id: draftId,
+                type: 'snake',
+                status: 'drafting',
+                league: mockLeague
+            };
+            
+            // Set mock draft flag
+            this.state.isMockDraft = true;
+            
+            // Trigger draft selection directly
+            console.log('🎯 Triggering mock draft selection with:', mockDraft);
+            
+            // Make sure draft handlers exist
+            if (!this.draftHandlers) {
+                console.error('❌ Draft handlers not initialized!');
+                this.showLandingPage();
+                return;
+            }
+            
+            await this.draftHandlers.handleDraftSelected(mockDraft);
+            
+        } catch (error) {
+            console.error('❌ Error loading mock draft from URL:', error);
+            // Fall back to showing the landing page
             this.showLandingPage();
         }
     }

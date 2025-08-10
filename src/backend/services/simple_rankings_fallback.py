@@ -133,6 +133,11 @@ class SimpleInMemoryRankings:
                             player['overall_rank'] = int(float(value))
                         except:
                             player['overall_rank'] = 999
+                    elif 'value' in key_lower:
+                        try:
+                            player['value'] = float(value)
+                        except:
+                            player['value'] = 0
                     else:
                         player[key] = value
                 

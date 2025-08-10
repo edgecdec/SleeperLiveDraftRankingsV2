@@ -21,7 +21,7 @@ from .config import init_paths
 from .api.user import user_bp
 from .api.draft import draft_bp
 from .api.custom_rankings import custom_rankings_bp
-from .rankings_api import rankings_bp
+from .rankings_api_v2 import rankings_bp_new as rankings_bp
 
 # Try to import new rankings system
 try:
@@ -149,9 +149,7 @@ def create_app(debug: bool = False) -> Flask:
         app.register_blueprint(rankings_bp_new, url_prefix='/api/rankings')
         print("🏈 New rankings API registered at /api/rankings/*")
     
-    # Register legacy rankings API at different path to avoid conflicts
-    app.register_blueprint(rankings_bp, url_prefix='/api/legacy')  # Changed from root to /api/legacy
-    print("🏈 Legacy rankings API registered at /api/legacy/rankings/*")
+    # Legacy rankings API is now the same as new rankings API, so no need to register twice
     
     if RANKINGS_AVAILABLE and init_rankings_routes:
         init_rankings_routes(app)
@@ -204,6 +202,17 @@ def create_app(debug: bool = False) -> Flask:
         except Exception as e:
             print(f"❌ Error serving user draft page: {e}")
             return f"Error loading draft page: {e}", 500
+    
+    # Mock draft route
+    @app.route('/sleeper/mock/<draft_id>')
+    def serve_mock_draft_page(draft_id):
+        """Serve the main HTML file for mock draft pages"""
+        print(f"🎭 Mock draft page requested for draft: {draft_id}")
+        try:
+            return send_from_directory(static_path, 'index.html')
+        except Exception as e:
+            print(f"❌ Error serving mock draft page: {e}")
+            return f"Error loading mock draft page: {e}", 500
     
     # Legacy route for backward compatibility (will be migrated by frontend)
     @app.route('/sleeper/league/<league_id>/draft/<draft_id>')

@@ -23,6 +23,17 @@ class LandingHandlers {
         this.setupUserSearchForm();
         this.setupMockDraftForm();
         this.setupLegacyEventListeners();
+        
+        // Add global debug function
+        window.debugMockDraft = () => {
+            console.log('🔧 Debug: Manual mock draft setup trigger');
+            this.setupMockDraftFormElements();
+        };
+        
+        window.testMockDraft = (draftId = '123456789') => {
+            console.log('🧪 Test: Manual mock draft connection');
+            this.handleMockDraftConnect(draftId);
+        };
     }
 
     /**
@@ -32,7 +43,7 @@ class LandingHandlers {
         const leaguesTab = document.getElementById('leagues-tab');
         const mockDraftTab = document.getElementById('mock-draft-tab');
         const leaguesContent = document.getElementById('leagues-tab-content');
-        const mockDraftContent = document.getElementById('mock-draft-tab-content');
+        const mockDraftContent = document.getElementById('mock-tab-content');
         
         if (leaguesTab && mockDraftTab) {
             console.log('✅ Setting up landing page tab navigation');
@@ -48,6 +59,11 @@ class LandingHandlers {
                 leaguesTab.classList.remove('active');
                 mockDraftContent.style.display = 'block';
                 leaguesContent.style.display = 'none';
+                
+                // Setup mock draft form when tab becomes visible
+                setTimeout(() => {
+                    this.setupMockDraftFormElements();
+                }, 100);
             });
         }
     }
@@ -104,20 +120,94 @@ class LandingHandlers {
      * Setup mock draft form
      */
     setupMockDraftForm() {
-        const form = document.getElementById('mock-draft-form');
-        const draftIdInput = document.getElementById('mock-draft-id');
-        const connectButton = document.getElementById('connect-mock-draft-btn');
+        // Initial setup attempt
+        this.setupMockDraftFormElements();
+    }
+    
+    /**
+     * Setup mock draft form elements (can be called multiple times)
+     */
+    setupMockDraftFormElements() {
+        console.log('🔍 Starting mock draft form element setup...');
         
-        if (form && draftIdInput && connectButton) {
+        const draftIdInput = document.getElementById('mock-draft-id');
+        const joinButton = document.getElementById('join-mock-btn');
+        
+        console.log('🔍 Mock draft form setup - Input:', draftIdInput, 'Button:', joinButton);
+        console.log('🔍 Input element details:', {
+            exists: !!draftIdInput,
+            id: draftIdInput?.id,
+            tagName: draftIdInput?.tagName
+        });
+        console.log('🔍 Button element details:', {
+            exists: !!joinButton,
+            id: joinButton?.id,
+            tagName: joinButton?.tagName
+        });
+        
+        if (draftIdInput && joinButton) {
+            // Check if already set up
+            if (joinButton.hasAttribute('data-mock-setup')) {
+                console.log('ℹ️ Mock draft form already set up');
+                return;
+            }
+            
             console.log('✅ Setting up mock draft form');
             
-            form.addEventListener('submit', async (e) => {
+            // Add a simple test click handler first
+            const testHandler = (e) => {
+                console.log('🎯 TEST: Mock draft button clicked!');
                 e.preventDefault();
+                alert('Button clicked! This is a test.');
+            };
+            
+            joinButton.addEventListener('click', testHandler);
+            
+            // Handle button click
+            joinButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                console.log('🎯 Mock draft button clicked!');
                 const draftId = draftIdInput.value.trim();
+                console.log('📝 Draft ID entered:', draftId);
                 
                 if (draftId) {
                     await this.handleMockDraftConnect(draftId);
+                } else {
+                    console.warn('⚠️ No draft ID entered');
+                    this.showMockDraftError('Please enter a draft ID');
                 }
+            });
+            
+            // Handle Enter key in input
+            draftIdInput.addEventListener('keypress', async (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    console.log('⌨️ Enter key pressed in mock draft input');
+                    const draftId = draftIdInput.value.trim();
+                    
+                    if (draftId) {
+                        await this.handleMockDraftConnect(draftId);
+                    } else {
+                        this.showMockDraftError('Please enter a draft ID');
+                    }
+                }
+            });
+            
+            // Mark as set up
+            joinButton.setAttribute('data-mock-setup', 'true');
+            console.log('✅ Mock draft form setup complete');
+        } else {
+            console.error('❌ Mock draft form elements not found!');
+            console.log('Missing elements:', {
+                draftIdInput: !!draftIdInput,
+                joinButton: !!joinButton
+            });
+            
+            // Let's see what elements ARE available
+            console.log('🔍 Available elements with mock-related IDs:');
+            const allElements = document.querySelectorAll('[id*="mock"]');
+            allElements.forEach(el => {
+                console.log(`  - ${el.id}: ${el.tagName}`);
             });
         }
     }
@@ -633,17 +723,24 @@ class LandingHandlers {
     async handleMockDraftConnect(draftId) {
         console.log('🎯 Connecting to mock draft:', draftId);
         
-        const connectButton = document.getElementById('connect-mock-draft-btn');
+        const joinButton = document.getElementById('join-mock-btn');
         
         // Validate draft ID
         if (!draftId.match(/^\d+$/)) {
+            console.error('❌ Invalid draft ID format:', draftId);
             this.showMockDraftError('Draft ID must be numeric');
             return;
         }
         
         try {
+            console.log('🔄 Starting mock draft connection process...');
+            
             // Show loading state
-            if (connectButton) connectButton.loading = true;
+            if (joinButton) {
+                joinButton.loading = true;
+                joinButton.disabled = true;
+                console.log('⏳ Button set to loading state');
+            }
             this.hideMockDraftError();
             
             // Create mock draft object
@@ -660,14 +757,38 @@ class LandingHandlers {
                 season: '2025'
             };
             
-            // Handle as regular draft selection
-            await this.handleDraftSelect(mockLeague, mockDraft);
+            console.log('📦 Created mock objects:', { mockLeague, mockDraft });
+            
+            // For mock drafts, we need to handle navigation differently since there's no user
+            // Navigate directly to the mock draft URL
+            const mockDraftUrl = `/sleeper/mock/${draftId}`;
+            console.log('🔗 Navigating to mock draft URL:', mockDraftUrl);
+            
+            // Store mock draft data in global state
+            if (window.app) {
+                window.app.state.selectedLeague = mockLeague;
+                window.app.state.selectedDraft = mockDraft;
+                window.app.state.isMockDraft = true;
+            }
+            
+            // Store in draft handlers state
+            if (this.draftHandlers) {
+                this.draftHandlers.state.currentLeague = mockLeague;
+                this.draftHandlers.state.currentDraft = mockDraft;
+            }
+            
+            // Navigate to the mock draft
+            window.location.href = mockDraftUrl;
             
         } catch (error) {
             console.error('❌ Mock draft connection failed:', error);
             this.showMockDraftError('Network error while connecting to mock draft');
         } finally {
-            if (connectButton) connectButton.loading = false;
+            if (joinButton) {
+                joinButton.loading = false;
+                joinButton.disabled = false;
+                console.log('🔓 Button loading state cleared');
+            }
         }
     }
 

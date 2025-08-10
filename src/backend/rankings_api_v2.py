@@ -52,12 +52,18 @@ def load_ranking_from_csv(ranking_id):
                     'full_name': row.get('Name', ''),  # Add full_name alias
                     'position': row.get('Position', ''),
                     'team': row.get('Team', ''),
-                    'rank': int(row.get('Overall Rank', 999)),
-                    'overall_rank': int(row.get('Overall Rank', 999)),  # Add overall_rank alias
+                    'rank': int(row.get('Rank', row.get('Overall Rank', 999))),
+                    'overall_rank': int(row.get('Rank', row.get('Overall Rank', 999))),  # Add overall_rank alias
                     'position_rank': int(row.get('Position Rank', 999)),
                     'bye_week': int(row.get('Bye', 0)),
-                    'tier': int(row.get('Tier', 1))
+                    'tier': int(row.get('Tier', 1)),
+                    'value': float(row.get('Value', 0)) if row.get('Value') else 0
                 }
+                
+                # Debug first 3 players
+                if len(players) < 3:
+                    logger.info(f"📊 Player {player['name']}: Value column = '{row.get('Value')}', parsed value = {player['value']}")
+                
                 players.append(player)
         
         logger.info(f"✅ Loaded {len(players)} players from {csv_filename}")

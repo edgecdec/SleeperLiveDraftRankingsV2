@@ -38,11 +38,11 @@
             <div class="landing-content">
                 <!-- Tab Navigation -->
                 <div class="tab-navigation">
-                    <button class="tab-button active" data-tab="leagues">
+                    <button id="leagues-tab" class="tab-button active" data-tab="leagues">
                         <sl-icon name="people-fill"></sl-icon>
                         <span>My Leagues</span>
                     </button>
-                    <button class="tab-button" data-tab="mock">
+                    <button id="mock-draft-tab" class="tab-button" data-tab="mock">
                         <sl-icon name="play-circle-fill"></sl-icon>
                         <span>Mock Draft</span>
                     </button>
@@ -51,7 +51,7 @@
                 <!-- Tab Content -->
                 <div class="tab-content">
                     <!-- My Leagues Tab -->
-                    <div id="leagues-tab" class="tab-pane active">
+                    <div id="leagues-tab-content" class="tab-pane active">
                         <!-- User Search Section -->
                         <div class="user-search-section">
                             <div class="search-container">
@@ -130,7 +130,7 @@
                     </div>
 
                     <!-- Mock Draft Tab -->
-                    <div id="mock-tab" class="tab-pane">
+                    <div id="mock-tab-content" class="tab-pane">
                         <div class="mock-draft-section">
                             <div class="mock-header">
                                 <sl-icon name="play-circle-fill" class="mock-icon"></sl-icon>
@@ -138,23 +138,31 @@
                                 <p>Practice your draft strategy with our mock draft simulator</p>
                             </div>
                             
-                            <div class="mock-options">
-                                <div class="option-card">
-                                    <h3>Quick Mock</h3>
-                                    <p>Jump into a standard 12-team PPR mock draft</p>
-                                    <sl-button variant="primary" size="large">
-                                        <sl-icon name="lightning-fill"></sl-icon>
-                                        Start Quick Mock
-                                    </sl-button>
-                                </div>
-                                
-                                <div class="option-card">
-                                    <h3>Custom Mock</h3>
-                                    <p>Configure your own mock draft settings</p>
-                                    <sl-button variant="default" size="large">
-                                        <sl-icon name="gear-fill"></sl-icon>
-                                        Configure Mock
-                                    </sl-button>
+                            <div class="mock-input-section">
+                                <div class="input-group">
+                                    <label for="mock-draft-id">Enter Sleeper Mock Draft ID</label>
+                                    <div class="input-with-button">
+                                        <sl-input 
+                                            id="mock-draft-id" 
+                                            placeholder="e.g., 1234567890123456789"
+                                            size="large"
+                                            clearable>
+                                        </sl-input>
+                                        <sl-button id="join-mock-btn" variant="primary" size="large">
+                                            <sl-icon name="play-circle-fill"></sl-icon>
+                                            Join Mock Draft
+                                        </sl-button>
+                                    </div>
+                                    <div class="help-text">
+                                        <sl-icon name="info-circle"></sl-icon>
+                                        <span>Enter the ID from your Sleeper mock draft URL</span>
+                                    </div>
+                                    
+                                    <!-- Error Display -->
+                                    <div id="mock-draft-error" class="error-message" style="display: none;">
+                                        <sl-icon name="exclamation-triangle"></sl-icon>
+                                        <span id="mock-draft-error-text"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -176,6 +184,10 @@
                         <div class="draft-title-info">
                             <h1 id="draft-title">Draft Board</h1>
                             <p id="draft-subtitle">Loading draft information...</p>
+                            <div id="mock-mode-indicator" class="mock-mode-badge" style="display: none;">
+                                <sl-icon name="play-circle"></sl-icon>
+                                MOCK MODE
+                            </div>
                         </div>
                     </div>
                     <div class="draft-controls">
@@ -194,6 +206,10 @@
                             <div id="connection-indicator" class="status-indicator offline">
                                 <div class="status-dot"></div>
                                 <span id="connection-text">Connecting...</span>
+                            </div>
+                            <div id="auto-refresh-indicator" class="status-indicator auto-refresh" style="display: none;">
+                                <div class="status-dot refresh-dot"></div>
+                                <span id="auto-refresh-text">Auto-refresh: 30s</span>
                             </div>
                         </div>
                         <button id="toggle-roster-btn" class="roster-toggle-btn">
@@ -220,8 +236,8 @@
                             <div class="player-name">Player</div>
                             <div class="player-position">Pos</div>
                             <div class="player-team">Team</div>
-                            <div class="player-adp">ADP</div>
-                            <div class="player-status">Status</div>
+                            <div class="player-adp">Value</div>
+                            <div class="player-bye">Bye</div>
                         </div>
                         <div id="players-list" class="players-list">
                             <!-- Players will be populated here -->
@@ -232,7 +248,12 @@
                 <!-- Roster Sidebar -->
                 <div id="roster-sidebar" class="roster-sidebar hidden">
                     <div class="roster-header">
-                        <h3>My Team</h3>
+                        <div class="roster-title-section">
+                            <h3>My Team</h3>
+                            <div class="team-value">
+                                <span id="total-team-value">Total: 0</span>
+                            </div>
+                        </div>
                         <div class="roster-header-buttons">
                             <button id="refresh-roster-btn" class="refresh-roster-btn" title="Refresh Roster">
                                 <sl-icon name="arrow-clockwise"></sl-icon>
