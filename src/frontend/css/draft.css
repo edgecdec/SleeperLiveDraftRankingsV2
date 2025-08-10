@@ -621,6 +621,131 @@ input[type="file"]:focus {
     border-radius: 0.25rem;
     font-size: 0.875rem;
 }
+
+.draft-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.leaderboard-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.leaderboard-toggle-btn:hover {
+    background: #d97706;
+    transform: translateY(-1px);
+}
+
+.leaderboard-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100vh;
+    background: white;
+    border-left: 1px solid #e5e7eb;
+    box-shadow: -4px 0 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 998;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+}
+
+.leaderboard-sidebar:not(.hidden) {
+    transform: translateX(0);
+}
+
+/* When roster is open, move leaderboard to the left */
+.roster-sidebar:not(.hidden) + .leaderboard-sidebar:not(.hidden),
+body:has(.roster-sidebar:not(.hidden)) .leaderboard-sidebar:not(.hidden) {
+    right: 320px;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.leaderboard-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.close-leaderboard-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    color: #6b7280;
+}
+
+.close-leaderboard-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.leaderboard-list {
+    padding: 1rem;
+}
+
+.leaderboard-team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.leaderboard-team.current-user {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.team-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.team-name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.team-owner {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.team-value {
+    font-weight: 600;
+    color: #059669;
+    background: #d1fae5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
     display: flex;
     align-items: center;
     gap: 0.5rem;

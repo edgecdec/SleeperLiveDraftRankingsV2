@@ -100,10 +100,24 @@ class DraftHandlers {
         
         if (leaderboardToggleBtn && leaderboardSidebar) {
             leaderboardToggleBtn.addEventListener('click', () => {
+                console.log('🏆 Leaderboard button clicked');
                 leaderboardSidebar.classList.toggle('hidden');
+                console.log('🏆 Leaderboard hidden class:', leaderboardSidebar.classList.contains('hidden'));
                 if (!leaderboardSidebar.classList.contains('hidden')) {
+                    console.log('🏆 Populating leaderboard...');
                     this.populateLeaderboard();
                 }
+            });
+        } else {
+            console.log('❌ Leaderboard elements not found:', {
+                button: !!leaderboardToggleBtn,
+                sidebar: !!leaderboardSidebar
+            });
+        }
+        
+        if (closeLeaderboardBtn && leaderboardSidebar) {
+            closeLeaderboardBtn.addEventListener('click', () => {
+                leaderboardSidebar.classList.add('hidden');
             });
         }
         
@@ -1321,6 +1335,182 @@ class DraftHandlers {
         }
         
         console.log(`💰 Total team value: ${totalValue.toFixed(1)}`);
+    }
+    
+    /**
+     * Populate leaderboard with all team values
+     */
+    async populateLeaderboard() {
+        try {
+            console.log('🏆 Starting leaderboard population...');
+            const leaderboardList = document.getElementById('leaderboard-list');
+            if (!leaderboardList) {
+                console.log('❌ Leaderboard list element not found');
+                return;
+            }
+            
+            // Show loading message
+            leaderboardList.innerHTML = '<div style="padding: 1rem; text-align: center;">Loading...</div>';
+            
+            const teams = [];
+            const currentUserId = this.getCurrentUserId();
+            
+            // Get unique users from draft picks
+            const userIds = new Set();
+            if (this.state.draftPicks) {
+                this.state.draftPicks.forEach(pick => {
+                    if (pick.picked_by) {
+                        userIds.add(pick.picked_by);
+                    }
+                });
+            }
+            
+            console.log('🏆 Found', userIds.size, 'unique users from draft picks');
+            
+            if (userIds.size === 0) {
+                leaderboardList.innerHTML = '<div style="padding: 1rem; text-align: center;">No teams found</div>';
+                return;
+            }
+            
+            // Calculate team values for each user
+            for (const userId of userIds) {
+                const userPicks = this.state.draftPicks.filter(p => p.picked_by === userId);
+                let totalValue = 0;
+                
+                // Calculate total value from draft picks
+                userPicks.forEach(pick => {
+                    const player = this.createPlayerFromSleeperId(pick.player_id);
+                    if (player) {
+                        totalValue += Math.max(0, player.value || 0);
+                    }
+                });
+                
+                teams.push({
+                    userId: userId,
+                    displayName: `Team ${userId}`,
+                    teamName: `Team ${userId}`,
+                    value: totalValue,
+                    pickCount: userPicks.length
+                });
+            }
+            
+            // Sort by value (highest first)
+            teams.sort((a, b) => b.value - a.value);
+            
+            // Generate HTML
+            let html = '';
+            teams.forEach((team, index) => {
+                const isCurrentUser = team.userId === currentUserId;
+                const rank = index + 1;
+                
+                html += `
+                    <div class="leaderboard-team ${isCurrentUser ? 'current-user' : ''}">
+                        <div class="team-info">
+                            <div class="team-name">${rank}. ${team.teamName}</div>
+                            <div class="team-owner">${team.pickCount} picks</div>
+                        </div>
+                        <div class="team-value">${team.value.toFixed(1)}</div>
+                    </div>
+                `;
+            });
+            
+            leaderboardList.innerHTML = html;
+            
+        } catch (error) {
+            console.error('❌ Error populating leaderboard:', error);
+        }
+    }
+    
+    /**
+     * Calculate total team value for a specific user
+     */
+    async calculateTeamValue(userId) {
+        try {
+            // Get user's roster and draft picks
+            const userRoster = this.state.leagueRosters?.find(r => r.owner_id === userId);
+            const userPicks = this.state.draftPicks?.filter(p => p.picked_by === userId) || [];
+            
+            let totalValue = 0;
+            const seenPlayerIds = new Set();
+            
+            // Add roster players
+            if (userRoster?.players) {
+                userRoster.players.forEach(playerId => {
+                    if (!seenPlayerIds.has(playerId)) {
+                        const player = this.createPlayerFromSleeperId(playerId);
+                        if (player) {
+                            totalValue += Math.max(0, player.value || 0);
+                            seenPlayerIds.add(playerId);
+                        }
+                    }
+                });
+            }
+            
+            // Add drafted players (replace roster if duplicate)
+            userPicks.forEach(pick => {
+                const player = this.createPlayerFromSleeperId(pick.player_id);
+                if (player) {
+                    if (seenPlayerIds.has(pick.player_id)) {
+                        // Already counted in roster, no change needed
+                    } else {
+                        totalValue += Math.max(0, player.value || 0);
+                        seenPlayerIds.add(pick.player_id);
+                    }
+                }
+            });
+            
+            return totalValue;
+            
+        } catch (error) {
+            console.error(`❌ Error calculating team value for user ${userId}:`, error);
+            return 0;
+        }
+    }
+    
+    /**
+     * Calculate total team value for a specific user using API data
+     */
+    async calculateTeamValueFromAPI(userId, leagueRosters) {
+        try {
+            // Get user's roster
+            const userRoster = leagueRosters.find(r => r.owner_id === userId);
+            const userPicks = this.state.draftPicks?.filter(p => p.picked_by === userId) || [];
+            
+            let totalValue = 0;
+            const seenPlayerIds = new Set();
+            
+            // Add roster players
+            if (userRoster?.players) {
+                userRoster.players.forEach(playerId => {
+                    if (!seenPlayerIds.has(playerId)) {
+                        const player = this.createPlayerFromSleeperId(playerId);
+                        if (player) {
+                            totalValue += Math.max(0, player.value || 0);
+                            seenPlayerIds.add(playerId);
+                        }
+                    }
+                });
+            }
+            
+            // Add drafted players (replace roster if duplicate)
+            userPicks.forEach(pick => {
+                const player = this.createPlayerFromSleeperId(pick.player_id);
+                if (player) {
+                    if (seenPlayerIds.has(pick.player_id)) {
+                        // Already counted in roster, no change needed
+                    } else {
+                        totalValue += Math.max(0, player.value || 0);
+                        seenPlayerIds.add(pick.player_id);
+                    }
+                }
+            });
+            
+            return totalValue;
+            
+        } catch (error) {
+            console.error(`❌ Error calculating team value for user ${userId}:`, error);
+            return 0;
+        }
     }
     
     /**

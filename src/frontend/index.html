@@ -212,10 +212,16 @@
                                 <span id="auto-refresh-text">Auto-refresh: 30s</span>
                             </div>
                         </div>
-                        <button id="toggle-roster-btn" class="roster-toggle-btn">
-                            <sl-icon name="people-fill"></sl-icon>
-                            <span>Show Roster</span>
-                        </button>
+                        <div class="draft-controls">
+                            <button id="toggle-roster-btn" class="roster-toggle-btn">
+                                <sl-icon name="people-fill"></sl-icon>
+                                <span>Show Roster</span>
+                            </button>
+                            <button id="toggle-leaderboard-btn" class="leaderboard-toggle-btn">
+                                <sl-icon name="trophy"></sl-icon>
+                                <span>Leaderboard</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -372,6 +378,21 @@
             <sl-button variant="primary" id="confirm-upload" disabled>Upload</sl-button>
         </div>
     </sl-dialog>
+
+    <!-- Leaderboard Sidebar -->
+    <div id="leaderboard-sidebar" class="leaderboard-sidebar hidden">
+        <div class="leaderboard-header">
+            <h3>Team Values</h3>
+            <button id="close-leaderboard-btn" class="close-leaderboard-btn">
+                <sl-icon name="x"></sl-icon>
+            </button>
+        </div>
+        <div class="leaderboard-content">
+            <div id="leaderboard-list" class="leaderboard-list">
+                <!-- Teams will be populated here -->
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript -->
     <!-- Load route constants first -->
