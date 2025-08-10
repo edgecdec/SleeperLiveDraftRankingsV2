@@ -228,6 +228,21 @@
 
             <!-- Draft Content -->
             <div class="draft-content">
+                <!-- Leaderboard Sidebar -->
+                <div id="leaderboard-sidebar" class="leaderboard-sidebar hidden">
+                    <div class="leaderboard-header">
+                        <h3>Team Values</h3>
+                        <button id="close-leaderboard-btn" class="close-leaderboard-btn">
+                            <sl-icon name="x"></sl-icon>
+                        </button>
+                    </div>
+                    <div class="leaderboard-content">
+                        <div id="leaderboard-list" class="leaderboard-list">
+                            <!-- Teams will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Main Draft Board -->
                 <div class="draft-board-container">
                     <!-- Position Tabs -->
@@ -378,21 +393,6 @@
             <sl-button variant="primary" id="confirm-upload" disabled>Upload</sl-button>
         </div>
     </sl-dialog>
-
-    <!-- Leaderboard Sidebar -->
-    <div id="leaderboard-sidebar" class="leaderboard-sidebar hidden">
-        <div class="leaderboard-header">
-            <h3>Team Values</h3>
-            <button id="close-leaderboard-btn" class="close-leaderboard-btn">
-                <sl-icon name="x"></sl-icon>
-            </button>
-        </div>
-        <div class="leaderboard-content">
-            <div id="leaderboard-list" class="leaderboard-list">
-                <!-- Teams will be populated here -->
-            </div>
-        </div>
-    </div>
 
     <!-- JavaScript -->
     <!-- Load route constants first -->

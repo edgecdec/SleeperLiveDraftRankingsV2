@@ -632,6 +632,36 @@ class DraftHandlers {
                     // Filter out drafted players
                     players = this.filterDraftedPlayers(players);
                     
+                    // Filter players based on league roster positions
+                    if (this.state.currentLeague?.roster_positions) {
+                        console.log('🏈 League roster positions:', this.state.currentLeague.roster_positions);
+                        
+                        // Get unique positions from league settings
+                        const leaguePositions = new Set(this.state.currentLeague.roster_positions);
+                        console.log('🏈 Filtering players for positions:', Array.from(leaguePositions));
+                        
+                        const beforeCount = players.length;
+                        console.log('🏈 Players before filtering:', beforeCount);
+                        
+                        // Filter players to only include those in league positions
+                        players = players.filter(player => {
+                            const isIncluded = leaguePositions.has(player.position) || 
+                                             leaguePositions.has('FLEX') || 
+                                             leaguePositions.has('SUPER_FLEX');
+                            
+                            if (!isIncluded && ['LB', 'DB', 'DL'].includes(player.position)) {
+                                console.log('🏈 Filtering out:', player.position, player.name);
+                            }
+                            
+                            return isIncluded;
+                        });
+                        
+                        console.log('🏈 Players after filtering:', players.length, '(removed', beforeCount - players.length, ')');
+                    } else {
+                        console.log('🏈 No roster positions found in league data, showing all players');
+                        console.log('🏈 Current league data:', this.state.currentLeague);
+                    }
+                    
                     // Store players and render
                     this.state.players = players;
                     this.state.filteredPlayers = players;

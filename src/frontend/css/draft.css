@@ -183,7 +183,7 @@ input[type="file"]:focus {
 /* Enhanced player row styling */
 .player-row {
     display: grid;
-    grid-template-columns: 50px 1fr 80px 60px 80px 100px;
+    grid-template-columns: 50px 1fr 80px 60px 80px 80px;
     gap: 1rem;
     padding: 0.75rem;
     border-bottom: 1px solid #e5e7eb;
@@ -529,22 +529,27 @@ input[type="file"]:focus {
 }
 
 .leaderboard-sidebar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 320px;
-    height: 100vh;
+    width: 300px;
+    height: 100%;
     background: white;
-    border-left: 1px solid #e5e7eb;
-    box-shadow: -4px 0 6px -1px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-    overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
-.leaderboard-sidebar:not(.hidden) {
-    transform: translateX(0);
+.leaderboard-sidebar.hidden {
+    width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.leaderboard-content {
+    flex: 1;
+    overflow-y: auto;
 }
 
 .leaderboard-header {
@@ -644,31 +649,6 @@ input[type="file"]:focus {
 .leaderboard-toggle-btn:hover {
     background: #d97706;
     transform: translateY(-1px);
-}
-
-.leaderboard-sidebar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 300px;
-    height: 100vh;
-    background: white;
-    border-left: 1px solid #e5e7eb;
-    box-shadow: -4px 0 6px -1px rgba(0, 0, 0, 0.1);
-    z-index: 998;
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-    overflow-y: auto;
-}
-
-.leaderboard-sidebar:not(.hidden) {
-    transform: translateX(0);
-}
-
-/* When roster is open, move leaderboard to the left */
-.roster-sidebar:not(.hidden) + .leaderboard-sidebar:not(.hidden),
-body:has(.roster-sidebar:not(.hidden)) .leaderboard-sidebar:not(.hidden) {
-    right: 320px;
 }
 
 .leaderboard-header {
@@ -832,7 +812,7 @@ body:has(.roster-sidebar:not(.hidden)) .leaderboard-sidebar:not(.hidden) {
 
 .players-header {
     display: grid;
-    grid-template-columns: 60px 1fr 60px 80px 80px 80px 100px;
+    grid-template-columns: 60px 1fr 60px 80px 80px 80px;
     gap: 1rem;
     padding: 1rem;
     background: white;
@@ -850,7 +830,7 @@ body:has(.roster-sidebar:not(.hidden)) .leaderboard-sidebar:not(.hidden) {
 
 .player-row {
     display: grid;
-    grid-template-columns: 60px 1fr 60px 80px 80px 80px 100px;
+    grid-template-columns: 60px 1fr 60px 80px 80px 80px;
     gap: 1rem;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid #e5e7eb;
@@ -1331,7 +1311,7 @@ body:has(.roster-sidebar:not(.hidden)) .leaderboard-sidebar:not(.hidden) {
     
     .players-header,
     .player-row {
-        grid-template-columns: 40px 1fr 40px 60px 60px 60px 80px;
+        grid-template-columns: 40px 1fr 40px 60px 60px 60px;
         font-size: 0.75rem;
     }
     
