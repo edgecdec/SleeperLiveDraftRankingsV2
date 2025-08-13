@@ -2050,50 +2050,68 @@ class DraftHandlers {
                     console.log('🔄 Applying traded picks in emergency override...');
                     console.log('🔍 Available traded picks:', this.state.tradedPicks.length);
                     
-                    const currentSeason = this.state.currentDraft?.season || '2025';
-                    const numTeams = 10;
-                    let tradesApplied = 0;
-                    
-                    this.state.draftPicks.forEach((pick, index) => {
-                        const pickNumber = index + 1;
-                        const round = Math.ceil(pickNumber / numTeams);
-                        const originalOwner = pick.roster_id;
+                    // Wait for roster mapping if it's being fetched
+                    const applyTrades = () => {
+                        const currentSeason = this.state.currentDraft?.season || '2025';
+                        const numTeams = 10;
+                        let tradesApplied = 0;
                         
-                        // Find if this pick was traded
-                        // User (edgecdec) is Roster 9, draft position 3
-                        // Traded picks use actual roster_id (1-10)
-                        let rosterIdInTrades;
-                        if (originalOwner === 3) {
-                            rosterIdInTrades = 9; // edgecdec is Roster 9
-                        } else {
-                            // For other positions, we need the correct roster mapping
-                            // This is a simplified mapping - may need full roster order
-                            rosterIdInTrades = originalOwner;
-                        }
-                        
-                        const trade = this.state.tradedPicks.find(tp => 
-                            tp.season === currentSeason && 
-                            tp.round === round && 
-                            tp.roster_id === rosterIdInTrades
-                        );
-                        
-                        if (trade && trade.owner_id !== rosterIdInTrades) {
-                            // Use roster-to-owner mapping to find the correct user
-                            let newOwnerUserId = null;
-                            if (this.state.rosterToOwnerMapping && this.state.rosterToOwnerMapping[trade.owner_id]) {
-                                newOwnerUserId = this.state.rosterToOwnerMapping[trade.owner_id];
-                                console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, Roster ${rosterIdInTrades} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
-                                pick.picked_by = newOwnerUserId;
-                                // Keep roster_id as the new owner's roster for consistency
-                                pick.roster_id = trade.owner_id;
-                                tradesApplied++;
+                        this.state.draftPicks.forEach((pick, index) => {
+                            const pickNumber = index + 1;
+                            const round = Math.ceil(pickNumber / numTeams);
+                            const originalOwner = pick.roster_id;
+                            
+                            // Find if this pick was traded
+                            // User (edgecdec) is Roster 9, draft position 3
+                            // Traded picks use actual roster_id (1-10)
+                            let rosterIdInTrades;
+                            if (originalOwner === 3) {
+                                rosterIdInTrades = 9; // edgecdec is Roster 9
                             } else {
-                                console.warn(`⚠️ TRADE Pick ${pickNumber}: No roster mapping available for roster ${trade.owner_id}`);
+                                // For other positions, we need the correct roster mapping
+                                // This is a simplified mapping - may need full roster order
+                                rosterIdInTrades = originalOwner;
                             }
-                        }
-                    });
+                            
+                            const trade = this.state.tradedPicks.find(tp => 
+                                tp.season === currentSeason && 
+                                tp.round === round && 
+                                tp.roster_id === rosterIdInTrades
+                            );
+                            
+                            if (trade && trade.owner_id !== rosterIdInTrades) {
+                                // Use roster-to-owner mapping to find the correct user
+                                let newOwnerUserId = null;
+                                if (this.state.rosterToOwnerMapping && this.state.rosterToOwnerMapping[trade.owner_id]) {
+                                    newOwnerUserId = this.state.rosterToOwnerMapping[trade.owner_id];
+                                    console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, Roster ${rosterIdInTrades} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
+                                    pick.picked_by = newOwnerUserId;
+                                    // Keep roster_id as the new owner's roster for consistency
+                                    pick.roster_id = trade.owner_id;
+                                    tradesApplied++;
+                                } else {
+                                    console.warn(`⚠️ TRADE Pick ${pickNumber}: No roster mapping available for roster ${trade.owner_id}`);
+                                }
+                            }
+                        });
+                        
+                        console.log(`✅ Applied ${tradesApplied} trades in emergency override [${overrideId}]`);
+                    };
                     
-                    console.log(`✅ Applied ${tradesApplied} trades in emergency override [${overrideId}]`);
+                    // Apply trades immediately if mapping is available, otherwise wait
+                    if (this.state.rosterToOwnerMapping) {
+                        applyTrades();
+                    } else {
+                        console.log('🔍 Waiting for roster mapping before applying trades...');
+                        setTimeout(() => {
+                            if (this.state.rosterToOwnerMapping) {
+                                applyTrades();
+                            } else {
+                                console.warn('⚠️ Roster mapping still not available, applying trades without it');
+                                applyTrades();
+                            }
+                        }, 1000);
+                    }
                 } else {
                     console.warn(`⚠️ No traded picks data available for emergency override [${overrideId}]`);
                 }
