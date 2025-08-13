@@ -1969,16 +1969,17 @@ class DraftHandlers {
                 
                 // DEBUG: Fetch league users to understand the roster mapping
                 if (this.state.currentDraft?.leagueId) {
-                    try {
-                        const leagueUsersResponse = await this.apiService.request(`/league/${this.state.currentDraft.leagueId}/users`);
-                        console.log(`🔍 DEBUG: League users from API:`, leagueUsersResponse);
-                        
-                        // Find current user's position in the league users array
-                        const userIndex = leagueUsersResponse.findIndex(user => user.user_id === currentUserId);
-                        console.log(`🔍 DEBUG: Current user is at index ${userIndex} in league users array`);
-                    } catch (error) {
-                        console.error('❌ Failed to fetch league users:', error);
-                    }
+                    this.apiService.request(`/league/${this.state.currentDraft.leagueId}/users`)
+                        .then(leagueUsersResponse => {
+                            console.log(`🔍 DEBUG: League users from API:`, leagueUsersResponse);
+                            
+                            // Find current user's position in the league users array
+                            const userIndex = leagueUsersResponse.findIndex(user => user.user_id === currentUserId);
+                            console.log(`🔍 DEBUG: Current user is at index ${userIndex} in league users array`);
+                        })
+                        .catch(error => {
+                            console.error('❌ Failed to fetch league users:', error);
+                        });
                 }
                 
                 // Find what roster the current user should have
