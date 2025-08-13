@@ -145,6 +145,22 @@ class DraftHandlers {
             });
         }
         
+        // Refresh leaderboard button
+        const refreshLeaderboardBtn = document.getElementById('refresh-leaderboard-btn');
+        if (refreshLeaderboardBtn) {
+            refreshLeaderboardBtn.addEventListener('click', () => {
+                this.refreshLeaderboard();
+            });
+        }
+        
+        // Auto-refresh indicator click
+        const autoRefreshIndicator = document.getElementById('auto-refresh-indicator');
+        if (autoRefreshIndicator) {
+            autoRefreshIndicator.addEventListener('click', () => {
+                this.triggerManualRefresh();
+            });
+        }
+        
         // Listen for draft selection events
         document.addEventListener('draftSelected', (event) => {
             this.handleDraftSelected(event.detail);
@@ -183,6 +199,12 @@ class DraftHandlers {
         console.log('🎯 Draft selected in draft handlers:', draftData);
         
         try {
+            // Set mock draft flag if provided
+            if (draftData.isMockDraft) {
+                this.state.isMockDraft = true;
+                console.log('🎭 Mock draft mode enabled');
+            }
+            
             // Store draft info
             this.state.currentDraft = draftData;
             
@@ -288,6 +310,15 @@ class DraftHandlers {
             
             if (landingSection) landingSection.style.display = 'none';
             if (draftSection) draftSection.style.display = 'flex';
+        }
+        
+        // Show mock mode indicator if this is a mock draft
+        if (this.state.isMockDraft) {
+            const mockIndicator = document.getElementById('mock-mode-indicator');
+            if (mockIndicator) {
+                mockIndicator.style.display = 'flex';
+                console.log('🎭 Mock mode indicator shown');
+            }
         }
         
         // Update page title
@@ -537,9 +568,11 @@ class DraftHandlers {
                     this.loadDraftPicksFromSleeper();
                 }
                 
-                // Load roster data for dynasty leagues
-                if (response.league_info) {
+                // Load roster data for dynasty leagues (skip for mock drafts)
+                if (response.league_info && !this.state.isMockDraft) {
                     this.loadRosterData(response.league_info);
+                } else if (this.state.isMockDraft) {
+                    console.log('🎭 Skipping dynasty roster loading for mock draft');
                 }
                 
                 // Load Sleeper player database for better ID mapping
@@ -605,7 +638,7 @@ class DraftHandlers {
                     
                     // Transform API data to match our player format
                     let players = playersResponse.players.map((player, index) => {
-                        console.log(`🔍 Player ${index}: value=${player.value}, ranking.value=${player.ranking?.value}`);
+
                         return {
                             player_id: player.player_id || player.sleeper_id,
                             full_name: player.name || player.full_name,
@@ -634,32 +667,10 @@ class DraftHandlers {
                     
                     // Filter players based on league roster positions
                     if (this.state.currentLeague?.roster_positions) {
-                        console.log('🏈 League roster positions:', this.state.currentLeague.roster_positions);
-                        
-                        // Get unique positions from league settings
-                        const leaguePositions = new Set(this.state.currentLeague.roster_positions);
-                        console.log('🏈 Filtering players for positions:', Array.from(leaguePositions));
-                        
-                        const beforeCount = players.length;
-                        console.log('🏈 Players before filtering:', beforeCount);
-                        
-                        // Filter players to only include those in league positions
-                        players = players.filter(player => {
-                            const isIncluded = leaguePositions.has(player.position) || 
-                                             leaguePositions.has('FLEX') || 
-                                             leaguePositions.has('SUPER_FLEX');
-                            
-                            if (!isIncluded && ['LB', 'DB', 'DL'].includes(player.position)) {
-                                console.log('🏈 Filtering out:', player.position, player.name);
-                            }
-                            
-                            return isIncluded;
-                        });
-                        
-                        console.log('🏈 Players after filtering:', players.length, '(removed', beforeCount - players.length, ')');
-                    } else {
-                        console.log('🏈 No roster positions found in league data, showing all players');
-                        console.log('🏈 Current league data:', this.state.currentLeague);
+                        const leaguePositions = this.getLeagueRelevantPositions();
+                        players = players.filter(player => 
+                            this.isPositionRelevant(player.position, leaguePositions)
+                        );
                     }
                     
                     // Store players and render
@@ -988,77 +999,115 @@ class DraftHandlers {
     }
     
     /**
-     * Create position tabs based on available positions in the data
+     * Position utility functions
+     */
+    normalizePosition(position) {
+        const mappings = {
+            'DST': 'DEF',
+            'D/ST': 'DEF'
+        };
+        return mappings[position] || position;
+    }
+    
+    getLeagueRelevantPositions() {
+        if (!this.state.currentLeague?.roster_positions) {
+            return new Set(['QB', 'RB', 'WR', 'TE', 'K', 'DEF']); // Default positions
+        }
+        
+        const relevantPositions = new Set();
+        
+        this.state.currentLeague.roster_positions.forEach(pos => {
+            if (pos === 'FLEX') {
+                relevantPositions.add('RB');
+                relevantPositions.add('WR');
+                relevantPositions.add('TE');
+            } else if (pos === 'SUPER_FLEX') {
+                relevantPositions.add('QB');
+                relevantPositions.add('RB');
+                relevantPositions.add('WR');
+                relevantPositions.add('TE');
+            } else {
+                relevantPositions.add(this.normalizePosition(pos));
+            }
+        });
+        
+        return relevantPositions;
+    }
+    
+    isPositionRelevant(playerPosition, leaguePositions) {
+        const normalizedPosition = this.normalizePosition(playerPosition);
+        
+        // Handle hybrid positions like WR/TE
+        if (playerPosition.includes('/')) {
+            return playerPosition.split('/').some(pos => 
+                leaguePositions.has(this.normalizePosition(pos))
+            );
+        }
+        
+        return leaguePositions.has(normalizedPosition);
+    }
+    
+    /**
+     * Create position tabs based on league requirements and available data
      */
     createPositionTabs() {
         const tabsContainer = document.getElementById('position-tabs');
         if (!tabsContainer) return;
         
-        // Get unique positions from players
-        const positions = new Set();
+        const leaguePositions = this.getLeagueRelevantPositions();
+        const hasSuperflex = this.state.currentLeague?.roster_positions?.includes('SUPER_FLEX');
+        const hasFlex = this.state.currentLeague?.roster_positions?.includes('FLEX');
+        
+        // Get positions available in data that are relevant to league
+        const availablePositions = new Set();
         this.state.players.forEach(player => {
-            positions.add(player.position);
+            const normalizedPos = this.normalizePosition(player.position);
+            if (this.isPositionRelevant(player.position, leaguePositions)) {
+                availablePositions.add(normalizedPos);
+            }
         });
         
-        console.log('🔍 Available positions in data:', Array.from(positions));
-        
-        // Define base tab order with multi-position groups
+        // Build tab order based on league settings
         const baseTabOrder = [
-            { key: 'ALL', label: 'All Players', filter: () => true, priority: 0 },
-            { key: 'SUPER_FLEX', label: 'Super Flex', filter: (p) => ['QB', 'RB', 'WR', 'TE'].includes(p.position), priority: 1 },
-            { key: 'FLEX', label: 'Flex', filter: (p) => ['RB', 'WR', 'TE'].includes(p.position), priority: 2 }
+            { key: 'ALL', label: 'All Players', filter: (p) => this.isPositionRelevant(p.position, leaguePositions), priority: 0 }
         ];
         
-        // Add individual position tabs dynamically
-        const individualPositions = Array.from(positions).sort();
-        individualPositions.forEach((pos, index) => {
-            // Determine priority based on common position order
-            let priority = 10; // Default priority for uncommon positions
-            
-            if (pos === 'QB') priority = 3;
-            else if (pos === 'RB') priority = 4;
-            else if (pos === 'WR') priority = 5;
-            else if (pos === 'TE') priority = 6;
-            else if (pos === 'K') priority = 7;
-            else if (pos === 'DEF') priority = 8;
-            else if (pos.includes('/')) priority = 9; // Hybrid positions like WR/TE, RB/WR
-            
-            // Create human-readable label for hybrid positions
-            let label = pos;
-            if (pos.includes('/')) {
-                // Convert "WR/TE" to "WR/TE", "RB/WR" to "RB/WR", etc.
-                label = pos.split('/').join('/');
-            } else {
-                // Standard position labels
-                const positionLabels = {
-                    'QB': 'QB',
-                    'RB': 'RB', 
-                    'WR': 'WR',
-                    'TE': 'TE',
-                    'K': 'K',
-                    'DEF': 'DEF'
-                };
-                label = positionLabels[pos] || pos;
-            }
-            
+        // Add SUPER_FLEX tab if league has it
+        if (hasSuperflex) {
+            baseTabOrder.push({
+                key: 'SUPER_FLEX', 
+                label: 'Super Flex', 
+                filter: (p) => ['QB', 'RB', 'WR', 'TE'].includes(this.normalizePosition(p.position)), 
+                priority: 1
+            });
+        }
+        
+        // Add FLEX tab if league has it
+        if (hasFlex) {
+            baseTabOrder.push({
+                key: 'FLEX', 
+                label: 'Flex', 
+                filter: (p) => ['RB', 'WR', 'TE'].includes(this.normalizePosition(p.position)), 
+                priority: 2
+            });
+        }
+        
+        // Add individual position tabs for league-relevant positions only
+        const positionPriority = { 'QB': 3, 'RB': 4, 'WR': 5, 'TE': 6, 'K': 7, 'DEF': 8 };
+        
+        Array.from(availablePositions).sort().forEach(pos => {
             baseTabOrder.push({
                 key: pos,
-                label: label,
-                filter: (p) => p.position === pos,
-                priority: priority
+                label: pos,
+                filter: (p) => this.normalizePosition(p.position) === pos,
+                priority: positionPriority[pos] || 9
             });
         });
         
-        // Only show tabs that have players (except ALL which always shows)
-        const availableTabs = baseTabOrder.filter(tab => {
-            if (tab.key === 'ALL') return true;
-            return this.state.players.some(tab.filter);
-        });
+        // Sort by priority and render
+        baseTabOrder.sort((a, b) => a.priority - b.priority);
         
-        // Sort by priority
-        availableTabs.sort((a, b) => a.priority - b.priority);
-        
-        tabsContainer.innerHTML = availableTabs.map((tab, index) => `
+        tabsContainer.innerHTML = baseTabOrder.map((tab, index) => `
             <button class="position-tab ${index === 0 ? 'active' : ''}" data-position="${tab.key}">
                 ${tab.label}
             </button>
@@ -1075,16 +1124,12 @@ class DraftHandlers {
         // Set initial filter
         this.state.currentPosition = 'ALL';
         this.state.filteredPlayers = this.state.players;
-        
-        console.log('✅ Created position tabs:', availableTabs.map(t => `${t.key} (${t.label})`));
     }
     
     /**
      * Filter players by position (enhanced for hybrid positions)
      */
     filterByPosition(position) {
-        console.log('🔍 Filtering by position:', position);
-        
         // Update active tab
         document.querySelectorAll('.position-tab').forEach(tab => {
             tab.classList.remove('active');
@@ -1094,41 +1139,32 @@ class DraftHandlers {
         // Filter players based on position
         switch (position) {
             case 'ALL':
-                this.state.filteredPlayers = this.state.players;
+                this.state.filteredPlayers = this.state.players.filter(player => 
+                    this.isPositionRelevant(player.position, this.getLeagueRelevantPositions())
+                );
                 break;
             case 'SUPER_FLEX':
                 this.state.filteredPlayers = this.state.players.filter(player => 
-                    ['QB', 'RB', 'WR', 'TE'].includes(player.position)
+                    ['QB', 'RB', 'WR', 'TE'].includes(this.normalizePosition(player.position))
                 );
                 break;
             case 'FLEX':
                 this.state.filteredPlayers = this.state.players.filter(player => 
-                    ['RB', 'WR', 'TE'].includes(player.position)
+                    ['RB', 'WR', 'TE'].includes(this.normalizePosition(player.position))
                 );
                 break;
             default:
-                // Handle both standard positions and hybrid positions like WR/TE, RB/WR
-                if (position.includes('/')) {
-                    // For hybrid positions, show players that match the exact hybrid position
-                    this.state.filteredPlayers = this.state.players.filter(player => 
-                        player.position === position
-                    );
-                } else {
-                    // Standard single position filter
-                    this.state.filteredPlayers = this.state.players.filter(player => 
-                        player.position === position
-                    );
-                }
+                this.state.filteredPlayers = this.state.players.filter(player => 
+                    this.normalizePosition(player.position) === position
+                );
         }
         
-        // Maintain ranking sort order within filtered results (all players have rankings now)
+        // Maintain ranking sort order
         this.state.filteredPlayers.sort((a, b) => {
             return a.ranking.overall_rank - b.ranking.overall_rank;
         });
         
         this.state.currentPosition = position;
-        
-        // Re-render players
         this.renderPlayersList();
     }
     
@@ -1166,7 +1202,7 @@ class DraftHandlers {
             const injuryStatus = player.injury_status ? ` (${player.injury_status})` : '';
             
             // Handle hybrid positions for CSS classes
-            const positionClass = player.position.replace('/', '-'); // WR/TE becomes WR-TE
+            const positionClass = this.normalizePosition(player.position).replace('/', '-');
             
             // Get ranking information
             // Get ranking information (all players have this now)
@@ -1190,13 +1226,13 @@ class DraftHandlers {
                 (player.status === 'available' ? 'Available' : 'Drafted');
             
             return `
-                <div class="player-row position-${player.position} ${player.status}" data-player-id="${player.player_id}">
+                <div class="player-row position-${this.normalizePosition(player.position)} ${player.status}" data-player-id="${player.player_id}">
                     <div class="player-rank">${rankDisplay}</div>
                     <div class="player-name">
                         ${player.full_name}${injuryStatus}
                         ${tierDisplay ? `<span class="tier-badge">${tierDisplay}</span>` : ''}
                     </div>
-                    <div class="player-position ${player.position}" data-position="${player.position}">
+                    <div class="player-position ${this.normalizePosition(player.position)}" data-position="${this.normalizePosition(player.position)}">
                         ${positionDisplay}
                     </div>
                     <div class="player-team">${player.team}</div>
@@ -1284,10 +1320,120 @@ class DraftHandlers {
     }
     
     /**
+     * Dynamic roster structure generation
+     */
+    calculatePositionCounts(rosterPositions) {
+        if (!rosterPositions || rosterPositions.length === 0) {
+            // Default roster structure
+            return { 'QB': 1, 'RB': 2, 'WR': 2, 'TE': 1, 'FLEX': 1, 'K': 1, 'DEF': 1, 'BENCH': 5 };
+        }
+        
+        const counts = {};
+        let totalStarters = 0;
+        
+        rosterPositions.forEach(pos => {
+            const normalizedPos = this.normalizePosition(pos);
+            counts[normalizedPos] = (counts[normalizedPos] || 0) + 1;
+            if (normalizedPos !== 'BENCH') totalStarters++;
+        });
+        
+        // Calculate bench size (typical league has 15-16 total roster spots)
+        const benchSize = Math.max(5, 16 - totalStarters);
+        counts['BENCH'] = benchSize;
+        
+        return counts;
+    }
+    
+    createPositionSection(position, count) {
+        const slots = Array(count).fill(0).map(() => 
+            '<div class="roster-slot empty">Empty</div>'
+        ).join('');
+        
+        return `
+            <div class="roster-position">
+                <div class="position-label">${position}</div>
+                <div class="position-slots" data-position="${position}">
+                    ${slots}
+                </div>
+            </div>
+        `;
+    }
+    
+    generateRosterStructure() {
+        const rosterPositions = this.state.currentLeague?.roster_positions;
+        const positionCounts = this.calculatePositionCounts(rosterPositions);
+        
+        // Define position order for display
+        const positionOrder = ['QB', 'RB', 'WR', 'TE', 'SUPER_FLEX', 'FLEX', 'K', 'DEF', 'BENCH'];
+        
+        return positionOrder
+            .filter(pos => positionCounts[pos] > 0)
+            .map(pos => this.createPositionSection(pos, positionCounts[pos]))
+            .join('');
+    }
+    
+    updateRosterStructure() {
+        const rosterContainer = document.querySelector('.roster-positions');
+        if (rosterContainer) {
+            rosterContainer.innerHTML = this.generateRosterStructure();
+        }
+    }
+    
+    /**
+     * Populate roster positions dynamically based on league structure
+     */
+    populateRosterPositions(rosterPlayers, playersByPosition) {
+        const rosterPositions = this.state.currentLeague?.roster_positions || [];
+        const positionCounts = this.calculatePositionCounts(rosterPositions);
+        const usedPlayers = new Set();
+        
+        // Populate starting positions first
+        Object.entries(positionCounts).forEach(([position, count]) => {
+            if (position === 'BENCH') return; // Handle bench last
+            
+            let eligiblePlayers = [];
+            
+            if (position === 'FLEX') {
+                // FLEX can use RB/WR/TE not already used in starting positions
+                eligiblePlayers = [
+                    ...(playersByPosition.RB || []),
+                    ...(playersByPosition.WR || []),
+                    ...(playersByPosition.TE || [])
+                ].filter(p => !usedPlayers.has(p.player_id));
+            } else if (position === 'SUPER_FLEX') {
+                // SUPER_FLEX can use QB/RB/WR/TE not already used
+                eligiblePlayers = [
+                    ...(playersByPosition.QB || []),
+                    ...(playersByPosition.RB || []),
+                    ...(playersByPosition.WR || []),
+                    ...(playersByPosition.TE || [])
+                ].filter(p => !usedPlayers.has(p.player_id));
+            } else {
+                // Standard position
+                eligiblePlayers = (playersByPosition[position] || []).filter(p => !usedPlayers.has(p.player_id));
+            }
+            
+            // Take the best available players for this position
+            const playersToUse = eligiblePlayers.slice(0, count);
+            playersToUse.forEach(p => usedPlayers.add(p.player_id));
+            
+            this.populatePositionSlots(position, playersToUse, count);
+        });
+        
+        // Handle bench - all remaining players
+        const benchPlayers = rosterPlayers.filter(p => !usedPlayers.has(p.player_id));
+        const benchSize = positionCounts['BENCH'] || benchPlayers.length;
+        this.populatePositionSlots('BENCH', benchPlayers, benchSize);
+    }
+    
+    /**
      * Populate the roster sidebar with dynasty players and draft picks
      */
     async populateRosterSidebar() {
         try {
+            // Update roster structure first
+            this.updateRosterStructure();
+            
             console.log('🏈 Populating roster sidebar...');
             
             // Check if roster sidebar exists and is visible
@@ -1320,25 +1466,8 @@ class DraftHandlers {
                 console.log('❌ TreVeyon Henderson not found in roster players');
             }
             
-            // Populate each position
-            this.populatePositionSlots('QB', playersByPosition.QB || [], 1);
-            this.populatePositionSlots('RB', playersByPosition.RB || [], 2);
-            this.populatePositionSlots('WR', playersByPosition.WR || [], 2);
-            this.populatePositionSlots('TE', playersByPosition.TE || [], 1);
-            this.populatePositionSlots('K', playersByPosition.K || [], 1);
-            this.populatePositionSlots('DEF', playersByPosition.DEF || [], 1);
-            
-            // Handle FLEX position (RB/WR/TE eligible)
-            const flexEligible = [
-                ...(playersByPosition.RB || []).slice(2), // Extra RBs
-                ...(playersByPosition.WR || []).slice(2), // Extra WRs  
-                ...(playersByPosition.TE || []).slice(1)  // Extra TEs
-            ];
-            this.populatePositionSlots('FLEX', flexEligible, 1);
-            
-            // Put remaining players on bench
-            const benchPlayers = this.getBenchPlayers(rosterPlayers, playersByPosition);
-            this.populatePositionSlots('BENCH', benchPlayers, benchPlayers.length);
+            // Populate positions dynamically based on league structure
+            this.populateRosterPositions(rosterPlayers, playersByPosition);
             
             console.log(`✅ Roster populated with ${rosterPlayers.length} players`);
             
@@ -1402,6 +1531,28 @@ class DraftHandlers {
                 return;
             }
             
+            // Get user names from league
+            let userNameMap = {};
+            try {
+                const username = window.app?.state?.currentUser?.username || 
+                               this.landingHandlers?.state?.currentUser?.username;
+                const leagueId = this.state.currentLeague?.league_id;
+                
+                if (username && leagueId) {
+                    console.log('🏆 Fetching league users for names...');
+                    const usersResponse = await this.apiService.getLeagueUsers(username, leagueId);
+                    
+                    if (usersResponse.status === 'success' && usersResponse.users) {
+                        usersResponse.users.forEach(user => {
+                            userNameMap[user.user_id] = user.display_name || user.username || `User ${user.user_id}`;
+                        });
+                        console.log('🏆 Loaded', Object.keys(userNameMap).length, 'user names');
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ Could not load user names:', error);
+            }
+            
             // Calculate team values for each user
             for (const userId of userIds) {
                 const userPicks = this.state.draftPicks.filter(p => p.picked_by === userId);
@@ -1415,10 +1566,12 @@ class DraftHandlers {
                     }
                 });
                 
+                const displayName = userNameMap[userId] || `Team ${userId}`;
+                
                 teams.push({
                     userId: userId,
-                    displayName: `Team ${userId}`,
-                    teamName: `Team ${userId}`,
+                    displayName: displayName,
+                    teamName: displayName,
                     value: totalValue,
                     pickCount: userPicks.length
                 });
@@ -1855,14 +2008,12 @@ class DraftHandlers {
         players.forEach(player => {
             let position = player.position || 'BENCH';
             
-            // Map DST to DEF to match HTML data-position attributes
-            if (position === 'DST') {
-                position = 'DEF';
-            }
+            // Normalize position names
+            position = this.normalizePosition(position);
             
             // Handle multi-position players (e.g., "RB/WR")
             const positions = position.split('/');
-            const primaryPosition = positions[0];
+            const primaryPosition = this.normalizePosition(positions[0]);
             
             if (!organized[primaryPosition]) {
                 organized[primaryPosition] = [];
@@ -1893,8 +2044,9 @@ class DraftHandlers {
      * Populate position slots with players
      */
     populatePositionSlots(position, players, maxSlots) {
-        console.log(`🔍 Populating ${position}: ${players.length} players, max ${maxSlots} slots`);
-        const slotsContainer = document.querySelector(`.position-slots[data-position="${position}"]`);
+        const normalizedPosition = this.normalizePosition(position);
+        console.log(`🔍 Populating ${normalizedPosition}: ${players.length} players, max ${maxSlots} slots`);
+        const slotsContainer = document.querySelector(`.position-slots[data-position="${normalizedPosition}"]`);
         if (!slotsContainer) {
             console.log(`❌ No slots container found for position: ${position}`);
             return;
@@ -1912,8 +2064,8 @@ class DraftHandlers {
         }
         
         const slots = slotsContainer.querySelectorAll('.roster-slot');
-        console.log(`🔍 Found ${slots.length} slots for ${position}`);
-        console.log(`🔍 Container HTML for ${position}:`, slotsContainer.innerHTML.substring(0, 200));
+        console.log(`🔍 Found ${slots.length} slots for ${normalizedPosition}`);
+
         
         // Fill slots with players
         for (let i = 0; i < Math.min(players.length, maxSlots, slots.length); i++) {
@@ -1923,7 +2075,7 @@ class DraftHandlers {
             if (slot && player) {
                 slot.className = `roster-slot filled ${player.source}`;
                 slot.innerHTML = this.createRosterPlayerHTML(player);
-                console.log(`✅ Populated ${position} slot ${i} with ${player.full_name}`);
+                console.log(`✅ Populated ${normalizedPosition} slot ${i} with ${player.full_name}`);
             }
         }
     }
@@ -2019,6 +2171,58 @@ class DraftHandlers {
         };
         
         return maxStarters[position] || 0;
+    }
+    
+    /**
+     * Refresh leaderboard data
+     */
+    async refreshLeaderboard() {
+        try {
+            const refreshBtn = document.getElementById('refresh-leaderboard-btn');
+            if (refreshBtn) {
+                refreshBtn.style.opacity = '0.5';
+                refreshBtn.style.pointerEvents = 'none';
+            }
+            
+            await this.populateLeaderboard();
+            
+            if (refreshBtn) {
+                refreshBtn.style.opacity = '1';
+                refreshBtn.style.pointerEvents = 'auto';
+            }
+        } catch (error) {
+            console.error('❌ Error refreshing leaderboard:', error);
+        }
+    }
+    
+    /**
+     * Trigger manual refresh from auto-refresh indicator
+     */
+    async triggerManualRefresh() {
+        try {
+            // Reset countdown and trigger immediate refresh
+            this.stopAutoRefresh();
+            
+            // Refresh all data
+            await this.loadDraftPicks();
+            await this.refreshPlayersAfterDraft();
+            
+            // Update roster if visible
+            if (this.state.isRosterVisible) {
+                await this.populateRosterSidebar();
+            }
+            
+            // Update leaderboard if visible
+            const leaderboard = document.getElementById('leaderboard-sidebar');
+            if (leaderboard && !leaderboard.classList.contains('hidden')) {
+                await this.populateLeaderboard();
+            }
+            
+            // Restart auto-refresh
+            this.startAutoRefresh();
+        } catch (error) {
+            console.error('❌ Error during manual refresh:', error);
+        }
     }
     
     /**
@@ -2336,7 +2540,7 @@ class DraftHandlers {
                         
                         if (bestMatch) {
                             if (draftedPlayerIds.has(bestMatch.id)) {
-                                console.log(`🚫 Filtered out by mapped ID: ${player.full_name} (${variation}) -> ${bestMatch.id} (${bestMatch.position}, ${bestMatch.team})`);
+
                                 return false;
                             }
                         }
@@ -2686,7 +2890,11 @@ class DraftHandlers {
         // Clear any existing interval
         this.stopAutoRefresh();
         
-        console.log(`🔄 Starting auto-refresh every ${this.refreshIntervalMs / 1000} seconds`);
+        // Less aggressive refresh for mock drafts
+        const refreshInterval = this.state.isMockDraft ? 60000 : this.refreshIntervalMs; // 60s for mock, 30s for real
+        this.currentRefreshInterval = refreshInterval; // Store for countdown
+        
+        console.log(`🔄 Starting auto-refresh every ${refreshInterval / 1000} seconds${this.state.isMockDraft ? ' (Mock Draft Mode)' : ''}`);
         
         // Show auto-refresh indicator
         const refreshIndicator = document.getElementById('auto-refresh-indicator');
@@ -2706,7 +2914,7 @@ class DraftHandlers {
             } catch (error) {
                 console.error('❌ Error during auto-refresh:', error);
             }
-        }, this.refreshIntervalMs);
+        }, refreshInterval);
     }
     
     /**
@@ -2718,7 +2926,7 @@ class DraftHandlers {
             clearInterval(this.countdownInterval);
         }
         
-        let secondsLeft = this.refreshIntervalMs / 1000;
+        let secondsLeft = (this.currentRefreshInterval || this.refreshIntervalMs) / 1000;
         const refreshText = document.getElementById('auto-refresh-text');
         
         if (refreshText) {

@@ -431,3 +431,50 @@ def get_queue_recommendations(username):
             'error': 'Internal server error',
             'code': 'INTERNAL_ERROR'
         }), 500
+
+@user_bp.route('/user/<username>/leagues/<league_id>/users')
+def get_league_users(username, league_id):
+    """
+    Get all users in a specific league
+    
+    Args:
+        username: Sleeper username (for context/validation)
+        league_id: League ID
+    
+    Returns:
+        JSON response with league users data or error
+    """
+    try:
+        # Get league users
+        users = SleeperAPI.get_league_users(league_id)
+        
+        if not users:
+            return jsonify({
+                'error': 'No users found for league',
+                'code': 'NO_USERS_FOUND'
+            }), 404
+        
+        return jsonify({
+            'users': users,
+            'league_id': league_id,
+            'total_users': len(users),
+            'status': 'success'
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            'error': str(e),
+            'code': 'INVALID_REQUEST'
+        }), 400
+        
+    except SleeperAPIError as e:
+        return jsonify({
+            'error': f'Sleeper API error: {str(e)}',
+            'code': 'SLEEPER_API_ERROR'
+        }), 502
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Internal server error',
+            'code': 'INTERNAL_ERROR'
+        }), 500

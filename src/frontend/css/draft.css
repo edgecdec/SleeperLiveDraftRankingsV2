@@ -487,16 +487,52 @@ input[type="file"]:focus {
     margin-left: 0.5rem;
 }
 
+.auto-refresh-button {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    margin-left: 0.5rem;
+}
+
+.auto-refresh-button:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    color: #374151;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.auto-refresh-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.refresh-icon {
+    width: 14px;
+    height: 14px;
+    animation: spin 2s linear infinite;
+}
+
+.auto-refresh-button:hover .refresh-icon {
+    animation-duration: 0.5s;
+}
+
 .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: currentColor;
     animation: pulse 2s infinite;
-}
-
-.refresh-dot {
-    animation: spin 2s linear infinite;
 }
 
 @keyframes spin {
@@ -568,6 +604,30 @@ input[type="file"]:focus {
     color: #1f2937;
 }
 
+.leaderboard-header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.refresh-leaderboard-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.refresh-leaderboard-btn:hover {
+    color: #374151;
+    background: #e5e7eb;
+}
+
 .close-leaderboard-btn {
     background: none;
     border: none;
@@ -580,6 +640,18 @@ input[type="file"]:focus {
 .close-leaderboard-btn:hover {
     background: #f3f4f6;
     color: #374151;
+}
+
+.status-indicator.clickable {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.status-indicator.clickable:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    margin: -0.25rem -0.5rem;
 }
 
 .leaderboard-list {

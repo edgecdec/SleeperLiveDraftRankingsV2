@@ -207,9 +207,9 @@
                                 <div class="status-dot"></div>
                                 <span id="connection-text">Connecting...</span>
                             </div>
-                            <div id="auto-refresh-indicator" class="status-indicator auto-refresh" style="display: none;">
-                                <div class="status-dot refresh-dot"></div>
-                                <span id="auto-refresh-text">Auto-refresh: 30s</span>
+                            <div id="auto-refresh-indicator" class="auto-refresh-button" style="display: none;" title="Click to refresh now">
+                                <sl-icon name="arrow-clockwise" class="refresh-icon"></sl-icon>
+                                <span id="auto-refresh-text">30s</span>
                             </div>
                         </div>
                         <div class="draft-controls">
@@ -232,9 +232,14 @@
                 <div id="leaderboard-sidebar" class="leaderboard-sidebar hidden">
                     <div class="leaderboard-header">
                         <h3>Team Values</h3>
-                        <button id="close-leaderboard-btn" class="close-leaderboard-btn">
-                            <sl-icon name="x"></sl-icon>
-                        </button>
+                        <div class="leaderboard-header-buttons">
+                            <button id="refresh-leaderboard-btn" class="refresh-leaderboard-btn" title="Refresh Team Values">
+                                <sl-icon name="arrow-clockwise"></sl-icon>
+                            </button>
+                            <button id="close-leaderboard-btn" class="close-leaderboard-btn">
+                                <sl-icon name="x"></sl-icon>
+                            </button>
+                        </div>
                     </div>
                     <div class="leaderboard-content">
                         <div id="leaderboard-list" class="leaderboard-list">
@@ -286,60 +291,7 @@
                     </div>
                     <div class="roster-content">
                         <div class="roster-positions">
-                            <div class="roster-position">
-                                <div class="position-label">QB</div>
-                                <div class="position-slots" data-position="QB">
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
-                            <div class="roster-position">
-                                <div class="position-label">RB</div>
-                                <div class="position-slots" data-position="RB">
-                                    <div class="roster-slot empty">Empty</div>
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
-                            <div class="roster-position">
-                                <div class="position-label">WR</div>
-                                <div class="position-slots" data-position="WR">
-                                    <div class="roster-slot empty">Empty</div>
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
-                            <div class="roster-position">
-                                <div class="position-label">TE</div>
-                                <div class="position-slots" data-position="TE">
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
-                            <div class="roster-position">
-                                <div class="position-label">FLEX</div>
-                                <div class="position-slots" data-position="FLEX">
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
-                            <div class="roster-position">
-                                <div class="position-label">K</div>
-                                <div class="position-slots" data-position="K">
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
-                            <div class="roster-position">
-                                <div class="position-label">DEF</div>
-                                <div class="position-slots" data-position="DEF">
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
-                            <div class="roster-position">
-                                <div class="position-label">BENCH</div>
-                                <div class="position-slots" data-position="BENCH">
-                                    <div class="roster-slot empty">Empty</div>
-                                    <div class="roster-slot empty">Empty</div>
-                                    <div class="roster-slot empty">Empty</div>
-                                    <div class="roster-slot empty">Empty</div>
-                                    <div class="roster-slot empty">Empty</div>
-                                </div>
-                            </div>
+                            <!-- Roster positions will be generated dynamically based on league settings -->
                         </div>
                     </div>
                 </div>

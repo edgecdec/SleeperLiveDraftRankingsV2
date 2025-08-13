@@ -35,13 +35,29 @@ class NavigationHandlers {
         document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        
+        const activeTabButton = document.querySelector(`[data-tab="${tabName}"]`);
+        if (activeTabButton) {
+            activeTabButton.classList.add('active');
+        }
         
         // Update active tab pane
         document.querySelectorAll('.tab-pane').forEach(pane => {
             pane.classList.remove('active');
         });
-        document.getElementById(`${tabName}-tab`).classList.add('active');
+        
+        const activeTabPane = document.getElementById(`${tabName}-tab-content`);
+        if (activeTabPane) {
+            activeTabPane.classList.add('active');
+        }
+        
+        // Setup mock draft form when switching to mock tab
+        if (tabName === 'mock' && window.app && window.app.landingHandlers) {
+            console.log('🎭 Setting up mock draft form after tab switch...');
+            setTimeout(() => {
+                window.app.landingHandlers.setupMockDraftFormElements();
+            }, 100);
+        }
         
         console.log('🔄 Switched to tab:', tabName);
     }

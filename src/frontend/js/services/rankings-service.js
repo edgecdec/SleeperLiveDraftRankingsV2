@@ -243,6 +243,31 @@ class RankingsService {
     }
     
     /**
+     * Find the best matching column name from a list of possible names
+     */
+    findColumnMatch(headers, targetNames) {
+        const headersLower = headers.map(h => h.toLowerCase().trim());
+        
+        for (const target of targetNames) {
+            const targetLower = target.toLowerCase().trim();
+            
+            // Exact match first
+            if (headersLower.includes(targetLower)) {
+                return headers[headersLower.indexOf(targetLower)];
+            }
+            
+            // Partial match
+            for (const header of headers) {
+                if (targetLower.includes(header.toLowerCase()) || header.toLowerCase().includes(targetLower)) {
+                    return header;
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
      * Parse CSV file for preview
      */
     async parseCSVFile(file) {
@@ -275,12 +300,19 @@ class RankingsService {
                         }
                     }
                     
-                    // Validate required columns
-                    const requiredColumns = ['name', 'position'];
-                    const availableColumns = headers.map(h => h.toLowerCase());
-                    const missingColumns = requiredColumns.filter(col => 
-                        !availableColumns.some(avail => avail.includes(col))
-                    );
+                    // Validate required columns using fuzzy matching
+                    const columnMappings = {
+                        'name': ['Name', 'Player', 'Player Name', 'Full Name'],
+                        'position': ['Position', 'Pos', 'Fantasy Position', 'POS']
+                    };
+                    
+                    const missingColumns = [];
+                    for (const [field, possibleNames] of Object.entries(columnMappings)) {
+                        const match = this.findColumnMatch(headers, possibleNames);
+                        if (!match) {
+                            missingColumns.push(field);
+                        }
+                    }
                     
                     if (missingColumns.length > 0) {
                         reject(new Error(`Missing required columns: ${missingColumns.join(', ')}`));

@@ -143,9 +143,15 @@ class SimpleApp {
             // Mark as attempted
             this.autoLoadAttempted = true;
             
-            // Load mock draft directly
+            // Set mock draft flag
+            this.state.isMockDraft = true;
+            
+            // Load mock draft using existing draft loading logic
             console.log('🚀 Loading mock draft from URL:', { draftId });
-            await this.loadMockDraftFromUrl(draftId);
+            this.draftHandlers.handleDraftSelected({
+                draft_id: draftId,
+                isMockDraft: true
+            });
             return;
         }
         

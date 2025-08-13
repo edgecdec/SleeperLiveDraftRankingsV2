@@ -21,6 +21,24 @@ except ImportError as e:
 
 logger = logging.getLogger(__name__)
 
+def find_column_match(headers, target_names):
+    """Find the best matching column name from a list of possible names"""
+    headers_lower = [h.lower().strip() for h in headers]
+    
+    for target in target_names:
+        target_lower = target.lower().strip()
+        
+        # Exact match first
+        if target_lower in headers_lower:
+            return headers[headers_lower.index(target_lower)]
+        
+        # Partial match
+        for header in headers:
+            if target_lower in header.lower() or header.lower() in target_lower:
+                return header
+    
+    return None
+
 def load_ranking_from_csv(ranking_id):
     """Load ranking data directly from CSV file as fallback or generate mock data"""
     try:
@@ -44,21 +62,48 @@ def load_ranking_from_csv(ranking_id):
         players = []
         with open(csv_filepath, 'r', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
+            headers = reader.fieldnames
+            
+            # Define column mappings with multiple possible names
+            column_mappings = {
+                'name': ['Name', 'Player', 'Player Name', 'Full Name'],
+                'position': ['Position', 'Pos', 'Fantasy Position', 'POS'],
+                'team': ['Team', 'TM', 'NFL Team'],
+                'rank': ['Rank', 'Overall Rank', 'Overall', 'Rk'],
+                'position_rank': ['Position Rank', 'Pos Rank', 'POS RK'],
+                'bye_week': ['Bye', 'Bye Week', 'BYE'],
+                'tier': ['Tier', 'TIR'],
+                'value': ['Value', '3D Value', 'Proj Value', 'Fantasy Value', 'Val']
+            }
+            
+            # Find actual column names
+            actual_columns = {}
+            for field, possible_names in column_mappings.items():
+                match = find_column_match(headers, possible_names)
+                if match:
+                    actual_columns[field] = match
+                    logger.info(f"📊 Mapped '{field}' to column '{match}'")
+                else:
+                    logger.warning(f"⚠️ No match found for '{field}' in columns: {headers}")
             
             for row in reader:
-                # Map CSV columns to our player format
+                # Map CSV columns to our player format using found mappings
                 player = {
-                    'name': row.get('Name', ''),
-                    'full_name': row.get('Name', ''),  # Add full_name alias
-                    'position': row.get('Position', ''),
-                    'team': row.get('Team', ''),
-                    'rank': int(row.get('Rank', row.get('Overall Rank', 999))),
-                    'overall_rank': int(row.get('Rank', row.get('Overall Rank', 999))),  # Add overall_rank alias
-                    'position_rank': int(row.get('Position Rank', 999)),
-                    'bye_week': int(row.get('Bye', 0)),
-                    'tier': int(row.get('Tier', 1)),
-                    'value': float(row.get('Value', 0)) if row.get('Value') else 0
+                    'name': row.get(actual_columns.get('name', ''), ''),
+                    'full_name': row.get(actual_columns.get('name', ''), ''),
+                    'position': row.get(actual_columns.get('position', ''), ''),
+                    'team': row.get(actual_columns.get('team', ''), ''),
+                    'rank': int(row.get(actual_columns.get('rank', ''), 999)) if row.get(actual_columns.get('rank', '')) else 999,
+                    'overall_rank': int(row.get(actual_columns.get('rank', ''), 999)) if row.get(actual_columns.get('rank', '')) else 999,
+                    'position_rank': int(row.get(actual_columns.get('position_rank', ''), 999)) if row.get(actual_columns.get('position_rank', '')) else 999,
+                    'bye_week': int(row.get(actual_columns.get('bye_week', ''), 0)) if row.get(actual_columns.get('bye_week', '')) else 0,
+                    'tier': int(row.get(actual_columns.get('tier', ''), 1)) if row.get(actual_columns.get('tier', '')) else 1,
+                    'value': float(row.get(actual_columns.get('value', ''), 0)) if row.get(actual_columns.get('value', '')) else 0
                 }
+                
+                # If no value column found, use inverted rank as value (higher rank = lower value)
+                if not actual_columns.get('value') and player['rank'] < 999:
+                    player['value'] = max(0, 300 - player['rank'])  # Top player gets ~300, rank 300 gets 0
                 
                 # Debug first 3 players
                 if len(players) < 3:

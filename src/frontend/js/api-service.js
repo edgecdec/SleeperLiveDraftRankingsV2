@@ -120,6 +120,12 @@ class ApiService {
     getBaseUrl() {
         return this.apiBase;
     }
+    /**
+     * Get league users
+     */
+    async getLeagueUsers(username, leagueId) {
+        return this.request(`/user/${username}/leagues/${leagueId}/users`);
+    }
 }
 
 // Export for use in other modules

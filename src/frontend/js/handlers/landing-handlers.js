@@ -62,7 +62,18 @@ class LandingHandlers {
                 
                 // Setup mock draft form when tab becomes visible
                 setTimeout(() => {
+                    console.log('🎭 Mock draft tab activated, setting up form...');
                     this.setupMockDraftFormElements();
+                    
+                    // Add a simple test button click
+                    const testBtn = document.getElementById('join-mock-btn');
+                    if (testBtn) {
+                        console.log('🔧 Adding test click handler');
+                        testBtn.onclick = () => {
+                            console.log('🚨 TEST CLICK DETECTED!');
+                            alert('Button clicked! Form is working.');
+                        };
+                    }
                 }, 100);
             });
         }
@@ -122,6 +133,96 @@ class LandingHandlers {
     setupMockDraftForm() {
         // Initial setup attempt
         this.setupMockDraftFormElements();
+    }
+    
+    setupMockDraftFormElements() {
+        console.log('🔍 Setting up mock draft form elements...');
+        
+        const mockDraftInput = document.getElementById('mock-draft-id');
+        const joinMockBtn = document.getElementById('join-mock-btn');
+        const mockError = document.getElementById('mock-draft-error');
+        
+        console.log('🔍 Elements found:', {
+            mockDraftInput: !!mockDraftInput,
+            joinMockBtn: !!joinMockBtn,
+            mockError: !!mockError,
+            inputValue: mockDraftInput?.value,
+            buttonText: joinMockBtn?.textContent
+        });
+        
+        if (joinMockBtn) {
+            console.log('✅ Adding click listener to join button');
+            
+            // Remove any existing listeners
+            const newBtn = joinMockBtn.cloneNode(true);
+            joinMockBtn.parentNode.replaceChild(newBtn, joinMockBtn);
+            
+            // Add simple onclick first
+            newBtn.onclick = (e) => {
+                console.log('🚨 ONCLICK FIRED!');
+                e.preventDefault();
+                const draftId = mockDraftInput?.value?.trim();
+                console.log('📝 Draft ID:', draftId);
+                
+                if (draftId && draftId.length >= 10) {
+                    console.log('🚀 Navigating to:', `/sleeper/mock/${draftId}`);
+                    window.location.href = `/sleeper/mock/${draftId}`;
+                } else {
+                    console.log('❌ Invalid draft ID');
+                    alert('Please enter a valid draft ID (at least 10 characters)');
+                }
+            };
+            
+            console.log('✅ Button setup complete');
+        } else {
+            console.log('❌ Join button not found');
+        }
+        
+        if (mockDraftInput) {
+            mockDraftInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    console.log('⏎ Enter pressed in mock draft input');
+                    e.preventDefault();
+                    const draftId = mockDraftInput.value?.trim();
+                    this.handleMockDraftJoin(draftId);
+                }
+            });
+        }
+    }
+    
+    handleMockDraftJoin(draftId) {
+        console.log('🎯 handleMockDraftJoin called with:', draftId);
+        
+        if (!draftId || draftId.length < 10) {
+            console.log('❌ Invalid draft ID:', draftId);
+            this.showMockError('Please enter a valid draft ID (at least 10 characters)');
+            return;
+        }
+        
+        // Clear any previous errors
+        this.hideMockError();
+        
+        console.log('🚀 Navigating to mock draft URL:', `/sleeper/mock/${draftId}`);
+        
+        // Navigate to mock draft URL
+        window.location.href = `/sleeper/mock/${draftId}`;
+    }
+    
+    showMockError(message) {
+        const mockError = document.getElementById('mock-draft-error');
+        const mockErrorText = document.getElementById('mock-draft-error-text');
+        
+        if (mockError && mockErrorText) {
+            mockErrorText.textContent = message;
+            mockError.style.display = 'flex';
+        }
+    }
+    
+    hideMockError() {
+        const mockError = document.getElementById('mock-draft-error');
+        if (mockError) {
+            mockError.style.display = 'none';
+        }
     }
     
     /**
