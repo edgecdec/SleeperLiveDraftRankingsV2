@@ -2159,6 +2159,14 @@ class DraftHandlers {
                         });
                         
                         console.log(`✅ Applied ${tradesApplied} trades in emergency override [${overrideId}]`);
+                        
+                        // Refresh leaderboard after trades are applied
+                        console.log('🔄 Refreshing leaderboard after trades...');
+                        setTimeout(() => {
+                            if (!document.getElementById('leaderboard-sidebar')?.classList.contains('hidden')) {
+                                this.populateLeaderboard();
+                            }
+                        }, 100);
                     };
                     
                     // Apply trades immediately using existing slot_to_roster_id mapping
