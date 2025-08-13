@@ -98,10 +98,6 @@
                         <sl-icon name="people-fill"></sl-icon>
                         <span>My Leagues</span>
                     </button>
-                    <button id="mock-draft-tab" class="tab-button" data-tab="mock">
-                        <sl-icon name="play-circle-fill"></sl-icon>
-                        <span>Mock Draft</span>
-                    </button>
                 </div>
 
                 <!-- Tab Content -->
@@ -181,57 +177,6 @@
                                 <sl-icon name="inbox" class="empty-icon"></sl-icon>
                                 <h3>No Leagues Found</h3>
                                 <p id="empty-message">No leagues found for this season.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mock Draft Tab -->
-                    <div id="mock-tab-content" class="tab-pane">
-                        <div class="mock-draft-section">
-                            <div class="mock-header">
-                                <sl-icon name="play-circle-fill" class="mock-icon"></sl-icon>
-                                <h2>Mock Draft</h2>
-                                <p>Practice your draft strategy with our mock draft simulator</p>
-                            </div>
-                            
-                            <div class="mock-input-section">
-                                <div class="input-group">
-                                    <label for="mock-draft-id">Enter Sleeper Mock Draft ID</label>
-                                    <div class="input-with-button">
-                                        <sl-input 
-                                            id="mock-draft-id" 
-                                            placeholder="e.g., 1234567890123456789"
-                                            size="large"
-                                            clearable>
-                                        </sl-input>
-                                    </div>
-                                    <div class="help-text">
-                                        <sl-icon name="info-circle"></sl-icon>
-                                        <span>Enter the ID from your Sleeper mock draft URL</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="input-group">
-                                    <label for="mock-league-select">Select League (for teams & roster structure)</label>
-                                    <sl-select id="mock-league-select" placeholder="Choose a league..." size="large" disabled>
-                                        <sl-option value="">First enter your username in the "My Leagues" tab</sl-option>
-                                    </sl-select>
-                                    <div class="help-text">
-                                        <sl-icon name="info-circle"></sl-icon>
-                                        <span>This determines team names and roster structure for the mock draft</span>
-                                    </div>
-                                </div>
-                                
-                                <sl-button id="join-mock-btn" variant="primary" size="large" disabled>
-                                    <sl-icon name="play-circle-fill"></sl-icon>
-                                    Join Mock Draft
-                                </sl-button>
-                                
-                                <!-- Error Display -->
-                                <div id="mock-draft-error" class="error-message" style="display: none;">
-                                    <sl-icon name="exclamation-triangle"></sl-icon>
-                                    <span id="mock-draft-error-text"></span>
-                                </div>
                             </div>
                         </div>
                     </div>
