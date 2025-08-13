@@ -2041,34 +2041,40 @@ class DraftHandlers {
                         const originalOwner = pick.roster_id;
                         
                         // Find if this pick was traded
-                        // Traded picks use league users array index as roster_id
-                        // User (edgecdec) is at index 1 in league users array
-                        let rosterIndexInTrades;
+                        // User (edgecdec) is Roster 9, draft position 3
+                        // Traded picks use actual roster_id (1-10)
+                        let rosterIdInTrades;
                         if (originalOwner === 3) {
-                            rosterIndexInTrades = 1; // edgecdec is at index 1 in league users array
+                            rosterIdInTrades = 9; // edgecdec is Roster 9
                         } else {
-                            // Map other draft positions to league users array indices
-                            // This is a simplified mapping - may need adjustment for other users
-                            rosterIndexInTrades = originalOwner - 1;
+                            // For other positions, we need the correct roster mapping
+                            // This is a simplified mapping - may need full roster order
+                            rosterIdInTrades = originalOwner;
                         }
                         
                         const trade = this.state.tradedPicks.find(tp => 
                             tp.season === currentSeason && 
                             tp.round === round && 
-                            tp.roster_id === rosterIndexInTrades
+                            tp.roster_id === rosterIdInTrades
                         );
                         
-                        if (trade && trade.owner_id !== rosterIndexInTrades) {
-                            // Convert league users array index back to draft position for user lookup
-                            const newOwnerDraftPosition = trade.owner_id + 1; // Approximate conversion
+                        if (trade && trade.owner_id !== rosterIdInTrades) {
+                            // Find which draft position owns the new roster
+                            // For now, simple mapping - may need full roster lookup
+                            let newOwnerDraftPosition;
+                            if (trade.owner_id === 1) newOwnerDraftPosition = 1; // AggressiveIyAvg
+                            else if (trade.owner_id === 2) newOwnerDraftPosition = 4; // pullmanguy  
+                            else if (trade.owner_id === 9) newOwnerDraftPosition = 3; // edgecdec
+                            else newOwnerDraftPosition = trade.owner_id; // Fallback
+                            
                             const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
                             if (newOwnerUserId) {
-                                console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, ${originalOwner} -> ${newOwnerDraftPosition}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
+                                console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, Roster ${rosterIdInTrades} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
                                 pick.picked_by = newOwnerUserId;
                                 pick.roster_id = newOwnerDraftPosition;
                                 tradesApplied++;
                             } else {
-                                console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for new owner ${newOwnerDraftPosition}`);
+                                console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for roster ${trade.owner_id}`);
                             }
                         }
                     });
