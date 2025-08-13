@@ -1950,9 +1950,53 @@ class DraftHandlers {
         if (this.state.draftPicks && this.state.draftPicks.length > 0) {
         console.log('🎯 Processing draft picks...');
         console.log('  - Sample draft pick:', this.state.draftPicks[0]);
-            console.log('  - First 3 picks picked_by values:', this.state.draftPicks.slice(0, 3).map(p => p.picked_by));
+        console.log('  - First 3 picks picked_by values:', this.state.draftPicks.slice(0, 3).map(p => p.picked_by));
+            
+        // EMERGENCY FIX: Re-apply picked_by override right before roster processing
+        if (this.state.isMockDraft && this.state.currentDraft?.slot_to_roster_id) {
+                console.log('🚑 EMERGENCY: Re-applying picked_by override before roster processing');
+            this.state.draftPicks.forEach((pick, index) => {
+                    const pickNumber = index + 1;
+                    const slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
+                    if (slotOwner) {
+                        const ownerUserId = this.getRosterOwnerUserId(slotOwner);
+                        if (ownerUserId) {
+                            pick.picked_by = ownerUserId;
+                            pick.roster_id = slotOwner;
+                        }
+                    }
+                });
+                
+                // Apply trades again
+                if (this.state.tradedPicks) {
+                    const currentSeason = this.state.currentDraft?.season || '2025';
+                    const numTeams = Object.keys(this.state.currentDraft?.draft_order || {}).length || 10;
+                    
+                    this.state.draftPicks.forEach((pick, index) => {
+                        const pickNumber = index + 1;
+                        const round = Math.ceil(pickNumber / numTeams);
+                        const originalOwner = pick.roster_id;
+                        
+                        const trade = this.state.tradedPicks.find(tp => 
+                            tp.season === currentSeason && 
+                            tp.round === round && 
+                            tp.roster_id === originalOwner
+                        );
+                        
+                        if (trade && trade.owner_id !== originalOwner) {
+                            const newOwnerUserId = this.getRosterOwnerUserId(trade.owner_id);
+                            if (newOwnerUserId) {
+                                pick.picked_by = newOwnerUserId;
+                                pick.roster_id = trade.owner_id;
+                            }
+                        }
+                    });
+                }
+                
+                console.log('✅ Emergency override complete - new first 3 picks:', this.state.draftPicks.slice(0, 3).map(p => p.picked_by));
+            }
 
-        // Get current user ID from various sources
+            // Get current user ID from various sources
             let currentUserId = this.getCurrentUserId();
 
             console.log('  - Looking for picks by user ID:', currentUserId);
