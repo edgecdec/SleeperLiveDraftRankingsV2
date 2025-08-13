@@ -639,40 +639,12 @@ class DraftHandlers {
                                     response.slot_to_roster_id = realDraftResponse.draft_info.slot_to_roster_id;
                                     response.settings = realDraftResponse.draft_info.settings;
                                     
-                                    // Get traded picks to determine actual pick ownership
-                                    console.log('🔄 Getting traded picks for accurate pick ownership');
+                                    // Load traded picks data for later use
                                     try {
                                         const tradedPicksResponse = await this.apiService.request(`/league/${draftData.leagueId}/traded_picks`);
                                         if (tradedPicksResponse.status === 'success' && tradedPicksResponse.traded_picks) {
-                                            console.log('✅ Got traded picks data:', tradedPicksResponse.traded_picks.length, 'trades');
-                                            
-                                            // Apply traded picks to mock draft
-                                            if (response.draft_info && response.draft_info.picks) {
-                                                let changedPicks = 0;
-                                                const currentSeason = response.draft_info.season || '2025';
-                                                
-                                                // Calculate pick ownership based on trades
-                                                response.draft_info.picks.forEach((mockPick, index) => {
-                                                    const pickNumber = index + 1;
-                                                    const round = Math.ceil(pickNumber / 10); // Assuming 10 teams, adjust if needed
-                                                    const originalOwner = mockPick.roster_id;
-                                                    
-                                                    // Find if this pick was traded
-                                                    const trade = tradedPicksResponse.traded_picks.find(tp => 
-                                                        tp.season === currentSeason && 
-                                                        tp.round === round && 
-                                                        tp.roster_id === originalOwner
-                                                    );
-                                                    
-                                                    if (trade && trade.owner_id !== originalOwner) {
-                                                        console.log(`🔄 Pick ${pickNumber} (Round ${round}): roster ${originalOwner} -> ${trade.owner_id}`);
-                                                        mockPick.roster_id = trade.owner_id;
-                                                        changedPicks++;
-                                                    }
-                                                });
-                                                
-                                                console.log(`✅ Applied ${changedPicks} traded picks to mock draft`);
-                                            }
+                                            this.state.tradedPicks = tradedPicksResponse.traded_picks;
+                                            console.log('✅ Stored traded picks data:', tradedPicksResponse.traded_picks.length, 'trades');
                                         } else {
                                             console.log('🔍 No traded picks found, using original draft order');
                                         }
@@ -726,6 +698,11 @@ class DraftHandlers {
                     this.state.draftPicks = response.draft_info.picks;
                     console.log('✅ Draft picks loaded:', response.draft_info.picks.length, 'picks');
                     console.log('🔍 Sample draft pick:', response.draft_info.picks[0]);
+                    
+                    // Apply traded picks for mock drafts
+                    if (this.state.isMockDraft && draftData && draftData.leagueId) {
+                        await this.applyTradedPicksToMockDraft(draftData.leagueId);
+                    }
                 } else {
                     console.log('⚠️ No draft picks found in response');
                     console.log('🔍 Draft info structure:', response.draft_info);
@@ -3563,6 +3540,42 @@ class DraftHandlers {
         if (formatSelect) formatSelect.value = 'custom';
         if (confirmBtn) confirmBtn.disabled = true;
         if (previewDiv) previewDiv.style.display = 'none';
+    }
+
+    /**
+     * Apply traded picks to mock draft picks
+     */
+    async applyTradedPicksToMockDraft(leagueId) {
+        if (!this.state.draftPicks || !this.state.tradedPicks) {
+            console.log('⚠️ No draft picks or traded picks data available');
+            return;
+        }
+
+        console.log('🔄 Applying traded picks to mock draft picks');
+        let changedPicks = 0;
+        const currentSeason = this.state.currentDraft?.season || '2025';
+        const numTeams = Object.keys(this.state.currentDraft?.draft_order || {}).length || 10;
+
+        this.state.draftPicks.forEach((mockPick, index) => {
+            const pickNumber = index + 1;
+            const round = Math.ceil(pickNumber / numTeams);
+            const originalOwner = mockPick.roster_id;
+
+            // Find if this pick was traded
+            const trade = this.state.tradedPicks.find(tp => 
+                tp.season === currentSeason && 
+                tp.round === round && 
+                tp.roster_id === originalOwner
+            );
+
+            if (trade && trade.owner_id !== originalOwner) {
+                console.log(`🔄 Pick ${pickNumber} (Round ${round}): roster ${originalOwner} -> ${trade.owner_id}`);
+                mockPick.roster_id = trade.owner_id;
+                changedPicks++;
+            }
+        });
+
+        console.log(`✅ Applied ${changedPicks} traded picks to mock draft`);
     }
 }
 
