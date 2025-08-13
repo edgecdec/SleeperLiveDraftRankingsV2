@@ -1133,14 +1133,21 @@ class LandingHandlers {
             btn.addEventListener('click', () => {
                 const leagueId = btn.dataset.leagueId;
                 const draftId = btn.dataset.draftId;
-                window.handleDraftSelect(leagueId, draftId);
+                const league = this.state.userLeagues?.find(l => l.league_id === leagueId);
+                const draft = league?.drafts?.find(d => d.draft_id === draftId);
+                if (league && draft) {
+                    this.handleDraftSelect(league, draft);
+                }
             });
         });
         
         mockBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const leagueId = btn.dataset.leagueId;
-                window.handleMockDraftSelect(leagueId, league.name);
+                const league = this.state.userLeagues?.find(l => l.league_id === leagueId);
+                if (league) {
+                    this.handleMockDraftSelect(league);
+                }
             });
         });
         
