@@ -635,9 +635,13 @@ class DraftHandlers {
                                 
                                 // Apply both draft order and slot-to-roster mapping for traded picks
                                 if (realDraftResponse.draft_info) {
-                                    response.draft_order = realDraftResponse.draft_info.draft_order;
-                                    response.slot_to_roster_id = realDraftResponse.draft_info.slot_to_roster_id;
-                                    response.settings = realDraftResponse.draft_info.settings;
+                                response.draft_order = realDraftResponse.draft_info.draft_order;
+                                response.slot_to_roster_id = realDraftResponse.draft_info.slot_to_roster_id;
+                                response.settings = realDraftResponse.draft_info.settings;
+                    
+                    // CRITICAL: Store the real draft order for user ID lookups
+                    this.state.realDraftOrder = realDraftResponse.draft_info.draft_order;
+                    console.log('✅ Stored real draft order for user lookups:', this.state.realDraftOrder);
                                     
                                     // Load traded picks data for later use
                                     try {
@@ -3732,15 +3736,18 @@ class DraftHandlers {
      * Get user ID for a roster ID from draft order
      */
     getRosterOwnerUserId(rosterId) {
-        if (!this.state.currentDraft?.draft_order) {
+        // Use real draft order if available, fallback to current draft
+        const draftOrder = this.state.realDraftOrder || this.state.currentDraft?.draft_order;
+        
+        if (!draftOrder) {
             console.error('❌ getRosterOwnerUserId: No draft_order available');
             return null;
         }
         
-        console.log(`🔍 getRosterOwnerUserId(${rosterId}): Searching in draft_order:`, this.state.currentDraft.draft_order);
+        console.log(`🔍 getRosterOwnerUserId(${rosterId}): Using draft order:`, draftOrder);
         
         // draft_order maps user_id -> roster_id, we need the reverse
-        for (const [userId, userRosterId] of Object.entries(this.state.currentDraft.draft_order)) {
+        for (const [userId, userRosterId] of Object.entries(draftOrder)) {
             console.log(`🔍 Checking: userId=${userId} has rosterId=${userRosterId}, looking for ${rosterId}`);
             if (parseInt(userRosterId) === parseInt(rosterId)) {
                 console.log(`✅ Found match: rosterId ${rosterId} belongs to userId ${userId}`);
