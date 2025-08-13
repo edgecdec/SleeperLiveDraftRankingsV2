@@ -966,17 +966,19 @@ class LandingHandlers {
             return;
         }
         
-        // Input validation
-        modalInput.addEventListener('sl-input', () => {
+        // Input validation with debugging
+        const validateInput = () => {
             const value = modalInput.value?.trim();
-            confirmBtn.disabled = !value || value.length < 10;
-        });
+            const isValid = value && value.length >= 10;
+            console.log('🔍 Modal input validation:', { value, length: value?.length, isValid });
+            confirmBtn.disabled = !isValid;
+            console.log('🔘 Button disabled state:', confirmBtn.disabled);
+        };
         
-        // Also listen for regular input events
-        modalInput.addEventListener('input', () => {
-            const value = modalInput.value?.trim();
-            confirmBtn.disabled = !value || value.length < 10;
-        });
+        modalInput.addEventListener('sl-input', validateInput);
+        modalInput.addEventListener('input', validateInput);
+        modalInput.addEventListener('keyup', validateInput);
+        modalInput.addEventListener('change', validateInput);
         
         // Cancel button
         cancelBtn.addEventListener('click', () => {
