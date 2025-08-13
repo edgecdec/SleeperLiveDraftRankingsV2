@@ -255,8 +255,19 @@ class SimpleApp {
         console.log('🔄 Loading user data then navigating to mock draft:', { username, leagueId, draftId, mockDraftId });
         
         try {
-            // Load user data first
-            await this.landingHandlers.handleUserSearch(username, '2025');
+            // Load user data first (without showing landing page)
+            console.log('🔄 Loading user data silently for mock draft');
+            const userResponse = await fetch(`/api/user/${username}`);
+            const userData = await userResponse.json();
+            
+            if (userData.status === 'success' && userData.user) {
+                // Store user data in state without showing landing page
+                this.state.currentUser = userData.user;
+                this.state.currentUser.user_id = userData.user.user_id;
+                console.log('✅ User data loaded silently:', userData.user.username);
+            } else {
+                throw new Error('Failed to load user data');
+            }
             
             // Set mock draft flag
             this.state.isMockDraft = true;
