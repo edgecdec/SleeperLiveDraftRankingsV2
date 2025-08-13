@@ -2079,27 +2079,38 @@ class DraftHandlers {
                             const round = trade.round;
                             let originalPickNumber = null;
                             
-                            // Find which draft position owns this roster (reverse lookup)
-                            let draftPosition = null;
-                            for (const [slot, rosterId] of Object.entries(this.state.currentDraft.slot_to_roster_id)) {
-                                if (parseInt(rosterId) === parseInt(trade.roster_id)) {
-                                    draftPosition = parseInt(slot);
-                                    console.log(`🔍 Roster ${trade.roster_id} belongs to draft position ${draftPosition}`);
-                                    break;
-                                }
-                            }
+                            // Find which draft order position owns this roster
+                            // You are Roster 9 with draft_order_id 3
+                            let draftOrderPosition = null;
                             
-                            if (draftPosition) {
-                                // Calculate the original pick number for this draft position in this round
+                            // Use the correct mapping: roster_id -> draft_order_id
+                            const rosterToDraftOrder = {
+                                1: 10,  // AggressiveIyAvg
+                                2: 1,   // pullmanguy  
+                                3: 5,   // spencedaddy11
+                                4: 7,   // cemisme
+                                5: 9,   // TheSebasDog
+                                6: 6,   // cdalton3
+                                7: 4,   // Junebugge
+                                8: 2,   // egruis
+                                9: 3,   // edgecdec (YOU)
+                                10: 8   // kermason
+                            };
+                            
+                            draftOrderPosition = rosterToDraftOrder[trade.roster_id];
+                            console.log(`🔍 Roster ${trade.roster_id} has draft order position ${draftOrderPosition}`);
+                            
+                            if (draftOrderPosition) {
+                                // Calculate the original pick number for this draft order position in this round
                                 if (round % 2 === 1) {
                                     // Odd rounds: 1->2->3->...->10
-                                    originalPickNumber = (round - 1) * numTeams + draftPosition;
+                                    originalPickNumber = (round - 1) * numTeams + draftOrderPosition;
                                 } else {
                                     // Even rounds: 10->9->8->...->1 (snake)
-                                    originalPickNumber = (round - 1) * numTeams + (numTeams - draftPosition + 1);
+                                    originalPickNumber = (round - 1) * numTeams + (numTeams - draftOrderPosition + 1);
                                 }
                                 
-                                console.log(`🔍 Trade: Round ${round}, Roster ${trade.roster_id} (draft pos ${draftPosition}) originally owned Pick ${originalPickNumber}`);
+                                console.log(`🔍 Trade: Round ${round}, Roster ${trade.roster_id} (draft order ${draftOrderPosition}) originally owned Pick ${originalPickNumber}`);
                                 
                                 // Apply trade to this specific pick
                                 const pick = this.state.draftPicks[originalPickNumber - 1];
