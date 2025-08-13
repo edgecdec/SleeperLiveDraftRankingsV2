@@ -262,19 +262,28 @@ class SimpleApp {
             
             // Navigate to mock draft with league context
             console.log('🚀 Loading mock draft with league context:', { username, leagueId, mockDraftId });
-            this.draftHandlers.handleDraftSelected({
+            console.log('🔍 Draft handlers available:', !!this.draftHandlers);
+            console.log('🔍 About to call handleDraftSelected');
+            
+            const result = this.draftHandlers.handleDraftSelected({
                 draft_id: mockDraftId,
                 isMockDraft: true,
                 leagueId: leagueId
             });
             
+            console.log('🔍 handleDraftSelected result:', result);
+            
         } catch (error) {
             console.error('❌ Error loading user data for mock draft:', error);
-            // Fallback to regular mock draft loading
+            console.error('❌ Error stack:', error.stack);
+            console.log('⚠️ NOT falling back to landing page - staying on mock draft');
+            
+            // Don't fallback to landing page for mock drafts - try to load anyway
             this.state.isMockDraft = true;
             this.draftHandlers.handleDraftSelected({
                 draft_id: mockDraftId,
-                isMockDraft: true
+                isMockDraft: true,
+                leagueId: leagueId
             });
         }
     }
