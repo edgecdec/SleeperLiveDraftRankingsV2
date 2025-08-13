@@ -2083,17 +2083,28 @@ class DraftHandlers {
                             );
                             
                             if (trade && trade.owner_id !== rosterIdInTrades) {
-                                // Use roster-to-owner mapping to find the correct user
-                                let newOwnerUserId = null;
-                                if (this.state.rosterToOwnerMapping && this.state.rosterToOwnerMapping[trade.owner_id]) {
-                                    newOwnerUserId = this.state.rosterToOwnerMapping[trade.owner_id];
-                                    console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, Roster ${rosterIdInTrades} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
-                                    pick.picked_by = newOwnerUserId;
-                                    // Keep roster_id as the new owner's roster for consistency
-                                    pick.roster_id = trade.owner_id;
-                                    tradesApplied++;
+                                // Use slot_to_roster_id mapping to find the correct user
+                                // Find which draft position owns the new roster
+                                let newOwnerDraftPosition = null;
+                                for (const [slot, rosterId] of Object.entries(this.state.currentDraft.slot_to_roster_id)) {
+                                    if (parseInt(rosterId) === parseInt(trade.owner_id)) {
+                                        newOwnerDraftPosition = parseInt(slot);
+                                        break;
+                                    }
+                                }
+                                
+                                if (newOwnerDraftPosition) {
+                                    const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
+                                    if (newOwnerUserId) {
+                                        console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, Roster ${rosterIdInTrades} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
+                                        pick.picked_by = newOwnerUserId;
+                                        pick.roster_id = newOwnerDraftPosition;
+                                        tradesApplied++;
+                                    } else {
+                                        console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for draft position ${newOwnerDraftPosition}`);
+                                    }
                                 } else {
-                                    console.warn(`⚠️ TRADE Pick ${pickNumber}: No roster mapping available for roster ${trade.owner_id}`);
+                                    console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find draft position for roster ${trade.owner_id}`);
                                 }
                             }
                         });
@@ -2101,20 +2112,8 @@ class DraftHandlers {
                         console.log(`✅ Applied ${tradesApplied} trades in emergency override [${overrideId}]`);
                     };
                     
-                    // Apply trades immediately if mapping is available, otherwise wait
-                    if (this.state.rosterToOwnerMapping) {
-                        applyTrades();
-                    } else {
-                        console.log('🔍 Waiting for roster mapping before applying trades...');
-                        setTimeout(() => {
-                            if (this.state.rosterToOwnerMapping) {
-                                applyTrades();
-                            } else {
-                                console.warn('⚠️ Roster mapping still not available, applying trades without it');
-                                applyTrades();
-                            }
-                        }, 1000);
-                    }
+                    // Apply trades immediately using existing slot_to_roster_id mapping
+                    applyTrades();
                 } else {
                     console.warn(`⚠️ No traded picks data available for emergency override [${overrideId}]`);
                 }
