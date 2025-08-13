@@ -133,12 +133,29 @@ class SimpleApp {
             return;
         }
         
-        // Check for mock draft URLs: /sleeper/mock/{draft_id}
+        // Check for user-based mock draft URLs: /sleeper/user/{username}/mock/{draft_id}
+        const userMockDraftMatch = path.match(/^\/sleeper\/user\/([^\/]+)\/mock\/([^\/]+)$/);
+        if (userMockDraftMatch) {
+            const username = userMockDraftMatch[1];
+            const draftId = userMockDraftMatch[2];
+            
+            console.log('🎭 Found user-based mock draft URL:', { username, draftId });
+            
+            // Mark as attempted
+            this.autoLoadAttempted = true;
+            
+            // Load user data first, then navigate to mock draft
+            console.log('🔄 Loading user data before mock draft navigation');
+            await this.loadUserThenMockDraft(username, draftId);
+            return;
+        }
+        
+        // Check for legacy mock draft URLs: /sleeper/mock/{draft_id}
         const mockDraftMatch = path.match(/^\/sleeper\/mock\/([^\/]+)$/);
         if (mockDraftMatch) {
             const draftId = mockDraftMatch[1];
             
-            console.log('🎭 Found mock draft URL:', { draftId });
+            console.log('🎭 Found legacy mock draft URL:', { draftId });
             
             // Mark as attempted
             this.autoLoadAttempted = true;
@@ -147,7 +164,7 @@ class SimpleApp {
             this.state.isMockDraft = true;
             
             // Load mock draft using existing draft loading logic
-            console.log('🚀 Loading mock draft from URL:', { draftId });
+            console.log('🚀 Loading legacy mock draft from URL:', { draftId });
             this.draftHandlers.handleDraftSelected({
                 draft_id: draftId,
                 isMockDraft: true
@@ -230,13 +247,40 @@ class SimpleApp {
     }
     
     /**
+     * Load user data first, then navigate to mock draft
+     */
+    async loadUserThenMockDraft(username, draftId) {
+        console.log('🔄 Loading user data then navigating to mock draft:', { username, draftId });
+        
+        try {
+            // Load user data first
+            await this.landingHandlers.handleUserSearch(username, '2025');
+            
+            // Set mock draft flag
+            this.state.isMockDraft = true;
+            
+            // Navigate to mock draft
+            console.log('🚀 Loading mock draft with user context:', { username, draftId });
+            this.draftHandlers.handleDraftSelected({
+                draft_id: draftId,
+                isMockDraft: true
+            });
+            
+        } catch (error) {
+            console.error('❌ Error loading user data for mock draft:', error);
+            // Fallback to regular mock draft loading
+            this.state.isMockDraft = true;
+            this.draftHandlers.handleDraftSelected({
+                draft_id: draftId,
+                isMockDraft: true
+            });
+        }
+    }
+    
+    /**
      * Load user data first, then navigate to specific draft
      */
     async loadUserThenDraft(username, leagueId, draftId) {
-        console.log('🔄 Loading user data then navigating to draft:', { username, leagueId, draftId });
-        
-        try {
-            // Get season from URL params or default to 2025
             const urlParams = new URLSearchParams(window.location.search);
             const season = urlParams.get('season') || '2025';
             

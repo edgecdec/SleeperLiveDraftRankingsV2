@@ -216,10 +216,17 @@ class LandingHandlers {
         // Clear any previous errors
         this.hideMockError();
         
-        console.log('🚀 Navigating to mock draft URL with league:', `/sleeper/mock/${draftId}?league=${selectedLeagueId}`);
+        // Get current user for URL construction
+        const currentUser = this.state.currentUser || window.app?.state?.currentUser;
+        if (!currentUser || !currentUser.username) {
+            this.showMockError('User data not found. Please reload the page.');
+            return;
+        }
         
-        // Navigate to mock draft URL with league parameter
-        window.location.href = `/sleeper/mock/${draftId}?league=${selectedLeagueId}`;
+        console.log('🚀 Navigating to mock draft URL with league:', `/sleeper/user/${currentUser.username}/mock/${draftId}?league=${selectedLeagueId}`);
+        
+        // Navigate to mock draft URL with username and league parameter
+        window.location.href = `/sleeper/user/${currentUser.username}/mock/${draftId}?league=${selectedLeagueId}`;
     }
     
     /**
