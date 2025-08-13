@@ -204,13 +204,20 @@ class DraftHandlers {
                 this.state.isMockDraft = true;
                 console.log('🎭 Mock draft mode enabled');
                 
-                // Check for league parameter in URL for mock drafts
-                const urlParams = new URLSearchParams(window.location.search);
-                const leagueId = urlParams.get('league');
-                
-                if (leagueId) {
-                    console.log('🎭 Loading real league data for mock draft:', leagueId);
-                    await this.loadRealLeagueForMockDraft(leagueId);
+                // Load league data for mock draft context
+                if (draftData.leagueId) {
+                    console.log('🔄 Loading league data for mock draft:', draftData.leagueId);
+                    try {
+                        const leagueData = await this.apiService.request(`/league/${draftData.leagueId}`);
+                        if (leagueData.status === 'success' && leagueData.league) {
+                            this.state.currentLeague = leagueData.league;
+                            console.log('✅ League data loaded for mock draft:', leagueData.league.name);
+                        } else {
+                            console.warn('⚠️ Failed to load league data for mock draft');
+                        }
+                    } catch (error) {
+                        console.error('❌ Error loading league data for mock draft:', error);
+                    }
                 }
             }
             
