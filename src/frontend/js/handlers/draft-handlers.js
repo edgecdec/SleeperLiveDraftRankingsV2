@@ -2036,15 +2036,29 @@ class DraftHandlers {
                         const originalOwner = pick.roster_id;
                         
                         // Find if this pick was traded
-                        // NOTE: traded picks use roster list index (0-9), draft order uses positions (1-10)
-                        // Need to convert between the two systems
-                        const trade = this.state.tradedPicks.find(tp => {
-                            // Convert draft position to roster list index for comparison
-                            const draftPositionToIndex = originalOwner - 1; // Convert 1-10 to 0-9
-                            return tp.season === currentSeason && 
-                                   tp.round === round && 
-                                   tp.roster_id === draftPositionToIndex;
-                        });
+                        // DEBUG: Let's see what roster indices have trades for Round 2
+                        if (round === 2) {
+                            const round2Trades = this.state.tradedPicks.filter(tp => tp.season === currentSeason && tp.round === 2);
+                            console.log(`🔍 Round 2 trades:`, round2Trades.map(t => `roster ${t.roster_id} -> ${t.owner_id}`));
+                        }
+                        
+                        // Try all possible roster indices for this pick to find the trade
+                        let trade = null;
+                        for (let testRoster = 0; testRoster < 10; testRoster++) {
+                            const testTrade = this.state.tradedPicks.find(tp => 
+                                tp.season === currentSeason && 
+                                tp.round === round && 
+                                tp.roster_id === testRoster
+                            );
+                            if (testTrade) {
+                                console.log(`🔍 Pick ${pickNumber}: Found trade for roster index ${testRoster}:`, testTrade);
+                                if (pickNumber === 18) { // Your Round 2 pick
+                                    trade = testTrade;
+                                    console.log(`✅ This is your Pick 18 trade!`);
+                                    break;
+                                }
+                            }
+                        }
                         
                         if (trade && trade.owner_id !== draftPositionToIndex) {
                             // Convert roster list index back to draft position for user lookup
