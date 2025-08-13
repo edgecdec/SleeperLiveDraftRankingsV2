@@ -702,20 +702,35 @@ class DraftHandlers {
                     // Override picked_by for all picks based on real draft order
                     if (this.state.currentDraft?.slot_to_roster_id) {
                         console.log('🔄 Overriding picked_by for all picks based on real draft order');
+                        console.log('🔍 slot_to_roster_id:', this.state.currentDraft.slot_to_roster_id);
+                        console.log('🔍 draft_order:', this.state.currentDraft.draft_order);
+                        
                         this.state.draftPicks.forEach((pick, index) => {
                             const pickNumber = index + 1;
                             const slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
                             
+                            console.log(`🔍 Pick ${pickNumber}: slot_to_roster_id[${pickNumber}] = ${slotOwner}`);
+                            
                             if (slotOwner) {
                                 const ownerUserId = this.getRosterOwnerUserId(slotOwner);
+                                console.log(`🔍 Pick ${pickNumber}: getRosterOwnerUserId(${slotOwner}) = ${ownerUserId}`);
+                                
                                 if (ownerUserId) {
-                                    console.log(`🔄 Pick ${pickNumber}: setting picked_by to ${ownerUserId}`);
+                                    console.log(`🔄 Pick ${pickNumber}: BEFORE - picked_by: '${pick.picked_by}', roster_id: ${pick.roster_id}`);
                                     pick.picked_by = ownerUserId;
                                     pick.roster_id = slotOwner;
+                                    console.log(`🔄 Pick ${pickNumber}: AFTER - picked_by: '${pick.picked_by}', roster_id: ${pick.roster_id}`);
+                                } else {
+                                    console.warn(`⚠️ Pick ${pickNumber}: Could not find user ID for roster ${slotOwner}`);
                                 }
+                            } else {
+                                console.warn(`⚠️ Pick ${pickNumber}: No slot owner found`);
                             }
                         });
                         console.log('✅ Overrode picked_by for all picks in main load');
+                    } else {
+                        console.warn('⚠️ No slot_to_roster_id data available for override');
+                        console.log('🔍 currentDraft:', this.state.currentDraft);
                     }
                     
                     // Apply traded picks for mock drafts
