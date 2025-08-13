@@ -223,18 +223,27 @@ class DraftHandlers {
             
             // Store draft info
             this.state.currentDraft = draftData;
+            console.log('💾 Draft data stored:', draftData);
             
             // Show draft view
+            console.log('🔄 About to show draft view');
             this.showDraftView();
+            console.log('✅ Draft view shown');
             
             // Load draft data
+            console.log('🔄 About to load draft data with ID:', draftData.draft_id);
             await this.loadDraftData(draftData.draft_id);
+            console.log('✅ Draft data loaded');
             
             // Load player rankings
+            console.log('🔄 About to load player rankings');
             await this.loadPlayerRankings();
+            console.log('✅ Player rankings loaded');
             
             // Update connection status
+            console.log('🔄 Updating connection status');
             this.updateConnectionStatus('online');
+            console.log('✅ Connection status updated');
             
         } catch (error) {
             console.error('❌ Error handling draft selection:', error);
