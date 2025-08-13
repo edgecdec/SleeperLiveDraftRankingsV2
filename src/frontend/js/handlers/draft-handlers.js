@@ -1955,15 +1955,27 @@ class DraftHandlers {
         // EMERGENCY FIX: Re-apply picked_by override right before roster processing
         if (this.state.isMockDraft && this.state.currentDraft?.slot_to_roster_id) {
                 console.log('🚑 EMERGENCY: Re-applying picked_by override before roster processing');
+                console.log('🔍 Emergency slot_to_roster_id:', this.state.currentDraft.slot_to_roster_id);
+                console.log('🔍 Emergency draft_order:', this.state.currentDraft.draft_order);
+                
             this.state.draftPicks.forEach((pick, index) => {
                     const pickNumber = index + 1;
                     const slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
+                    console.log(`🔍 Emergency Pick ${pickNumber}: slot_to_roster_id[${pickNumber}] = ${slotOwner}`);
+                    
                     if (slotOwner) {
                         const ownerUserId = this.getRosterOwnerUserId(slotOwner);
+                        console.log(`🔍 Emergency Pick ${pickNumber}: getRosterOwnerUserId(${slotOwner}) = ${ownerUserId}`);
+                        
                         if (ownerUserId) {
+                            console.log(`🚑 Emergency Pick ${pickNumber}: BEFORE picked_by='${pick.picked_by}' AFTER='${ownerUserId}'`);
                             pick.picked_by = ownerUserId;
                             pick.roster_id = slotOwner;
+                        } else {
+                            console.error(`❌ Emergency Pick ${pickNumber}: getRosterOwnerUserId(${slotOwner}) returned null!`);
                         }
+                    } else {
+                        console.error(`❌ Emergency Pick ${pickNumber}: No slot owner found for slot ${pickNumber}`);
                     }
                 });
                 
