@@ -264,6 +264,12 @@ class SimpleApp {
                 // Store user data in state without showing landing page
                 this.state.currentUser = userData.user;
                 this.state.currentUser.user_id = userData.user.user_id;
+                
+                // Also store in draft handlers state
+                if (this.draftHandlers) {
+                    this.draftHandlers.state.currentUser = userData.user;
+                }
+                
                 console.log('✅ User data loaded silently:', userData.user.username);
             } else {
                 throw new Error('Failed to load user data');

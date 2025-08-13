@@ -211,9 +211,9 @@ class DraftHandlers {
                         const leagueData = await this.apiService.request(`/league/${draftData.leagueId}`);
                         console.log('📥 League API response:', leagueData);
                         
-                        if (leagueData.status === 'success' && leagueData.league) {
-                            this.state.currentLeague = leagueData.league;
-                            console.log('✅ League data loaded for mock draft:', leagueData.league.name);
+                        if (leagueData.status === 'success' && leagueData.league_info) {
+                            this.state.currentLeague = leagueData.league_info;
+                            console.log('✅ League data loaded for mock draft:', leagueData.league_info.name);
                         } else {
                             console.warn('⚠️ Failed to load league data for mock draft - invalid response:', leagueData);
                         }
