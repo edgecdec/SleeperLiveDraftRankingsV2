@@ -209,15 +209,21 @@ class DraftHandlers {
                     console.log('🔄 Loading league data for mock draft:', draftData.leagueId);
                     try {
                         const leagueData = await this.apiService.request(`/league/${draftData.leagueId}`);
+                        console.log('📥 League API response:', leagueData);
+                        
                         if (leagueData.status === 'success' && leagueData.league) {
                             this.state.currentLeague = leagueData.league;
                             console.log('✅ League data loaded for mock draft:', leagueData.league.name);
                         } else {
-                            console.warn('⚠️ Failed to load league data for mock draft');
+                            console.warn('⚠️ Failed to load league data for mock draft - invalid response:', leagueData);
                         }
                     } catch (error) {
                         console.error('❌ Error loading league data for mock draft:', error);
+                        console.error('❌ Error details:', error.message);
+                        console.error('❌ Error stack:', error.stack);
                     }
+                } else {
+                    console.warn('⚠️ No leagueId provided for mock draft');
                 }
             }
             
@@ -232,7 +238,7 @@ class DraftHandlers {
             
             // Load draft data
             console.log('🔄 About to load draft data with ID:', draftData.draft_id);
-            await this.loadDraftData(draftData.draft_id);
+            await this.loadDraftData(draftData.draft_id, draftData);
             console.log('✅ Draft data loaded');
             
             // Load player rankings
@@ -581,7 +587,7 @@ class DraftHandlers {
     /**
      * Load draft data from API
      */
-    async loadDraftData(draftId) {
+    async loadDraftData(draftId, draftData = null) {
         console.log('📡 Loading draft data for:', draftId);
         
         try {
@@ -592,15 +598,15 @@ class DraftHandlers {
                 console.log('✅ Draft API response keys:', Object.keys(response));
                 
                 // For mock drafts, we need to use the real league's draft order and traded picks
-                if (this.state.isMockDraft && this.state.currentLeague) {
+                if (this.state.isMockDraft && draftData.leagueId) {
                     console.log('🎭 Mock draft detected - using real league draft order');
                     console.log('🔍 Mock draft state:', this.state.isMockDraft);
-                    console.log('🔍 Current league:', this.state.currentLeague?.name, this.state.currentLeague?.league_id);
+                    console.log('🔍 League ID from URL:', draftData.leagueId);
                     
                     // Get the real league's draft data for proper pick assignments
                     try {
-                        console.log('📡 Fetching league drafts for:', this.state.currentLeague.league_id);
-                        const leagueResponse = await this.apiService.request(`/league/${this.state.currentLeague.league_id}/drafts`);
+                        console.log('📡 Fetching league drafts for:', draftData.leagueId);
+                        const leagueResponse = await this.apiService.request(`/league/${draftData.leagueId}/drafts`);
                         console.log('📥 League drafts response:', leagueResponse);
                         
                         if (leagueResponse.status === 'success' && leagueResponse.drafts && leagueResponse.drafts.length > 0) {
@@ -635,9 +641,9 @@ class DraftHandlers {
                         console.error('❌ Error stack:', error.stack);
                     }
                 } else {
-                    console.log('🔍 Not a mock draft or no league data:', {
+                    console.log('🔍 Not a mock draft or no league ID:', {
                         isMockDraft: this.state.isMockDraft,
-                        hasLeague: !!this.state.currentLeague
+                        hasLeagueId: !!draftData.leagueId
                     });
                 }
                 
