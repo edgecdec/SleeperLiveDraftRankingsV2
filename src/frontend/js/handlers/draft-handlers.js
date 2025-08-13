@@ -1967,6 +1967,20 @@ class DraftHandlers {
                 console.log(`🔍 DEBUG: Real draft order:`, this.state.realDraftOrder);
                 console.log(`🔍 DEBUG: Mock draft order:`, this.state.currentDraft.draft_order);
                 
+                // DEBUG: Fetch league users to understand the roster mapping
+                if (this.state.currentDraft?.leagueId) {
+                    try {
+                        const leagueUsersResponse = await this.apiService.request(`/league/${this.state.currentDraft.leagueId}/users`);
+                        console.log(`🔍 DEBUG: League users from API:`, leagueUsersResponse);
+                        
+                        // Find current user's position in the league users array
+                        const userIndex = leagueUsersResponse.findIndex(user => user.user_id === currentUserId);
+                        console.log(`🔍 DEBUG: Current user is at index ${userIndex} in league users array`);
+                    } catch (error) {
+                        console.error('❌ Failed to fetch league users:', error);
+                    }
+                }
+                
                 // Find what roster the current user should have
                 let realRoster = null;
                 if (this.state.realDraftOrder) {
@@ -2036,29 +2050,19 @@ class DraftHandlers {
                         const originalOwner = pick.roster_id;
                         
                         // Find if this pick was traded
-                        // DEBUG: Let's see what roster indices have trades for Round 2
-                        if (round === 2) {
-                            const round2Trades = this.state.tradedPicks.filter(tp => tp.season === currentSeason && tp.round === 2);
-                            console.log(`🔍 Round 2 trades:`, round2Trades.map(t => `roster ${t.roster_id} -> ${t.owner_id}`));
+                        // Based on debug: User (draft position 3) is roster index 1 in trade data
+                        let rosterIndexInTrades;
+                        if (originalOwner === 3) {
+                            rosterIndexInTrades = 1; // User's trades are under roster index 1
+                        } else {
+                            rosterIndexInTrades = originalOwner - 1; // Standard conversion for others
                         }
                         
-                        // Try all possible roster indices for this pick to find the trade
-                        let trade = null;
-                        for (let testRoster = 0; testRoster < 10; testRoster++) {
-                            const testTrade = this.state.tradedPicks.find(tp => 
-                                tp.season === currentSeason && 
-                                tp.round === round && 
-                                tp.roster_id === testRoster
-                            );
-                            if (testTrade) {
-                                console.log(`🔍 Pick ${pickNumber}: Found trade for roster index ${testRoster}:`, testTrade);
-                                if (pickNumber === 18) { // Your Round 2 pick
-                                    trade = testTrade;
-                                    console.log(`✅ This is your Pick 18 trade!`);
-                                    break;
-                                }
-                            }
-                        }
+                        const trade = this.state.tradedPicks.find(tp => 
+                            tp.season === currentSeason && 
+                            tp.round === round && 
+                            tp.roster_id === rosterIndexInTrades
+                        );
                         
                         if (trade && trade.owner_id !== draftPositionToIndex) {
                             // Convert roster list index back to draft position for user lookup
