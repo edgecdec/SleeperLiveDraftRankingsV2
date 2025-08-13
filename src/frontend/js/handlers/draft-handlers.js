@@ -1964,8 +1964,24 @@ class DraftHandlers {
                 
             this.state.draftPicks.forEach((pick, index) => {
                     const pickNumber = index + 1;
-                    const slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
-                    console.log(`🔍 Emergency Pick ${pickNumber}: slot_to_roster_id[${pickNumber}] = ${slotOwner}`);
+                    let slotOwner;
+                    
+                    // For picks 1-10, use slot_to_roster_id mapping
+                    if (pickNumber <= 10) {
+                        slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
+                        console.log(`🔍 Emergency Pick ${pickNumber}: slot_to_roster_id[${pickNumber}] = ${slotOwner}`);
+                    } else {
+                        // For picks 11+, calculate based on snake draft pattern
+                        const numTeams = Object.keys(this.state.currentDraft.draft_order).length;
+                        const round = Math.ceil(pickNumber / numTeams);
+                        const positionInRound = ((pickNumber - 1) % numTeams) + 1;
+                        
+                        // Snake draft: odd rounds go 1->10, even rounds go 10->1
+                        const draftPosition = (round % 2 === 1) ? positionInRound : (numTeams - positionInRound + 1);
+                        slotOwner = this.state.currentDraft.slot_to_roster_id[draftPosition];
+                        
+                        console.log(`🔍 Emergency Pick ${pickNumber}: Round ${round}, Position ${positionInRound}, Draft Position ${draftPosition} = Roster ${slotOwner}`);
+                    }
                     
                     if (slotOwner) {
                         const ownerUserId = this.getRosterOwnerUserId(slotOwner);
