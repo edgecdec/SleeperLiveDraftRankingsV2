@@ -971,6 +971,19 @@ class LandingHandlers {
                     modalInput.addEventListener('input', validateInput);
                     modalInput.addEventListener('keyup', validateInput);
                     
+                    // Setup confirm button click handler
+                    const handleConfirm = () => {
+                        const draftId = modalInput.value?.trim();
+                        console.log('🎯 Confirm button clicked with draft ID:', draftId);
+                        if (draftId && this.selectedMockLeague) {
+                            this.handleMockDraftJoin(draftId);
+                            modal.hide();
+                        }
+                    };
+                    
+                    confirmBtn.removeEventListener('click', handleConfirm);
+                    confirmBtn.addEventListener('click', handleConfirm);
+                    
                     // Initial validation
                     validateInput();
                 } else {
