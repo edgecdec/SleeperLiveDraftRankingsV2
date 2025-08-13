@@ -2065,7 +2065,7 @@ class DraftHandlers {
                             tp.roster_id === rosterIndexInTrades
                         );
                         
-                        if (trade && trade.owner_id !== draftPositionToIndex) {
+                        if (trade && trade.owner_id !== rosterIndexInTrades) {
                             // Convert roster list index back to draft position for user lookup
                             const newOwnerDraftPosition = trade.owner_id + 1; // Convert 0-9 to 1-10
                             const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
