@@ -736,6 +736,12 @@ class DraftHandlers {
                     // Apply traded picks for mock drafts
                     if (this.state.isMockDraft && draftData && draftData.leagueId) {
                         await this.applyTradedPicksToMockDraft(draftData.leagueId);
+                        
+                        // Force refresh roster sidebar after applying trades
+                        if (this.state.isRosterVisible) {
+                            console.log('🔄 Force refreshing roster after traded picks applied');
+                            await this.populateRosterSidebar();
+                        }
                     }
                 } else {
                     console.log('⚠️ No draft picks found in response');
@@ -1942,12 +1948,13 @@ class DraftHandlers {
         
         // Add drafted players from current draft
         if (this.state.draftPicks && this.state.draftPicks.length > 0) {
-            console.log('🎯 Processing draft picks...');
-            console.log('  - Sample draft pick:', this.state.draftPicks[0]);
-            
-            // Get current user ID from various sources
+        console.log('🎯 Processing draft picks...');
+        console.log('  - Sample draft pick:', this.state.draftPicks[0]);
+            console.log('  - First 3 picks picked_by values:', this.state.draftPicks.slice(0, 3).map(p => p.picked_by));
+
+        // Get current user ID from various sources
             let currentUserId = this.getCurrentUserId();
-            
+
             console.log('  - Looking for picks by user ID:', currentUserId);
             
             this.state.draftPicks.forEach((pick, index) => {
