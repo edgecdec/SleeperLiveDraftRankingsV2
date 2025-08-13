@@ -1108,7 +1108,7 @@ class LandingHandlers {
                                         <sl-icon slot="prefix" name="play-fill"></sl-icon>
                                         Select Draft
                                     </sl-button>
-                                    <sl-button variant="neutral" size="small" onclick="window.handleMockDraftSelect('${league.league_id}', '${league.name.replace(/'/g, "&apos;")}')">
+                                    <sl-button variant="neutral" size="small" onclick="window.handleMockDraftSelect('${league.league_id}', \"${league.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}\")">
                                         <sl-icon slot="prefix" name="play-circle"></sl-icon>
                                         Mock Draft
                                     </sl-button>
