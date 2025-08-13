@@ -3556,6 +3556,24 @@ class DraftHandlers {
         const currentSeason = this.state.currentDraft?.season || '2025';
         const numTeams = Object.keys(this.state.currentDraft?.draft_order || {}).length || 10;
 
+        // First, assign correct picked_by based on real draft order (before trades)
+        this.state.draftPicks.forEach((mockPick, index) => {
+            const pickNumber = index + 1;
+            const slotOwner = this.state.currentDraft?.slot_to_roster_id?.[pickNumber];
+            
+            if (slotOwner && !mockPick.picked_by) {
+                const ownerUserId = this.getRosterOwnerUserId(slotOwner);
+                if (ownerUserId) {
+                    mockPick.picked_by = ownerUserId;
+                    mockPick.roster_id = slotOwner;
+                }
+            }
+        });
+        
+        console.log('✅ Assigned picked_by fields based on real draft order');
+
+        // Then apply traded picks
+
         this.state.draftPicks.forEach((mockPick, index) => {
             const pickNumber = index + 1;
             const round = Math.ceil(pickNumber / numTeams);
