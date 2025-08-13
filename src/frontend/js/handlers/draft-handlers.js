@@ -2004,7 +2004,6 @@ class DraftHandlers {
                     // For picks 1-10, use slot_to_roster_id mapping
                     if (pickNumber <= 10) {
                         slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
-                        console.log(`🔍 Emergency Pick ${pickNumber}: slot_to_roster_id[${pickNumber}] = ${slotOwner}`);
                     } else {
                         // For picks 11+, calculate based on snake draft pattern
                         const numTeams = 10; // Hardcode for 10-team league
@@ -2014,23 +2013,14 @@ class DraftHandlers {
                         // Snake draft: odd rounds go 1->10, even rounds go 10->1
                         const draftPosition = (round % 2 === 1) ? positionInRound : (numTeams - positionInRound + 1);
                         slotOwner = this.state.currentDraft.slot_to_roster_id[draftPosition];
-                        
-                        console.log(`🔍 Emergency Pick ${pickNumber}: Round ${round}, Position ${positionInRound}, Draft Position ${draftPosition}, NumTeams ${numTeams} = Roster ${slotOwner}`);
                     }
                     
                     if (slotOwner) {
                         const ownerUserId = this.getRosterOwnerUserId(slotOwner);
-                        console.log(`🔍 Emergency Pick ${pickNumber}: getRosterOwnerUserId(${slotOwner}) = ${ownerUserId}`);
-                        
                         if (ownerUserId) {
-                            console.log(`🚑 Emergency Pick ${pickNumber}: BEFORE picked_by='${pick.picked_by}' AFTER='${ownerUserId}'`);
                             pick.picked_by = ownerUserId;
                             pick.roster_id = slotOwner;
-                        } else {
-                            console.error(`❌ Emergency Pick ${pickNumber}: getRosterOwnerUserId(${slotOwner}) returned null!`);
                         }
-                    } else {
-                        console.error(`❌ Emergency Pick ${pickNumber}: No slot owner found for slot ${pickNumber}`);
                     }
                 });
                 
