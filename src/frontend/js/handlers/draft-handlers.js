@@ -1960,6 +1960,25 @@ class DraftHandlers {
         if (this.state.isMockDraft && this.state.currentDraft?.slot_to_roster_id) {
                 const overrideId = Math.random().toString(36).substr(2, 9);
                 console.log(`🚑 EMERGENCY [${overrideId}]: Re-applying picked_by override before roster processing`);
+                
+                // DEBUG: Check actual roster mapping from Sleeper API
+                const currentUserId = this.getCurrentUserId();
+                console.log(`🔍 DEBUG: Current user ID: ${currentUserId}`);
+                console.log(`🔍 DEBUG: Real draft order:`, this.state.realDraftOrder);
+                console.log(`🔍 DEBUG: Mock draft order:`, this.state.currentDraft.draft_order);
+                
+                // Find what roster the current user should have
+                let realRoster = null;
+                if (this.state.realDraftOrder) {
+                    for (const [userId, rosterId] of Object.entries(this.state.realDraftOrder)) {
+                        if (userId === currentUserId) {
+                            realRoster = rosterId;
+                            break;
+                        }
+                    }
+                }
+                console.log(`🔍 DEBUG: Current user should be roster ${realRoster} in real league`);
+                
                 console.log('🔍 Emergency slot_to_roster_id:', this.state.currentDraft.slot_to_roster_id);
                 console.log('🔍 Emergency draft_order:', this.state.currentDraft.draft_order);
                 
