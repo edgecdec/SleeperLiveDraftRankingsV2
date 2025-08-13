@@ -2073,11 +2073,12 @@ class DraftHandlers {
                             const round = trade.round;
                             let originalPickNumber = null;
                             
-                            // Find which draft position owns this roster
+                            // Find which draft position owns this roster (reverse lookup)
                             let draftPosition = null;
                             for (const [slot, rosterId] of Object.entries(this.state.currentDraft.slot_to_roster_id)) {
                                 if (parseInt(rosterId) === parseInt(trade.roster_id)) {
                                     draftPosition = parseInt(slot);
+                                    console.log(`🔍 Roster ${trade.roster_id} belongs to draft position ${draftPosition}`);
                                     break;
                                 }
                             }
