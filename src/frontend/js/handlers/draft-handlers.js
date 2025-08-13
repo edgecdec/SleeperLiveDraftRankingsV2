@@ -2001,14 +2001,19 @@ class DraftHandlers {
                 
                 // Apply trades again
                 if (this.state.tradedPicks) {
+                    console.log('🔄 Applying traded picks in emergency override...');
+                    console.log('🔍 Available traded picks:', this.state.tradedPicks.length);
+                    
                     const currentSeason = this.state.currentDraft?.season || '2025';
-                    const numTeams = Object.keys(this.state.currentDraft?.draft_order || {}).length || 10;
+                    const numTeams = 10;
+                    let tradesApplied = 0;
                     
                     this.state.draftPicks.forEach((pick, index) => {
                         const pickNumber = index + 1;
                         const round = Math.ceil(pickNumber / numTeams);
                         const originalOwner = pick.roster_id;
                         
+                        // Find if this pick was traded
                         const trade = this.state.tradedPicks.find(tp => 
                             tp.season === currentSeason && 
                             tp.round === round && 
@@ -2018,11 +2023,19 @@ class DraftHandlers {
                         if (trade && trade.owner_id !== originalOwner) {
                             const newOwnerUserId = this.getRosterOwnerUserId(trade.owner_id);
                             if (newOwnerUserId) {
+                                console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, ${originalOwner} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
                                 pick.picked_by = newOwnerUserId;
                                 pick.roster_id = trade.owner_id;
+                                tradesApplied++;
+                            } else {
+                                console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for new owner ${trade.owner_id}`);
                             }
                         }
                     });
+                    
+                    console.log(`✅ Applied ${tradesApplied} trades in emergency override`);
+                } else {
+                    console.warn('⚠️ No traded picks data available for emergency override');
                 }
                 
                 console.log('✅ Emergency override complete - new first 3 picks:', this.state.draftPicks.slice(0, 3).map(p => p.picked_by));
