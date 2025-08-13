@@ -2115,23 +2115,28 @@ class DraftHandlers {
                                 // Apply trade to this specific pick
                                 const pick = this.state.draftPicks[originalPickNumber - 1];
                                 if (pick && trade.owner_id !== trade.roster_id) {
-                                    // Find new owner's draft position
-                                    let newOwnerDraftPosition = null;
-                                    for (const [slot, rosterId] of Object.entries(this.state.currentDraft.slot_to_roster_id)) {
-                                        if (parseInt(rosterId) === parseInt(trade.owner_id)) {
-                                            newOwnerDraftPosition = parseInt(slot);
-                                            break;
-                                        }
-                                    }
+                                    // Use the same roster-to-user mapping for new owner
+                                    const rosterToUser = {
+                                        1: "499393148506599424",  // AggressiveIyAvg
+                                        2: "587948115202449408",  // pullmanguy  
+                                        3: "727725654417719296",  // spencedaddy11
+                                        4: "727725864363581440",  // cemisme
+                                        5: "727732656132943872",  // TheSebasDog
+                                        6: "727738754193776640",  // cdalton3
+                                        7: "727760561156239360",  // Junebugge
+                                        8: "587043546847019008",  // egruis
+                                        9: "587035242359988224",  // edgecdec (YOU)
+                                        10: "728762621490229248"  // kermason
+                                    };
                                     
-                                    if (newOwnerDraftPosition) {
-                                        const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
-                                        if (newOwnerUserId) {
-                                            console.log(`🔄 TRADE Pick ${originalPickNumber}: Round ${round}, Roster ${trade.roster_id} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
-                                            pick.picked_by = newOwnerUserId;
-                                            pick.roster_id = newOwnerDraftPosition;
-                                            tradesApplied++;
-                                        }
+                                    const newOwnerUserId = rosterToUser[trade.owner_id];
+                                    if (newOwnerUserId) {
+                                        console.log(`🔄 TRADE Pick ${originalPickNumber}: Round ${round}, Roster ${trade.roster_id} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
+                                        pick.picked_by = newOwnerUserId;
+                                        pick.roster_id = trade.owner_id; // Keep as roster ID for consistency
+                                        tradesApplied++;
+                                    } else {
+                                        console.warn(`⚠️ TRADE Pick ${originalPickNumber}: No user found for roster ${trade.owner_id}`);
                                     }
                                 }
                             }
