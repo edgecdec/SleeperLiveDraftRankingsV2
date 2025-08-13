@@ -2065,61 +2065,56 @@ class DraftHandlers {
                         const numTeams = 10;
                         let tradesApplied = 0;
                         
-                        // Track which trades have been applied to avoid duplicates
-                        const appliedTrades = new Set();
-                        
-                        this.state.draftPicks.forEach((pick, index) => {
-                            const pickNumber = index + 1;
-                            const round = Math.ceil(pickNumber / numTeams);
-                            const originalOwner = pick.roster_id;
+                        // Apply trades based on original snake draft ownership, not current ownership
+                        this.state.tradedPicks.forEach(trade => {
+                            if (trade.season !== currentSeason) return;
                             
-                            // Find if this pick was traded
-                            // Convert draft position to roster ID using slot_to_roster_id mapping
-                            const rosterIdInTrades = this.state.currentDraft.slot_to_roster_id[originalOwner];
+                            // Find which pick this roster originally owned in this round (snake draft)
+                            const round = trade.round;
+                            let originalPickNumber = null;
                             
-                            if (!rosterIdInTrades) {
-                                console.warn(`⚠️ Pick ${pickNumber}: No roster found for draft position ${originalOwner}`);
-                                return;
+                            // Find which draft position owns this roster
+                            let draftPosition = null;
+                            for (const [slot, rosterId] of Object.entries(this.state.currentDraft.slot_to_roster_id)) {
+                                if (parseInt(rosterId) === parseInt(trade.roster_id)) {
+                                    draftPosition = parseInt(slot);
+                                    break;
+                                }
                             }
                             
-                            const trade = this.state.tradedPicks.find(tp => 
-                                tp.season === currentSeason && 
-                                tp.round === round && 
-                                tp.roster_id === rosterIdInTrades
-                            );
-                            
-                            if (trade && trade.owner_id !== rosterIdInTrades) {
-                                // Create unique key for this trade to avoid applying it multiple times
-                                const tradeKey = `${trade.season}-${trade.round}-${trade.roster_id}-${trade.owner_id}`;
-                                
-                                if (appliedTrades.has(tradeKey)) {
-                                    console.log(`🔄 SKIP Pick ${pickNumber}: Trade already applied for ${tradeKey}`);
-                                    return; // Skip this trade, already applied
-                                }
-                                
-                                appliedTrades.add(tradeKey);
-                                // Use slot_to_roster_id mapping to find the correct user
-                                // Find which draft position owns the new roster
-                                let newOwnerDraftPosition = null;
-                                for (const [slot, rosterId] of Object.entries(this.state.currentDraft.slot_to_roster_id)) {
-                                    if (parseInt(rosterId) === parseInt(trade.owner_id)) {
-                                        newOwnerDraftPosition = parseInt(slot);
-                                        break;
-                                    }
-                                }
-                                
-                                if (newOwnerDraftPosition) {
-                                    const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
-                                    if (newOwnerUserId) {
-                                        console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, Roster ${rosterIdInTrades} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
-                                        pick.picked_by = newOwnerUserId;
-                                        pick.roster_id = newOwnerDraftPosition;
-                                        tradesApplied++;
-                                    } else {
-                                        console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for draft position ${newOwnerDraftPosition}`);
-                                    }
+                            if (draftPosition) {
+                                // Calculate the original pick number for this draft position in this round
+                                if (round % 2 === 1) {
+                                    // Odd rounds: 1->2->3->...->10
+                                    originalPickNumber = (round - 1) * numTeams + draftPosition;
                                 } else {
-                                    console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find draft position for roster ${trade.owner_id}`);
+                                    // Even rounds: 10->9->8->...->1 (snake)
+                                    originalPickNumber = (round - 1) * numTeams + (numTeams - draftPosition + 1);
+                                }
+                                
+                                console.log(`🔍 Trade: Round ${round}, Roster ${trade.roster_id} (draft pos ${draftPosition}) originally owned Pick ${originalPickNumber}`);
+                                
+                                // Apply trade to this specific pick
+                                const pick = this.state.draftPicks[originalPickNumber - 1];
+                                if (pick && trade.owner_id !== trade.roster_id) {
+                                    // Find new owner's draft position
+                                    let newOwnerDraftPosition = null;
+                                    for (const [slot, rosterId] of Object.entries(this.state.currentDraft.slot_to_roster_id)) {
+                                        if (parseInt(rosterId) === parseInt(trade.owner_id)) {
+                                            newOwnerDraftPosition = parseInt(slot);
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (newOwnerDraftPosition) {
+                                        const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
+                                        if (newOwnerUserId) {
+                                            console.log(`🔄 TRADE Pick ${originalPickNumber}: Round ${round}, Roster ${trade.roster_id} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
+                                            pick.picked_by = newOwnerUserId;
+                                            pick.roster_id = newOwnerDraftPosition;
+                                            tradesApplied++;
+                                        }
+                                    }
                                 }
                             }
                         });
