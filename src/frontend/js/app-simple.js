@@ -260,14 +260,12 @@ class SimpleApp {
             // Set mock draft flag
             this.state.isMockDraft = true;
             
-            // Load real league data for mock draft context
-            await this.draftHandlers.loadRealLeagueForMockDraft(leagueId);
-            
-            // Navigate to mock draft
+            // Navigate to mock draft with league context
             console.log('🚀 Loading mock draft with league context:', { username, leagueId, mockDraftId });
             this.draftHandlers.handleDraftSelected({
                 draft_id: mockDraftId,
-                isMockDraft: true
+                isMockDraft: true,
+                leagueId: leagueId
             });
             
         } catch (error) {
