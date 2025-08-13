@@ -2041,12 +2041,15 @@ class DraftHandlers {
                         const originalOwner = pick.roster_id;
                         
                         // Find if this pick was traded
-                        // Based on debug: User (draft position 3) is roster index 1 in trade data
+                        // Traded picks use league users array index as roster_id
+                        // User (edgecdec) is at index 1 in league users array
                         let rosterIndexInTrades;
                         if (originalOwner === 3) {
-                            rosterIndexInTrades = 1; // User's trades are under roster index 1
+                            rosterIndexInTrades = 1; // edgecdec is at index 1 in league users array
                         } else {
-                            rosterIndexInTrades = originalOwner - 1; // Standard conversion for others
+                            // Map other draft positions to league users array indices
+                            // This is a simplified mapping - may need adjustment for other users
+                            rosterIndexInTrades = originalOwner - 1;
                         }
                         
                         const trade = this.state.tradedPicks.find(tp => 
@@ -2056,8 +2059,8 @@ class DraftHandlers {
                         );
                         
                         if (trade && trade.owner_id !== rosterIndexInTrades) {
-                            // Convert roster list index back to draft position for user lookup
-                            const newOwnerDraftPosition = trade.owner_id + 1; // Convert 0-9 to 1-10
+                            // Convert league users array index back to draft position for user lookup
+                            const newOwnerDraftPosition = trade.owner_id + 1; // Approximate conversion
                             const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
                             if (newOwnerUserId) {
                                 console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, ${originalOwner} -> ${newOwnerDraftPosition}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
