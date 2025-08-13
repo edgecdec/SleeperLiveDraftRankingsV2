@@ -148,21 +148,33 @@
                                             size="large"
                                             clearable>
                                         </sl-input>
-                                        <sl-button id="join-mock-btn" variant="primary" size="large">
-                                            <sl-icon name="play-circle-fill"></sl-icon>
-                                            Join Mock Draft
-                                        </sl-button>
                                     </div>
                                     <div class="help-text">
                                         <sl-icon name="info-circle"></sl-icon>
                                         <span>Enter the ID from your Sleeper mock draft URL</span>
                                     </div>
-                                    
-                                    <!-- Error Display -->
-                                    <div id="mock-draft-error" class="error-message" style="display: none;">
-                                        <sl-icon name="exclamation-triangle"></sl-icon>
-                                        <span id="mock-draft-error-text"></span>
+                                </div>
+                                
+                                <div class="input-group">
+                                    <label for="mock-league-select">Select League (for teams & roster structure)</label>
+                                    <sl-select id="mock-league-select" placeholder="Choose a league..." size="large" disabled>
+                                        <sl-option value="">First enter your username in the "My Leagues" tab</sl-option>
+                                    </sl-select>
+                                    <div class="help-text">
+                                        <sl-icon name="info-circle"></sl-icon>
+                                        <span>This determines team names and roster structure for the mock draft</span>
                                     </div>
+                                </div>
+                                
+                                <sl-button id="join-mock-btn" variant="primary" size="large" disabled>
+                                    <sl-icon name="play-circle-fill"></sl-icon>
+                                    Join Mock Draft
+                                </sl-button>
+                                
+                                <!-- Error Display -->
+                                <div id="mock-draft-error" class="error-message" style="display: none;">
+                                    <sl-icon name="exclamation-triangle"></sl-icon>
+                                    <span id="mock-draft-error-text"></span>
                                 </div>
                             </div>
                         </div>

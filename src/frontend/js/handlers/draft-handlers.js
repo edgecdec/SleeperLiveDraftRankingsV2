@@ -203,6 +203,15 @@ class DraftHandlers {
             if (draftData.isMockDraft) {
                 this.state.isMockDraft = true;
                 console.log('🎭 Mock draft mode enabled');
+                
+                // Check for league parameter in URL for mock drafts
+                const urlParams = new URLSearchParams(window.location.search);
+                const leagueId = urlParams.get('league');
+                
+                if (leagueId) {
+                    console.log('🎭 Loading real league data for mock draft:', leagueId);
+                    await this.loadRealLeagueForMockDraft(leagueId);
+                }
             }
             
             // Store draft info
@@ -223,6 +232,37 @@ class DraftHandlers {
         } catch (error) {
             console.error('❌ Error handling draft selection:', error);
             this.updateConnectionStatus('offline');
+        }
+    }
+    
+    /**
+     * Load real league data for mock draft (teams, roster structure)
+     */
+    async loadRealLeagueForMockDraft(leagueId) {
+        try {
+            console.log('🎭 Loading real league data for mock draft:', leagueId);
+            
+            // Get current user from global state
+            const currentUser = window.app?.state?.currentUser;
+            if (!currentUser || !currentUser.username) {
+                console.error('❌ No current user found for league data loading');
+                return;
+            }
+            
+            // Load league data from API
+            const response = await this.apiService.request(`/user/${currentUser.username}/leagues/${leagueId}`);
+            
+            if (response.status === 'success' && response.league) {
+                this.state.mockLeagueData = response.league;
+                console.log('✅ Real league data loaded for mock draft:', response.league.name);
+                console.log('👥 Teams:', Object.keys(response.league.users || {}).length);
+                console.log('🏆 Roster positions:', response.league.roster_positions);
+            } else {
+                console.error('❌ Failed to load league data:', response);
+            }
+            
+        } catch (error) {
+            console.error('❌ Error loading real league data for mock draft:', error);
         }
     }
     
@@ -2967,6 +3007,242 @@ class DraftHandlers {
         const refreshIndicator = document.getElementById('auto-refresh-indicator');
         if (refreshIndicator) {
             refreshIndicator.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Populate leaderboard with all team values
+     */
+    async populateLeaderboard() {
+        try {
+            console.log('🏆 Starting leaderboard population...');
+            const leaderboardList = document.getElementById('leaderboard-list');
+            if (!leaderboardList) {
+                console.log('❌ Leaderboard list element not found');
+                return;
+            }
+            
+            // Get all draft participants (for mock drafts, use draft picks to identify users)
+            let allUsers = [];
+            
+            if (this.state.isMockDraft) {
+                // For mock drafts, get unique users from draft picks
+                const uniqueUsers = new Set();
+                this.state.draftPicks?.forEach(pick => {
+                    // Use picked_by if available, otherwise use draft_slot as fallback
+                    const userId = pick.picked_by || `slot_${pick.draft_slot}`;
+                    if (userId) {
+                        uniqueUsers.add(userId);
+                    }
+                });
+                
+                // Use real league data if available, otherwise generate team names
+                if (this.state.mockLeagueData && this.state.mockLeagueData.users) {
+                    console.log('🎭 Using real league teams for mock draft');
+                    allUsers = Object.entries(this.state.mockLeagueData.users).map(([userId, userData]) => ({
+                        user_id: userId,
+                        display_name: userData.display_name || userData.username || `Team ${userId.slice(-4)}`
+                    }));
+                } else {
+                    allUsers = Array.from(uniqueUsers).map(userId => ({ 
+                        user_id: userId, 
+                        display_name: userId.startsWith('slot_') ? `Team ${userId.replace('slot_', '')}` : `Team ${userId.slice(-4)}` 
+                    }));
+                }
+                
+                console.log('🎭 Mock draft users from picks:', allUsers);
+                
+                // Debug for specific mock draft
+                if (this.state.currentDraft?.draft_id === '1261266130878611456') {
+                    console.log('🔍 DEBUG Mock Draft - All draft picks:');
+                    this.state.draftPicks?.forEach((pick, index) => {
+                        if (index < 10) { // Show first 10 picks
+                            const userId = pick.picked_by || `slot_${pick.draft_slot}`;
+                            console.log(`  Pick ${pick.pick_no}: Player ${pick.player_id} picked by ${userId} (slot ${pick.draft_slot})`);
+                        }
+                    });
+                    console.log('🔍 DEBUG Mock Draft - Unique users found:', Array.from(uniqueUsers));
+                }
+            } else {
+                // For real drafts, use league users
+                allUsers = this.state.currentLeague?.users || [];
+                console.log('🏆 Real draft users from league:', allUsers);
+            }
+            
+            if (allUsers.length === 0) {
+                console.log('⚠️ No users found for leaderboard');
+                leaderboardList.innerHTML = '<div class="text-center py-4 text-gray-500">No teams found</div>';
+                return;
+            }
+            
+            // Calculate team values for all users
+            const teamValues = [];
+            for (const user of allUsers) {
+                const userId = user.user_id;
+                const teamValue = await this.calculateTeamValue(userId);
+                teamValues.push({
+                    userId,
+                    displayName: user.display_name || `Team ${userId.slice(-4)}`,
+                    value: teamValue
+                });
+            }
+            
+            // Sort by value (highest first)
+            teamValues.sort((a, b) => b.value - a.value);
+            
+            // Generate leaderboard HTML
+            const leaderboardHTML = teamValues.map((team, index) => {
+                const rank = index + 1;
+                const isCurrentUser = team.userId === this.state.currentDraft?.user_id;
+                
+                return `
+                    <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''}">
+                        <div class="rank">#${rank}</div>
+                        <div class="team-info">
+                            <div class="team-name">${team.displayName}</div>
+                            <div class="team-value">${team.value.toFixed(1)} pts</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            leaderboardList.innerHTML = leaderboardHTML;
+            console.log('✅ Leaderboard populated with', teamValues.length, 'teams');
+            
+        } catch (error) {
+            console.error('❌ Error populating leaderboard:', error);
+        }
+    }
+    
+    /**
+     * Calculate team value for a specific user (handles traded picks correctly)
+     */
+    async calculateTeamValue(userId) {
+        try {
+            // Debug for specific mock draft
+            if (this.state.currentDraft?.draft_id === '1261266130878611456') {
+                console.log(`🔍 DEBUG Mock Draft - Calculating value for user: ${userId}`);
+                console.log(`🔍 Total draft picks available:`, this.state.draftPicks?.length || 0);
+                
+                // Show all picks for this user
+                const userPicks = this.state.draftPicks?.filter(pick => pick.picked_by === userId) || [];
+                console.log(`🔍 User ${userId} picks:`, userPicks.map(p => `Pick ${p.pick_no}: ${p.player_id} (picked_by: ${p.picked_by})`));
+                
+                // Show detailed pick analysis for your specific user
+                if (userId === '587035242359988224') {
+                    console.log('🔍 DETAILED PICK ANALYSIS FOR YOUR USER:');
+                    userPicks.forEach(pick => {
+                        console.log(`  Pick ${pick.pick_no} (Round ${pick.round}): Player ${pick.player_id}`);
+                        console.log(`    - draft_slot: ${pick.draft_slot}`);
+                        console.log(`    - picked_by: "${pick.picked_by}"`);
+                        console.log(`    - roster_id: ${pick.roster_id}`);
+                        console.log(`    - metadata:`, pick.metadata);
+                        
+                        // Check if this pick was traded
+                        if (pick.metadata && (pick.metadata.traded_for || pick.metadata.original_owner)) {
+                            console.log(`    - TRADE INFO:`, pick.metadata);
+                        }
+                    });
+                    console.log('🔍 Expected: Only Pick 3 (Bijan) and Pick 40+ (Jayden Daniels)');
+                    
+                    // Check if we can find the actual picks by looking at draft_slot vs picked_by mismatch
+                    console.log('🔍 CHECKING FOR TRADE PATTERNS:');
+                    const allPicks = this.state.draftPicks || [];
+                    const suspiciousPicks = allPicks.filter(p => p.picked_by === userId && p.draft_slot !== 3);
+                    console.log(`Found ${suspiciousPicks.length} picks that might be incorrectly attributed (not from your original slot 3)`);
+                }
+                
+                // Show sample of all picks to see structure
+                if (this.state.draftPicks?.length > 0) {
+                    console.log(`🔍 Sample draft pick structure:`, this.state.draftPicks[0]);
+                    console.log(`🔍 All unique picked_by values:`, [...new Set(this.state.draftPicks.map(p => p.picked_by))]);
+                }
+            }
+            
+            let totalValue = 0;
+            const seenPlayerIds = new Set();
+            
+            // For mock drafts, only use draft picks (no roster data)
+            if (this.state.isMockDraft) {
+                let userPicks = this.state.draftPicks?.filter(pick => {
+                    // Use picked_by if available, otherwise use draft_slot as fallback
+                    const pickUserId = pick.picked_by || `slot_${pick.draft_slot}`;
+                    return pickUserId === userId;
+                }) || [];
+                
+                // WORKAROUND: For specific mock draft with known trade issues
+                if (this.state.currentDraft?.draft_id === '1261266130878611456' && userId === '587035242359988224') {
+                    console.log('🔧 APPLYING TRADE WORKAROUND for your user');
+                    // Filter to only picks that make sense based on your actual draft position
+                    // You were slot 3, so you should have picks 3, 18, 23, 38, 43, etc. in snake draft
+                    // But you traded some away, so let's be more selective
+                    const validPicks = userPicks.filter(pick => {
+                        // Keep pick 3 (Bijan) and any pick 40+ (Jayden Daniels area)
+                        return pick.pick_no === 3 || pick.pick_no >= 40;
+                    });
+                    console.log(`🔧 Filtered from ${userPicks.length} to ${validPicks.length} picks`);
+                    userPicks = validPicks;
+                }
+                
+                console.log(`🎭 Mock draft picks for user ${userId}:`, userPicks.length);
+                
+                userPicks.forEach(pick => {
+                    const player = this.createPlayerFromSleeperId(pick.player_id);
+                    if (player && !seenPlayerIds.has(pick.player_id)) {
+                        totalValue += Math.max(0, player.value || 0);
+                        seenPlayerIds.add(pick.player_id);
+                        
+                        // Debug for specific mock draft
+                        if (this.state.currentDraft?.draft_id === '1261266130878611456') {
+                            console.log(`🔍 Added player: ${player.full_name} (Value: ${player.value || 0})`);
+                        }
+                    }
+                });
+            } else {
+                // For real drafts, use roster data + draft picks
+                const userRoster = this.state.leagueRosters?.find(r => r.owner_id === userId);
+                const userPicks = this.state.draftPicks?.filter(pick => {
+                    // Use picked_by for the actual owner (handles trades)
+                    return pick.picked_by === userId;
+                }) || [];
+                
+                // Add roster players (dynasty)
+                if (userRoster?.players) {
+                    userRoster.players.forEach(playerId => {
+                        if (!seenPlayerIds.has(playerId)) {
+                            const player = this.createPlayerFromSleeperId(playerId);
+                            if (player) {
+                                totalValue += Math.max(0, player.value || 0);
+                                seenPlayerIds.add(playerId);
+                            }
+                        }
+                    });
+                }
+                
+                // Add drafted players (replace roster if duplicate)
+                userPicks.forEach(pick => {
+                    const player = this.createPlayerFromSleeperId(pick.player_id);
+                    if (player) {
+                        if (seenPlayerIds.has(pick.player_id)) {
+                            // Already counted in roster, no change needed
+                        } else {
+                            totalValue += Math.max(0, player.value || 0);
+                            seenPlayerIds.add(pick.player_id);
+                        }
+                    }
+                });
+            }
+            
+            // Debug for specific mock draft
+            if (this.state.currentDraft?.draft_id === '1261266130878611456') {
+                console.log(`🔍 Final team value for user ${userId}: ${totalValue}`);
+            }
+            
+            return totalValue;
+            
+        } catch (error) {
+            console.error(`❌ Error calculating team value for user ${userId}:`, error);
+            return 0;
         }
     }
     

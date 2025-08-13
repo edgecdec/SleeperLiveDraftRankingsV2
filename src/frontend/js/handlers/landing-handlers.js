@@ -187,11 +187,19 @@ class LandingHandlers {
                     this.handleMockDraftJoin(draftId);
                 }
             });
+            
+            // Add input validation
+            mockDraftInput.addEventListener('sl-input', () => {
+                this.validateMockDraftForm();
+            });
         }
     }
     
     handleMockDraftJoin(draftId) {
         console.log('🎯 handleMockDraftJoin called with:', draftId);
+        
+        const mockLeagueSelect = document.getElementById('mock-league-select');
+        const selectedLeagueId = mockLeagueSelect?.value;
         
         if (!draftId || draftId.length < 10) {
             console.log('❌ Invalid draft ID:', draftId);
@@ -199,13 +207,73 @@ class LandingHandlers {
             return;
         }
         
+        if (!selectedLeagueId) {
+            console.log('❌ No league selected');
+            this.showMockError('Please select a league for team names and roster structure');
+            return;
+        }
+        
         // Clear any previous errors
         this.hideMockError();
         
-        console.log('🚀 Navigating to mock draft URL:', `/sleeper/mock/${draftId}`);
+        console.log('🚀 Navigating to mock draft URL with league:', `/sleeper/mock/${draftId}?league=${selectedLeagueId}`);
         
-        // Navigate to mock draft URL
-        window.location.href = `/sleeper/mock/${draftId}`;
+        // Navigate to mock draft URL with league parameter
+        window.location.href = `/sleeper/mock/${draftId}?league=${selectedLeagueId}`;
+    }
+    
+    /**
+     * Populate mock draft league selector
+     */
+    populateMockLeagueSelector(leagues) {
+        const mockLeagueSelect = document.getElementById('mock-league-select');
+        if (!mockLeagueSelect || !leagues || leagues.length === 0) {
+            return;
+        }
+        
+        console.log('🎭 Populating mock league selector with', leagues.length, 'leagues');
+        
+        // Clear existing options
+        mockLeagueSelect.innerHTML = '';
+        
+        // Add leagues as options
+        leagues.forEach(league => {
+            const option = document.createElement('sl-option');
+            option.value = league.league_id;
+            option.textContent = `${league.name} (${league.total_rosters} teams)`;
+            mockLeagueSelect.appendChild(option);
+        });
+        
+        // Enable the selector
+        mockLeagueSelect.disabled = false;
+        
+        // Add change listener for validation
+        mockLeagueSelect.addEventListener('sl-change', () => {
+            this.validateMockDraftForm();
+        });
+        
+        // Enable mock draft button validation
+        this.validateMockDraftForm();
+        
+        console.log('✅ Mock league selector populated');
+    }
+    
+    /**
+     * Validate mock draft form and enable/disable button
+     */
+    validateMockDraftForm() {
+        const mockDraftInput = document.getElementById('mock-draft-id');
+        const mockLeagueSelect = document.getElementById('mock-league-select');
+        const joinMockBtn = document.getElementById('join-mock-btn');
+        
+        if (!mockDraftInput || !mockLeagueSelect || !joinMockBtn) {
+            return;
+        }
+        
+        const hasDraftId = mockDraftInput.value && mockDraftInput.value.trim().length >= 10;
+        const hasLeague = mockLeagueSelect.value && mockLeagueSelect.value.trim().length > 0;
+        
+        joinMockBtn.disabled = !(hasDraftId && hasLeague);
     }
     
     showMockError(message) {
@@ -399,6 +467,9 @@ class LandingHandlers {
                         });
                         
                         console.log('✅ Created', sortedLeagues.length, 'V1-style league cards');
+                        
+                        // Populate mock draft league selector
+                        this.populateMockLeagueSelector(leaguesData.leagues);
                     }
                     
                     // Store data
