@@ -203,6 +203,17 @@ def create_app(debug: bool = False) -> Flask:
             print(f"❌ Error serving user draft page: {e}")
             return f"Error loading draft page: {e}", 500
     
+    # SPA route for user-based mock draft pages
+    @app.route('/sleeper/user/<username>/league/<league_id>/draft/<draft_id>/mock/<mock_draft_id>')
+    def serve_user_mock_draft_page(username, league_id, draft_id, mock_draft_id):
+        """Serve the main HTML file for user-based mock draft pages"""
+        print(f"🎭 User mock draft page requested for user: {username}, league: {league_id}, draft: {draft_id}, mock: {mock_draft_id}")
+        try:
+            return send_from_directory(static_path, 'index.html')
+        except Exception as e:
+            print(f"❌ Error serving user mock draft page: {e}")
+            return f"Error loading mock draft page: {e}", 500
+    
     # Mock draft route
     @app.route('/sleeper/mock/<draft_id>')
     def serve_mock_draft_page(draft_id):
