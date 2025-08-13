@@ -605,8 +605,15 @@ class DraftHandlers {
                     
                     // Get the real league's draft data for proper pick assignments
                     try {
-                        console.log('📡 Fetching league drafts for:', draftData.leagueId);
-                        const leagueResponse = await this.apiService.request(`/league/${draftData.leagueId}/drafts`);
+                        // We need the username for the API call - get it from state
+                        const currentUser = this.state.currentUser;
+                        if (!currentUser || !currentUser.username) {
+                            console.warn('⚠️ No current user available for league drafts API call');
+                            return;
+                        }
+                        
+                        console.log('📡 Fetching league drafts for user:', currentUser.username, 'league:', draftData.leagueId);
+                        const leagueResponse = await this.apiService.request(`/user/${currentUser.username}/leagues/${draftData.leagueId}/drafts`);
                         console.log('📥 League drafts response:', leagueResponse);
                         
                         if (leagueResponse.status === 'success' && leagueResponse.drafts && leagueResponse.drafts.length > 0) {
