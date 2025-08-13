@@ -876,6 +876,24 @@ class DraftHandlers {
                 if (picks.length > 0) {
                     console.log('🔍 Sample Sleeper pick:', picks[0]);
                     
+                    // Override picked_by for all picks based on real draft order
+                    if (this.state.currentDraft?.slot_to_roster_id) {
+                        console.log('🔄 Overriding picked_by for all picks based on real draft order');
+                        picks.forEach((pick, index) => {
+                            const pickNumber = index + 1;
+                            const slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
+                            
+                            if (slotOwner) {
+                                const ownerUserId = this.getRosterOwnerUserId(slotOwner);
+                                if (ownerUserId) {
+                                    pick.picked_by = ownerUserId;
+                                    pick.roster_id = slotOwner;
+                                }
+                            }
+                        });
+                        console.log('✅ Overrode picked_by for all picks');
+                    }
+                    
                     // Apply traded picks for mock drafts before any roster processing
                     if (this.state.isMockDraft && this.state.tradedPicks) {
                         await this.applyTradedPicksToMockDraft();
