@@ -1999,6 +1999,8 @@ class DraftHandlers {
                     }
                 });
                 
+                console.log('✅ Base ownership assigned - now applying trades...');
+                
                 // Apply trades again
                 if (this.state.tradedPicks) {
                     console.log('🔄 Applying traded picks in emergency override...');
