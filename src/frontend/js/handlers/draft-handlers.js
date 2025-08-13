@@ -639,38 +639,45 @@ class DraftHandlers {
                                     response.slot_to_roster_id = realDraftResponse.draft_info.slot_to_roster_id;
                                     response.settings = realDraftResponse.draft_info.settings;
                                     
-                                    // Get the real draft's individual pick ownership (including traded picks)
-                                    console.log('🔄 Getting real draft picks for individual pick trades');
+                                    // Get traded picks to determine actual pick ownership
+                                    console.log('🔄 Getting traded picks for accurate pick ownership');
                                     try {
-                                        const realPicksResponse = await this.apiService.request(`/draft/${realDraft.draft_id}/picks`);
-                                        if (realPicksResponse.status === 'success' && realPicksResponse.picks) {
-                                            console.log('✅ Got real draft picks for trade mapping');
+                                        const tradedPicksResponse = await this.apiService.request(`/league/${draftData.leagueId}/traded_picks`);
+                                        if (tradedPicksResponse.status === 'success' && tradedPicksResponse.traded_picks) {
+                                            console.log('✅ Got traded picks data:', tradedPicksResponse.traded_picks.length, 'trades');
                                             
-                                            // Create a mapping of pick number to actual owner
-                                            const pickToOwner = {};
-                                            realPicksResponse.picks.forEach((pick, index) => {
-                                                pickToOwner[index + 1] = pick.roster_id;
-                                            });
-                                            
-                                            console.log('🔍 Real pick ownership mapping (first 20):', Object.fromEntries(Object.entries(pickToOwner).slice(0, 20)));
-                                            
-                                            // Apply this to mock draft picks
+                                            // Apply traded picks to mock draft
                                             if (response.draft_info && response.draft_info.picks) {
                                                 let changedPicks = 0;
+                                                const currentSeason = response.draft_info.season || '2025';
+                                                
+                                                // Calculate pick ownership based on trades
                                                 response.draft_info.picks.forEach((mockPick, index) => {
                                                     const pickNumber = index + 1;
-                                                    const realOwner = pickToOwner[pickNumber];
-                                                    if (realOwner && mockPick.roster_id !== realOwner) {
-                                                        console.log(`🔄 Pick ${pickNumber}: roster ${mockPick.roster_id} -> ${realOwner}`);
-                                                        mockPick.roster_id = realOwner;
+                                                    const round = Math.ceil(pickNumber / 10); // Assuming 10 teams, adjust if needed
+                                                    const originalOwner = mockPick.roster_id;
+                                                    
+                                                    // Find if this pick was traded
+                                                    const trade = tradedPicksResponse.traded_picks.find(tp => 
+                                                        tp.season === currentSeason && 
+                                                        tp.round === round && 
+                                                        tp.roster_id === originalOwner
+                                                    );
+                                                    
+                                                    if (trade && trade.owner_id !== originalOwner) {
+                                                        console.log(`🔄 Pick ${pickNumber} (Round ${round}): roster ${originalOwner} -> ${trade.owner_id}`);
+                                                        mockPick.roster_id = trade.owner_id;
                                                         changedPicks++;
                                                     }
                                                 });
-                                                console.log(`✅ Applied ${changedPicks} individual pick trades to mock draft`);
+                                                
+                                                console.log(`✅ Applied ${changedPicks} traded picks to mock draft`);
                                             }
+                                        } else {
+                                            console.log('🔍 No traded picks found, using original draft order');
                                         }
                                     } catch (error) {
-                                        console.warn('⚠️ Could not load real draft picks for trade mapping:', error);
+                                        console.warn('⚠️ Could not load traded picks:', error);
                                     }
                                 }
                                 

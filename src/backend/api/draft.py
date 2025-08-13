@@ -1,3 +1,56 @@
+@draft_bp.route('/league/<league_id>/traded_picks')
+def get_league_traded_picks(league_id):
+    """
+    Get all traded picks for a specific league
+    
+    Args:
+        league_id: Sleeper league ID
+    
+    Returns:
+        JSON response with traded picks data
+    """
+    try:
+        print(f"📡 Fetching traded picks for league: {league_id}")
+        
+        # Make request to Sleeper API
+        url = f"https://api.sleeper.app/v1/league/{league_id}/traded_picks"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            traded_picks = response.json()
+            print(f"✅ Successfully fetched {len(traded_picks)} traded picks")
+            
+            return jsonify({
+                'league_id': league_id,
+                'traded_picks': traded_picks,
+                'total_trades': len(traded_picks),
+                'status': 'success',
+                'timestamp': int(time.time())
+            })
+        else:
+            print(f"❌ Sleeper API error: {response.status_code}")
+            return jsonify({
+                'error': f'Sleeper API returned status {response.status_code}',
+                'code': 'SLEEPER_API_ERROR'
+            }), response.status_code
+            
+    except requests.exceptions.Timeout:
+        return jsonify({
+            'error': 'Request timeout - Sleeper API took too long to respond',
+            'code': 'TIMEOUT_ERROR'
+        }), 504
+    except SleeperAPIError as e:
+        return jsonify({
+            'error': f'Sleeper API error: {str(e)}',
+            'code': 'SLEEPER_API_ERROR'
+        }), 500
+    except Exception as e:
+        print(f"❌ Unexpected error in get_league_traded_picks: {e}")
+        return jsonify({
+            'error': 'Internal server error',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
 """
 Draft API routes for Fantasy Football Draft Assistant V2
 
