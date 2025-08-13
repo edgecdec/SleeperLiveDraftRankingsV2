@@ -157,6 +157,8 @@ class DraftHandlers {
         
         console.log(`✅ Applied ${tradesApplied} trades in emergency override [${overrideId}]`);
     }
+    
+    /**
      * Load user data when accessing draft directly (without going through landing page)
      */
     async loadUserDataForDraft(username) {
@@ -4055,4 +4057,5 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
     // Make available globally for browser use
     window.DraftHandlers = DraftHandlers;
+    console.log('✅ DraftHandlers exported to window scope');
 }
