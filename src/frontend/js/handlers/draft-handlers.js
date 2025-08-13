@@ -1980,6 +1980,25 @@ class DraftHandlers {
                         .catch(error => {
                             console.error('❌ Failed to fetch league users:', error);
                         });
+                        
+                    // Fetch rosters to get roster_id -> owner_id mapping
+                    this.apiService.request(`/league/${this.state.currentDraft.leagueId}/rosters`)
+                        .then(rostersResponse => {
+                            console.log(`🔍 DEBUG: League rosters from API:`, rostersResponse);
+                            
+                            // Create roster_id -> owner_id mapping
+                            const rosterToOwner = {};
+                            rostersResponse.forEach(roster => {
+                                rosterToOwner[roster.roster_id] = roster.owner_id;
+                            });
+                            console.log(`🔍 DEBUG: Roster to owner mapping:`, rosterToOwner);
+                            
+                            // Store for use in trade application
+                            this.state.rosterToOwnerMapping = rosterToOwner;
+                        })
+                        .catch(error => {
+                            console.error('❌ Failed to fetch league rosters:', error);
+                        });
                 }
                 
                 // Find what roster the current user should have
@@ -2059,22 +2078,17 @@ class DraftHandlers {
                         );
                         
                         if (trade && trade.owner_id !== rosterIdInTrades) {
-                            // Find which draft position owns the new roster
-                            // For now, simple mapping - may need full roster lookup
-                            let newOwnerDraftPosition;
-                            if (trade.owner_id === 1) newOwnerDraftPosition = 1; // AggressiveIyAvg
-                            else if (trade.owner_id === 2) newOwnerDraftPosition = 4; // pullmanguy  
-                            else if (trade.owner_id === 9) newOwnerDraftPosition = 3; // edgecdec
-                            else newOwnerDraftPosition = trade.owner_id; // Fallback
-                            
-                            const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
-                            if (newOwnerUserId) {
+                            // Use roster-to-owner mapping to find the correct user
+                            let newOwnerUserId = null;
+                            if (this.state.rosterToOwnerMapping && this.state.rosterToOwnerMapping[trade.owner_id]) {
+                                newOwnerUserId = this.state.rosterToOwnerMapping[trade.owner_id];
                                 console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, Roster ${rosterIdInTrades} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
                                 pick.picked_by = newOwnerUserId;
-                                pick.roster_id = newOwnerDraftPosition;
+                                // Keep roster_id as the new owner's roster for consistency
+                                pick.roster_id = trade.owner_id;
                                 tradesApplied++;
                             } else {
-                                console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for roster ${trade.owner_id}`);
+                                console.warn(`⚠️ TRADE Pick ${pickNumber}: No roster mapping available for roster ${trade.owner_id}`);
                             }
                         }
                     });
