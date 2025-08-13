@@ -4052,4 +4052,7 @@ class DraftHandlers {
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = DraftHandlers;
+} else {
+    // Make available globally for browser use
+    window.DraftHandlers = DraftHandlers;
 }
