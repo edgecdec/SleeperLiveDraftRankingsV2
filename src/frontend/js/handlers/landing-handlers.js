@@ -1104,11 +1104,11 @@ class LandingHandlers {
                                 
                                 <div class="draft-actions">
                                     <div class="badge ${draft.status}">${draft.status.replace('_', ' ')}</div>
-                                    <sl-button variant="primary" size="small" onclick="window.handleDraftSelect('${league.league_id}', '${draft.draft_id}')">
+                                    <sl-button variant="primary" size="small" data-league-id="${league.league_id}" data-draft-id="${draft.draft_id}" class="select-draft-btn">
                                         <sl-icon slot="prefix" name="play-fill"></sl-icon>
                                         Select Draft
                                     </sl-button>
-                                    <sl-button variant="neutral" size="small" onclick="window.handleMockDraftSelect('${league.league_id}', \"${league.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}\")">
+                                    <sl-button variant="neutral" size="small" data-league-id="${league.league_id}" class="mock-draft-btn">
                                         <sl-icon slot="prefix" name="play-circle"></sl-icon>
                                         Mock Draft
                                     </sl-button>
@@ -1124,6 +1124,25 @@ class LandingHandlers {
                 </div>
             `}
         `;
+        
+        // Add event listeners after creating the HTML
+        const selectBtns = card.querySelectorAll('.select-draft-btn');
+        const mockBtns = card.querySelectorAll('.mock-draft-btn');
+        
+        selectBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const leagueId = btn.dataset.leagueId;
+                const draftId = btn.dataset.draftId;
+                window.handleDraftSelect(leagueId, draftId);
+            });
+        });
+        
+        mockBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const leagueId = btn.dataset.leagueId;
+                window.handleMockDraftSelect(leagueId, league.name);
+            });
+        });
         
         return card;
     }
