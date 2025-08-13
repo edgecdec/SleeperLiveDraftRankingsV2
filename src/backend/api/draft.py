@@ -1,3 +1,23 @@
+"""
+Draft API routes for Fantasy Football Draft Assistant V2
+
+This module handles draft-related API endpoints including:
+- Draft information retrieval
+- Draft picks data
+- Available players calculation
+- Player data cache management
+"""
+
+from flask import Blueprint, jsonify, request
+import time
+import requests
+from ..services.sleeper_api import SleeperAPI, SleeperAPIError
+from ..services.ranked_player_cache import get_ranked_player_cache
+from ..services.team_analyzer import TeamAnalyzer
+from ..services.vbd_calculator import VBDCalculator
+
+draft_bp = Blueprint('draft', __name__)
+
 @draft_bp.route('/league/<league_id>/traded_picks')
 def get_league_traded_picks(league_id):
     """
@@ -50,25 +70,6 @@ def get_league_traded_picks(league_id):
             'error': 'Internal server error',
             'code': 'INTERNAL_ERROR'
         }), 500
-
-"""
-Draft API routes for Fantasy Football Draft Assistant V2
-
-This module handles draft-related API endpoints including:
-- Draft information retrieval
-- Draft picks data
-- Available players calculation
-- Player data cache management
-"""
-
-from flask import Blueprint, jsonify, request
-import time
-from ..services.sleeper_api import SleeperAPI, SleeperAPIError
-from ..services.ranked_player_cache import get_ranked_player_cache
-from ..services.team_analyzer import TeamAnalyzer
-from ..services.vbd_calculator import VBDCalculator
-
-draft_bp = Blueprint('draft', __name__)
 
 
 @draft_bp.route('/draft/<draft_id>')
