@@ -594,26 +594,51 @@ class DraftHandlers {
                 // For mock drafts, we need to use the real league's draft order and traded picks
                 if (this.state.isMockDraft && this.state.currentLeague) {
                     console.log('🎭 Mock draft detected - using real league draft order');
+                    console.log('🔍 Mock draft state:', this.state.isMockDraft);
+                    console.log('🔍 Current league:', this.state.currentLeague?.name, this.state.currentLeague?.league_id);
                     
                     // Get the real league's draft data for proper pick assignments
                     try {
+                        console.log('📡 Fetching league drafts for:', this.state.currentLeague.league_id);
                         const leagueResponse = await this.apiService.request(`/league/${this.state.currentLeague.league_id}/drafts`);
+                        console.log('📥 League drafts response:', leagueResponse);
+                        
                         if (leagueResponse.status === 'success' && leagueResponse.drafts && leagueResponse.drafts.length > 0) {
                             const realDraft = leagueResponse.drafts[0]; // Use the first (main) draft
                             console.log('✅ Using real draft order from league draft:', realDraft.draft_id);
+                            console.log('🔍 Real draft data:', realDraft);
                             
                             // Get the real draft's pick order
+                            console.log('📡 Fetching real draft data for:', realDraft.draft_id);
                             const realDraftResponse = await this.apiService.request(`/draft/${realDraft.draft_id}`);
+                            console.log('📥 Real draft response:', realDraftResponse);
+                            
                             if (realDraftResponse.status === 'success') {
                                 // Use real draft order but keep mock draft picks
+                                console.log('🔄 Applying real draft order to mock draft');
+                                console.log('🔍 Original mock draft order:', response.draft_order);
+                                console.log('🔍 Real draft order:', realDraftResponse.draft_order);
+                                
                                 response.draft_order = realDraftResponse.draft_order;
                                 response.settings = realDraftResponse.settings;
+                                
                                 console.log('✅ Applied real draft order to mock draft');
+                                console.log('🔍 Updated mock draft order:', response.draft_order);
+                            } else {
+                                console.error('❌ Failed to get real draft data:', realDraftResponse);
                             }
+                        } else {
+                            console.warn('⚠️ No drafts found in league response:', leagueResponse);
                         }
                     } catch (error) {
-                        console.warn('⚠️ Could not load real draft order for mock draft:', error);
+                        console.error('❌ Error loading real draft order for mock draft:', error);
+                        console.error('❌ Error stack:', error.stack);
                     }
+                } else {
+                    console.log('🔍 Not a mock draft or no league data:', {
+                        isMockDraft: this.state.isMockDraft,
+                        hasLeague: !!this.state.currentLeague
+                    });
                 }
                 
                 // Store draft data - the response itself contains the draft info
