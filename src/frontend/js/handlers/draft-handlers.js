@@ -2059,6 +2059,12 @@ class DraftHandlers {
                         console.log(`  ${index + 1}. Season ${tp.season}, Round ${tp.round}, Roster ${tp.roster_id} -> ${tp.owner_id}`);
                     });
                     
+                    // DEBUG: Show the slot_to_roster_id mapping
+                    console.log('🔍 slot_to_roster_id mapping:', this.state.currentDraft.slot_to_roster_id);
+                    
+                    // DEBUG: Show the real draft order mapping
+                    console.log('🔍 realDraftOrder mapping:', this.state.realDraftOrder);
+                    
                     // Wait for roster mapping if it's being fetched
                     const applyTrades = () => {
                         const currentSeason = this.state.currentDraft?.season || '2025';
