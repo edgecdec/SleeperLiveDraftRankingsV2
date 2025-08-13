@@ -3780,13 +3780,9 @@ class DraftHandlers {
             return null;
         }
         
-        console.log(`🔍 getRosterOwnerUserId(${rosterId}): Using draft order:`, draftOrder);
-        
         // draft_order maps user_id -> roster_id, we need the reverse
         for (const [userId, userRosterId] of Object.entries(draftOrder)) {
-            console.log(`🔍 Checking: userId=${userId} has rosterId=${userRosterId}, looking for ${rosterId}`);
             if (parseInt(userRosterId) === parseInt(rosterId)) {
-                console.log(`✅ Found match: rosterId ${rosterId} belongs to userId ${userId}`);
                 return userId;
             }
         }
