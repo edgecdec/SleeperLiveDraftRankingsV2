@@ -949,6 +949,34 @@ class LandingHandlers {
         const modal = document.getElementById('mock-draft-modal');
         if (modal) {
             modal.show();
+            
+            // Setup validation after modal is shown
+            setTimeout(() => {
+                const modalInput = document.getElementById('modal-mock-draft-id');
+                const confirmBtn = document.getElementById('confirm-mock-btn');
+                
+                if (modalInput && confirmBtn) {
+                    console.log('✅ Setting up modal validation after show');
+                    
+                    const validateInput = () => {
+                        const value = modalInput.value?.trim();
+                        const isValid = value && value.length >= 10;
+                        console.log('🔍 Modal input validation:', { value, length: value?.length, isValid });
+                        confirmBtn.disabled = !isValid;
+                        console.log('🔘 Button disabled state:', confirmBtn.disabled);
+                    };
+                    
+                    // Remove any existing listeners and add new ones
+                    modalInput.removeEventListener('input', validateInput);
+                    modalInput.addEventListener('input', validateInput);
+                    modalInput.addEventListener('keyup', validateInput);
+                    
+                    // Initial validation
+                    validateInput();
+                } else {
+                    console.error('❌ Modal elements not found after show');
+                }
+            }, 100);
         }
     }
     
