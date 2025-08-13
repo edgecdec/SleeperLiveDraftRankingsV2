@@ -25,15 +25,33 @@ class LandingHandlers {
         this.setupMockDraftModal();
         this.setupLegacyEventListeners();
         
-        // Add global debug function
-        window.debugMockDraft = () => {
-            console.log('🔧 Debug: Manual mock draft setup trigger');
-            this.setupMockDraftFormElements();
+        // Setup global draft select handler
+        window.handleDraftSelect = (leagueId, draftId) => {
+            console.log('🎯 Draft selected:', { leagueId, draftId });
+            
+            // Find the league and draft objects
+            const league = this.state.userLeagues?.find(l => l.league_id === leagueId);
+            const draft = league?.drafts?.find(d => d.draft_id === draftId);
+            
+            if (league && draft) {
+                this.handleDraftSelect(league, draft);
+            } else {
+                console.error('❌ League or draft not found:', { leagueId, draftId });
+            }
         };
         
-        window.testMockDraft = (draftId = '123456789') => {
-            console.log('🧪 Test: Manual mock draft connection');
-            this.handleMockDraftConnect(draftId);
+        // Setup global mock draft select handler
+        window.handleMockDraftSelect = (leagueId, leagueName) => {
+            console.log('🎭 Mock draft selected:', { leagueId, leagueName });
+            
+            // Find the league object
+            const league = this.state.userLeagues?.find(l => l.league_id === leagueId);
+            
+            if (league) {
+                this.handleMockDraftSelect(league);
+            } else {
+                console.error('❌ League not found for mock draft:', { leagueId, leagueName });
+            }
         };
     }
 
@@ -1357,6 +1375,10 @@ class LandingHandlers {
                                     <sl-button variant="primary" size="small" onclick="window.handleDraftSelect('${league.league_id}', '${draft.draft_id}')">
                                         <sl-icon slot="prefix" name="play-fill"></sl-icon>
                                         Select Draft
+                                    </sl-button>
+                                    <sl-button variant="neutral" size="small" onclick="window.handleMockDraftSelect('${league.league_id}', '${league.name}')">
+                                        <sl-icon slot="prefix" name="play-circle"></sl-icon>
+                                        Mock Draft
                                     </sl-button>
                                 </div>
                             </div>
