@@ -1972,7 +1972,7 @@ class DraftHandlers {
                         console.log(`🔍 Emergency Pick ${pickNumber}: slot_to_roster_id[${pickNumber}] = ${slotOwner}`);
                     } else {
                         // For picks 11+, calculate based on snake draft pattern
-                        const numTeams = Object.keys(this.state.realDraftOrder || this.state.currentDraft.draft_order).length;
+                        const numTeams = 10; // Hardcode for 10-team league
                         const round = Math.ceil(pickNumber / numTeams);
                         const positionInRound = ((pickNumber - 1) % numTeams) + 1;
                         
