@@ -223,10 +223,10 @@ class LandingHandlers {
             return;
         }
         
-        console.log('🚀 Navigating to mock draft URL with league:', `/sleeper/user/${currentUser.username}/mock/${draftId}?league=${selectedLeagueId}`);
+        console.log('🚀 Navigating to mock draft URL:', `/sleeper/user/${currentUser.username}/league/${selectedLeagueId}/draft/mock/${draftId}`);
         
-        // Navigate to mock draft URL with username and league parameter
-        window.location.href = `/sleeper/user/${currentUser.username}/mock/${draftId}?league=${selectedLeagueId}`;
+        // Navigate to mock draft URL with league context
+        window.location.href = `/sleeper/user/${currentUser.username}/league/${selectedLeagueId}/draft/mock/${draftId}`;
     }
     
     /**
