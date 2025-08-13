@@ -935,10 +935,14 @@ class LandingHandlers {
             mockLeagueName.textContent = league.name;
         }
         
-        // Clear previous input
+        // Clear previous input and reset button state
         const modalInput = document.getElementById('modal-mock-draft-id');
+        const confirmBtn = document.getElementById('confirm-mock-btn');
         if (modalInput) {
             modalInput.value = '';
+        }
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
         }
         
         // Show modal
@@ -964,6 +968,12 @@ class LandingHandlers {
         
         // Input validation
         modalInput.addEventListener('sl-input', () => {
+            const value = modalInput.value?.trim();
+            confirmBtn.disabled = !value || value.length < 10;
+        });
+        
+        // Also listen for regular input events
+        modalInput.addEventListener('input', () => {
             const value = modalInput.value?.trim();
             confirmBtn.disabled = !value || value.length < 10;
         });
