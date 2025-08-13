@@ -26,10 +26,66 @@
                 <div class="header-content">
                     <div class="logo-section">
                         <div class="logo">
-                            <sl-icon name="trophy-fill" class="logo-icon"></sl-icon>
-                            <h1>Fantasy Football Draft Assistant</h1>
+                        <sl-icon name="trophy-fill" class="logo-icon"></sl-icon>
+                        <h1>Fantasy Football Draft Assistant</h1>
                         </div>
-                        <p class="tagline">Your ultimate draft companion for Sleeper leagues</p>
+    
+    <!-- Mock Draft Modal -->
+    <sl-dialog id="mock-draft-modal" label="Join Mock Draft">
+        <div class="mock-modal-content">
+            <p>Enter the Sleeper Mock Draft ID to practice for <strong id="mock-league-name">this league</strong>:</p>
+            
+            <sl-input 
+                id="modal-mock-draft-id" 
+                placeholder="e.g., 1234567890123456789"
+                size="large"
+                clearable>
+                <sl-icon name="play-circle-fill" slot="prefix"></sl-icon>
+            </sl-input>
+            
+            <div class="help-text" style="margin-top: 0.5rem;">
+                <sl-icon name="info-circle"></sl-icon>
+                <span>Get the ID from your Sleeper mock draft URL</span>
+            </div>
+        </div>
+        
+        <div slot="footer">
+            <sl-button variant="neutral" id="cancel-mock-btn">Cancel</sl-button>
+            <sl-button variant="primary" id="confirm-mock-btn" disabled>
+                <sl-icon name="play-circle-fill"></sl-icon>
+                Join Mock Draft
+            </sl-button>
+        </div>
+    </sl-dialog>
+    
+    <!-- Mock Draft Modal -->
+    <sl-dialog id="mock-draft-modal" label="Join Mock Draft">
+        <div class="mock-modal-content">
+            <p>Enter the Sleeper Mock Draft ID to practice for <strong id="mock-league-name">this league</strong>:</p>
+            
+            <sl-input 
+                id="modal-mock-draft-id" 
+                placeholder="e.g., 1234567890123456789"
+                size="large"
+                clearable>
+                <sl-icon name="play-circle-fill" slot="prefix"></sl-icon>
+            </sl-input>
+            
+            <div class="help-text" style="margin-top: 0.5rem;">
+                <sl-icon name="info-circle"></sl-icon>
+                <span>Get the ID from your Sleeper mock draft URL</span>
+            </div>
+        </div>
+        
+        <div slot="footer">
+            <sl-button variant="neutral" id="cancel-mock-btn">Cancel</sl-button>
+            <sl-button variant="primary" id="confirm-mock-btn" disabled>
+                <sl-icon name="play-circle-fill"></sl-icon>
+                Join Mock Draft
+            </sl-button>
+        </div>
+    </sl-dialog>
+                                         <p class="tagline">Your ultimate draft companion for Sleeper leagues</p>
                     </div>
                 </div>
             </div>

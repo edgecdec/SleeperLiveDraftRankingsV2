@@ -22,6 +22,7 @@ class LandingHandlers {
         this.setupTabNavigation();
         this.setupUserSearchForm();
         this.setupMockDraftForm();
+        this.setupMockDraftModal();
         this.setupLegacyEventListeners();
         
         // Add global debug function
@@ -198,8 +199,7 @@ class LandingHandlers {
     handleMockDraftJoin(draftId) {
         console.log('🎯 handleMockDraftJoin called with:', draftId);
         
-        const mockLeagueSelect = document.getElementById('mock-league-select');
-        const selectedLeagueId = mockLeagueSelect?.value;
+        const selectedLeagueId = this.selectedMockLeague?.league_id;
         
         if (!draftId || draftId.length < 10) {
             console.log('❌ Invalid draft ID:', draftId);
@@ -329,15 +329,6 @@ class LandingHandlers {
             }
             
             console.log('✅ Setting up mock draft form');
-            
-            // Add a simple test click handler first
-            const testHandler = (e) => {
-                console.log('🎯 TEST: Mock draft button clicked!');
-                e.preventDefault();
-                alert('Button clicked! This is a test.');
-            };
-            
-            joinButton.addEventListener('click', testHandler);
             
             // Handle button click
             joinButton.addEventListener('click', async (e) => {
@@ -842,6 +833,18 @@ class LandingHandlers {
         });
         
         rightSide.appendChild(selectButton);
+        
+        // Add mock draft button
+        const mockButton = document.createElement('sl-button');
+        mockButton.variant = 'neutral';
+        mockButton.size = 'small';
+        mockButton.innerHTML = '<sl-icon slot="prefix" name="play-circle"></sl-icon>Mock Draft';
+        
+        mockButton.addEventListener('click', () => {
+            this.handleMockDraftSelect(league);
+        });
+        
+        rightSide.appendChild(mockButton);
         item.appendChild(rightSide);
         
         return item;
@@ -1165,6 +1168,78 @@ class LandingHandlers {
         }
         
         return false;
+    }
+    
+    /**
+     * Handle mock draft selection from league card
+     */
+    handleMockDraftSelect(league) {
+        console.log('🎭 Mock draft selected for league:', league.name);
+        
+        // Store selected league for modal
+        this.selectedMockLeague = league;
+        
+        // Update modal title
+        const mockLeagueName = document.getElementById('mock-league-name');
+        if (mockLeagueName) {
+            mockLeagueName.textContent = league.name;
+        }
+        
+        // Clear previous input
+        const modalInput = document.getElementById('modal-mock-draft-id');
+        if (modalInput) {
+            modalInput.value = '';
+        }
+        
+        // Show modal
+        const modal = document.getElementById('mock-draft-modal');
+        if (modal) {
+            modal.show();
+        }
+    }
+    
+    /**
+     * Setup mock draft modal handlers
+     */
+    setupMockDraftModal() {
+        const modal = document.getElementById('mock-draft-modal');
+        const modalInput = document.getElementById('modal-mock-draft-id');
+        const cancelBtn = document.getElementById('cancel-mock-btn');
+        const confirmBtn = document.getElementById('confirm-mock-btn');
+        
+        if (!modal || !modalInput || !cancelBtn || !confirmBtn) {
+            console.log('⚠️ Mock draft modal elements not found');
+            return;
+        }
+        
+        // Input validation
+        modalInput.addEventListener('sl-input', () => {
+            const value = modalInput.value?.trim();
+            confirmBtn.disabled = !value || value.length < 10;
+        });
+        
+        // Cancel button
+        cancelBtn.addEventListener('click', () => {
+            modal.hide();
+        });
+        
+        // Confirm button
+        confirmBtn.addEventListener('click', () => {
+            const draftId = modalInput.value?.trim();
+            if (draftId && this.selectedMockLeague) {
+                this.handleMockDraftJoin(draftId);
+                modal.hide();
+            }
+        });
+        
+        // Enter key support
+        modalInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !confirmBtn.disabled) {
+                confirmBtn.click();
+            }
+        });
+        
+        console.log('✅ Mock draft modal setup complete');
     }
 
     /**
