@@ -1990,14 +1990,17 @@ class DraftHandlers {
                             const rosterToOwner = {};
                             rostersResponse.forEach(roster => {
                                 rosterToOwner[roster.roster_id] = roster.owner_id;
+                                console.log(`🔍 Mapping roster ${roster.roster_id} -> owner ${roster.owner_id}`);
                             });
                             console.log(`🔍 DEBUG: Roster to owner mapping:`, rosterToOwner);
                             
                             // Store for use in trade application
                             this.state.rosterToOwnerMapping = rosterToOwner;
+                            console.log(`✅ Roster mapping stored in state:`, this.state.rosterToOwnerMapping);
                         })
                         .catch(error => {
                             console.error('❌ Failed to fetch league rosters:', error);
+                            console.error('❌ Error details:', error.message, error.stack);
                         });
                 }
                 
