@@ -3571,11 +3571,40 @@ class DraftHandlers {
             if (trade && trade.owner_id !== originalOwner) {
                 console.log(`🔄 Pick ${pickNumber} (Round ${round}): roster ${originalOwner} -> ${trade.owner_id}`);
                 mockPick.roster_id = trade.owner_id;
+                
+                // Also update picked_by to reflect the new owner
+                if (mockPick.picked_by) {
+                    // Find the user ID for the new roster owner
+                    const newOwnerUserId = this.getRosterOwnerUserId(trade.owner_id);
+                    if (newOwnerUserId) {
+                        console.log(`🔄 Pick ${pickNumber} picked_by: ${mockPick.picked_by} -> ${newOwnerUserId}`);
+                        mockPick.picked_by = newOwnerUserId;
+                    }
+                }
+                
                 changedPicks++;
             }
         });
 
         console.log(`✅ Applied ${changedPicks} traded picks to mock draft`);
+    }
+
+    /**
+     * Get user ID for a roster ID from draft order
+     */
+    getRosterOwnerUserId(rosterId) {
+        if (!this.state.currentDraft?.draft_order) {
+            return null;
+        }
+        
+        // draft_order maps user_id -> roster_id, we need the reverse
+        for (const [userId, userRosterId] of Object.entries(this.state.currentDraft.draft_order)) {
+            if (userRosterId === rosterId) {
+                return userId;
+            }
+        }
+        
+        return null;
     }
 }
 
