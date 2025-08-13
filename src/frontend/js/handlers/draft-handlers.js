@@ -40,6 +40,123 @@ class DraftHandlers {
     }
     
     /**
+     * Apply emergency pick override to fix mock draft ownership
+     */
+    applyEmergencyPickOverride() {
+        // Only apply for mock drafts
+        if (!this.state.isMockDraft || !this.state.currentDraft?.slot_to_roster_id || !this.state.draftPicks) {
+            return;
+        }
+        
+        const overrideId = Math.random().toString(36).substr(2, 9);
+        console.log(`🚑 EMERGENCY [${overrideId}]: Applying picked_by override immediately after draft load`);
+        
+        // Apply base ownership first
+        this.state.draftPicks.forEach((pick, index) => {
+            const pickNumber = index + 1;
+            let slotOwner;
+            
+            // For picks 1-10, use slot_to_roster_id mapping
+            if (pickNumber <= 10) {
+                slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
+            } else {
+                // For picks 11+, calculate based on snake draft pattern
+                const numTeams = 10;
+                const round = Math.ceil(pickNumber / numTeams);
+                const positionInRound = ((pickNumber - 1) % numTeams) + 1;
+                
+                // Snake draft: odd rounds go 1->10, even rounds go 10->1
+                const draftPosition = (round % 2 === 1) ? positionInRound : (numTeams - positionInRound + 1);
+                slotOwner = this.state.currentDraft.slot_to_roster_id[draftPosition];
+            }
+            
+            if (slotOwner) {
+                const ownerUserId = this.getRosterOwnerUserId(slotOwner);
+                if (ownerUserId) {
+                    pick.picked_by = ownerUserId;
+                    pick.roster_id = slotOwner;
+                }
+            }
+        });
+        
+        console.log('✅ Base ownership assigned - now applying trades...');
+        
+        // Apply trades if available
+        if (this.state.tradedPicks) {
+            this.applyTradesToPicks(overrideId);
+        }
+    }
+    
+    /**
+     * Apply trades to picks (extracted from emergency override)
+     */
+    applyTradesToPicks(overrideId) {
+        console.log('🔄 Applying traded picks in emergency override...');
+        console.log('🔍 Available traded picks:', this.state.tradedPicks.length);
+        
+        const currentSeason = this.state.currentDraft?.season || '2025';
+        const numTeams = 10;
+        let tradesApplied = 0;
+        
+        // Use the correct mapping: roster_id -> draft_order_id
+        const rosterToDraftOrder = {
+            1: 10,  // AggressiveIyAvg
+            2: 1,   // pullmanguy  
+            3: 5,   // spencedaddy11
+            4: 7,   // cemisme
+            5: 9,   // TheSebasDog
+            6: 6,   // cdalton3
+            7: 4,   // Junebugge
+            8: 2,   // egruis
+            9: 3,   // edgecdec (YOU)
+            10: 8   // kermason
+        };
+        
+        const rosterToUser = {
+            1: "499393148506599424",  // AggressiveIyAvg
+            2: "587948115202449408",  // pullmanguy  
+            3: "727725654417719296",  // spencedaddy11
+            4: "727725864363581440",  // cemisme
+            5: "727732656132943872",  // TheSebasDog
+            6: "727738754193776640",  // cdalton3
+            7: "727760561156239360",  // Junebugge
+            8: "587043546847019008",  // egruis
+            9: "587035242359988224",  // edgecdec (YOU)
+            10: "728762621490229248"  // kermason
+        };
+        
+        // Apply trades based on original snake draft ownership
+        this.state.tradedPicks.forEach(trade => {
+            if (trade.season !== currentSeason) return;
+            
+            const round = trade.round;
+            const draftOrderPosition = rosterToDraftOrder[trade.roster_id];
+            
+            if (draftOrderPosition) {
+                // Calculate the original pick number for this draft order position
+                let originalPickNumber;
+                if (round % 2 === 1) {
+                    originalPickNumber = (round - 1) * numTeams + draftOrderPosition;
+                } else {
+                    originalPickNumber = (round - 1) * numTeams + (numTeams - draftOrderPosition + 1);
+                }
+                
+                // Apply trade to this specific pick
+                const pick = this.state.draftPicks[originalPickNumber - 1];
+                if (pick && trade.owner_id !== trade.roster_id) {
+                    const newOwnerUserId = rosterToUser[trade.owner_id];
+                    if (newOwnerUserId) {
+                        console.log(`🔄 TRADE Pick ${originalPickNumber}: Round ${round}, Roster ${trade.roster_id} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
+                        pick.picked_by = newOwnerUserId;
+                        pick.roster_id = trade.owner_id;
+                        tradesApplied++;
+                    }
+                }
+            }
+        });
+        
+        console.log(`✅ Applied ${tradesApplied} trades in emergency override [${overrideId}]`);
+    }
      * Load user data when accessing draft directly (without going through landing page)
      */
     async loadUserDataForDraft(username) {
@@ -703,6 +820,9 @@ class DraftHandlers {
                     console.log('✅ Draft picks loaded:', response.draft_info.picks.length, 'picks');
                     console.log('🔍 Sample draft pick:', response.draft_info.picks[0]);
                     
+                    // Apply emergency override immediately after loading picks
+                    this.applyEmergencyPickOverride();
+                    
                     // Override picked_by for all picks based on real draft order
                     if (this.state.currentDraft?.slot_to_roster_id) {
                         console.log('🔄 Overriding picked_by for all picks based on real draft order');
@@ -916,6 +1036,9 @@ class DraftHandlers {
                 const picks = await response.json();
                 this.state.draftPicks = picks || [];
                 console.log('✅ Draft picks loaded from Sleeper:', picks.length, 'picks');
+                
+                // Apply emergency override immediately after loading picks
+                this.applyEmergencyPickOverride();
                 
                 if (picks.length > 0) {
                     console.log('🔍 Sample Sleeper pick:', picks[0]);
