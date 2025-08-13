@@ -875,6 +875,12 @@ class DraftHandlers {
                 
                 if (picks.length > 0) {
                     console.log('🔍 Sample Sleeper pick:', picks[0]);
+                    
+                    // Apply traded picks for mock drafts before any roster processing
+                    if (this.state.isMockDraft && this.state.tradedPicks) {
+                        await this.applyTradedPicksToMockDraft();
+                    }
+                    
                     // Refresh the player list with new draft picks
                     await this.refreshPlayersAfterDraft();
                     
@@ -3545,7 +3551,7 @@ class DraftHandlers {
     /**
      * Apply traded picks to mock draft picks
      */
-    async applyTradedPicksToMockDraft(leagueId) {
+    async applyTradedPicksToMockDraft(leagueId = null) {
         if (!this.state.draftPicks || !this.state.tradedPicks) {
             console.log('⚠️ No draft picks or traded picks data available');
             return;
