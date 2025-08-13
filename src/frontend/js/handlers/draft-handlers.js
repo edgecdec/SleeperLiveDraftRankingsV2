@@ -1958,7 +1958,8 @@ class DraftHandlers {
             
         // EMERGENCY FIX: Re-apply picked_by override right before roster processing
         if (this.state.isMockDraft && this.state.currentDraft?.slot_to_roster_id) {
-                console.log('🚑 EMERGENCY: Re-applying picked_by override before roster processing');
+                const overrideId = Math.random().toString(36).substr(2, 9);
+                console.log(`🚑 EMERGENCY [${overrideId}]: Re-applying picked_by override before roster processing`);
                 console.log('🔍 Emergency slot_to_roster_id:', this.state.currentDraft.slot_to_roster_id);
                 console.log('🔍 Emergency draft_order:', this.state.currentDraft.draft_order);
                 
@@ -2035,12 +2036,12 @@ class DraftHandlers {
                         }
                     });
                     
-                    console.log(`✅ Applied ${tradesApplied} trades in emergency override`);
+                    console.log(`✅ Applied ${tradesApplied} trades in emergency override [${overrideId}]`);
                 } else {
-                    console.warn('⚠️ No traded picks data available for emergency override');
+                    console.warn(`⚠️ No traded picks data available for emergency override [${overrideId}]`);
                 }
                 
-                console.log('✅ Emergency override complete - new first 3 picks:', this.state.draftPicks.slice(0, 3).map(p => p.picked_by));
+                console.log(`✅ Emergency override complete [${overrideId}] - new first 3 picks:`, this.state.draftPicks.slice(0, 3).map(p => p.picked_by));
             }
 
             // Get current user ID from various sources
