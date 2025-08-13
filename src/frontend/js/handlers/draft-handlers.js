@@ -630,13 +630,53 @@ class DraftHandlers {
                                 // Use real draft order but keep mock draft picks
                                 console.log('🔄 Applying real draft order to mock draft');
                                 console.log('🔍 Original mock draft order:', response.draft_order);
-                                console.log('🔍 Real draft order:', realDraftResponse.draft_order);
+                                console.log('🔍 Real draft order:', realDraftResponse.draft_info?.draft_order);
+                                console.log('🔍 Real slot to roster mapping:', realDraftResponse.draft_info?.slot_to_roster_id);
                                 
-                                response.draft_order = realDraftResponse.draft_order;
-                                response.settings = realDraftResponse.settings;
+                                // Apply both draft order and slot-to-roster mapping for traded picks
+                                if (realDraftResponse.draft_info) {
+                                    response.draft_order = realDraftResponse.draft_info.draft_order;
+                                    response.slot_to_roster_id = realDraftResponse.draft_info.slot_to_roster_id;
+                                    response.settings = realDraftResponse.draft_info.settings;
+                                    
+                                    // Get the real draft's individual pick ownership (including traded picks)
+                                    console.log('🔄 Getting real draft picks for individual pick trades');
+                                    try {
+                                        const realPicksResponse = await this.apiService.request(`/draft/${realDraft.draft_id}/picks`);
+                                        if (realPicksResponse.status === 'success' && realPicksResponse.picks) {
+                                            console.log('✅ Got real draft picks for trade mapping');
+                                            
+                                            // Create a mapping of pick number to actual owner
+                                            const pickToOwner = {};
+                                            realPicksResponse.picks.forEach((pick, index) => {
+                                                pickToOwner[index + 1] = pick.roster_id;
+                                            });
+                                            
+                                            console.log('🔍 Real pick ownership mapping (first 20):', Object.fromEntries(Object.entries(pickToOwner).slice(0, 20)));
+                                            
+                                            // Apply this to mock draft picks
+                                            if (response.draft_info && response.draft_info.picks) {
+                                                let changedPicks = 0;
+                                                response.draft_info.picks.forEach((mockPick, index) => {
+                                                    const pickNumber = index + 1;
+                                                    const realOwner = pickToOwner[pickNumber];
+                                                    if (realOwner && mockPick.roster_id !== realOwner) {
+                                                        console.log(`🔄 Pick ${pickNumber}: roster ${mockPick.roster_id} -> ${realOwner}`);
+                                                        mockPick.roster_id = realOwner;
+                                                        changedPicks++;
+                                                    }
+                                                });
+                                                console.log(`✅ Applied ${changedPicks} individual pick trades to mock draft`);
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.warn('⚠️ Could not load real draft picks for trade mapping:', error);
+                                    }
+                                }
                                 
-                                console.log('✅ Applied real draft order to mock draft');
+                                console.log('✅ Applied real draft order and traded picks to mock draft');
                                 console.log('🔍 Updated mock draft order:', response.draft_order);
+                                console.log('🔍 Updated slot to roster mapping:', response.slot_to_roster_id);
                             } else {
                                 console.error('❌ Failed to get real draft data:', realDraftResponse);
                             }
