@@ -2001,7 +2001,7 @@ class DraftHandlers {
                 
                 console.log('✅ Base ownership assigned - now applying trades...');
                 
-                // Apply trades again
+                // Apply trades AFTER all base assignments are complete
                 if (this.state.tradedPicks) {
                     console.log('🔄 Applying traded picks in emergency override...');
                     console.log('🔍 Available traded picks:', this.state.tradedPicks.length);
@@ -3706,6 +3706,10 @@ class DraftHandlers {
             console.log('⚠️ No draft picks or traded picks data available');
             return;
         }
+
+        console.log('🔍 applyTradedPicksToMockDraft called - trades will be handled in emergency override');
+        console.log('🔍 Skipping trade application here to avoid conflicts');
+        return;
 
         console.log('🔄 Applying traded picks to mock draft picks');
         let changedPicks = 0;
