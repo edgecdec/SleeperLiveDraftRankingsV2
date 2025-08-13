@@ -2053,6 +2053,12 @@ class DraftHandlers {
                     console.log('🔄 Applying traded picks in emergency override...');
                     console.log('🔍 Available traded picks:', this.state.tradedPicks.length);
                     
+                    // DEBUG: Show all traded picks to understand the data structure
+                    console.log('🔍 All traded picks data:');
+                    this.state.tradedPicks.forEach((tp, index) => {
+                        console.log(`  ${index + 1}. Season ${tp.season}, Round ${tp.round}, Roster ${tp.roster_id} -> ${tp.owner_id}`);
+                    });
+                    
                     // Wait for roster mapping if it's being fetched
                     const applyTrades = () => {
                         const currentSeason = this.state.currentDraft?.season || '2025';
@@ -2065,15 +2071,12 @@ class DraftHandlers {
                             const originalOwner = pick.roster_id;
                             
                             // Find if this pick was traded
-                            // User (edgecdec) is Roster 9, draft position 3
-                            // Traded picks use actual roster_id (1-10)
-                            let rosterIdInTrades;
-                            if (originalOwner === 3) {
-                                rosterIdInTrades = 9; // edgecdec is Roster 9
-                            } else {
-                                // For other positions, we need the correct roster mapping
-                                // This is a simplified mapping - may need full roster order
-                                rosterIdInTrades = originalOwner;
+                            // Convert draft position to roster ID using slot_to_roster_id mapping
+                            const rosterIdInTrades = this.state.currentDraft.slot_to_roster_id[originalOwner];
+                            
+                            if (!rosterIdInTrades) {
+                                console.warn(`⚠️ Pick ${pickNumber}: No roster found for draft position ${originalOwner}`);
+                                return;
                             }
                             
                             const trade = this.state.tradedPicks.find(tp => 
