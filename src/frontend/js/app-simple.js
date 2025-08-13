@@ -133,21 +133,22 @@ class SimpleApp {
             return;
         }
         
-        // Check for user-based mock draft URLs: /sleeper/user/{username}/league/{league_id}/draft/mock/{mock_draft_id}
-        const userMockDraftMatch = path.match(/^\/sleeper\/user\/([^\/]+)\/league\/([^\/]+)\/draft\/mock\/([^\/]+)$/);
+        // Check for user-based mock draft URLs: /sleeper/user/{username}/league/{league_id}/draft/{draft_id}/mock/{mock_draft_id}
+        const userMockDraftMatch = path.match(/^\/sleeper\/user\/([^\/]+)\/league\/([^\/]+)\/draft\/([^\/]+)\/mock\/([^\/]+)$/);
         if (userMockDraftMatch) {
             const username = userMockDraftMatch[1];
             const leagueId = userMockDraftMatch[2];
-            const mockDraftId = userMockDraftMatch[3];
+            const draftId = userMockDraftMatch[3];
+            const mockDraftId = userMockDraftMatch[4];
             
-            console.log('🎭 Found user-based mock draft URL:', { username, leagueId, mockDraftId });
+            console.log('🎭 Found user-based mock draft URL:', { username, leagueId, draftId, mockDraftId });
             
             // Mark as attempted
             this.autoLoadAttempted = true;
             
             // Load user data first, then navigate to mock draft
             console.log('🔄 Loading user data before mock draft navigation');
-            await this.loadUserThenMockDraft(username, leagueId, mockDraftId);
+            await this.loadUserThenMockDraft(username, leagueId, draftId, mockDraftId);
             return;
         }
         
@@ -250,8 +251,8 @@ class SimpleApp {
     /**
      * Load user data first, then navigate to mock draft
      */
-    async loadUserThenMockDraft(username, leagueId, mockDraftId) {
-        console.log('🔄 Loading user data then navigating to mock draft:', { username, leagueId, mockDraftId });
+    async loadUserThenMockDraft(username, leagueId, draftId, mockDraftId) {
+        console.log('🔄 Loading user data then navigating to mock draft:', { username, leagueId, draftId, mockDraftId });
         
         try {
             // Load user data first
@@ -261,12 +262,13 @@ class SimpleApp {
             this.state.isMockDraft = true;
             
             // Navigate to mock draft with league context
-            console.log('🚀 Loading mock draft with league context:', { username, leagueId, mockDraftId });
+            console.log('🚀 Loading mock draft with league context:', { username, leagueId, draftId, mockDraftId });
             console.log('🔍 Draft handlers available:', !!this.draftHandlers);
             console.log('🔍 About to call handleDraftSelected');
             
             const result = this.draftHandlers.handleDraftSelected({
-                draft_id: mockDraftId,
+                draft_id: draftId,
+                mock_draft_id: mockDraftId,
                 isMockDraft: true,
                 leagueId: leagueId
             });
@@ -281,7 +283,8 @@ class SimpleApp {
             // Don't fallback to landing page for mock drafts - try to load anyway
             this.state.isMockDraft = true;
             this.draftHandlers.handleDraftSelected({
-                draft_id: mockDraftId,
+                draft_id: draftId,
+                mock_draft_id: mockDraftId,
                 isMockDraft: true,
                 leagueId: leagueId
             });
