@@ -2036,21 +2036,27 @@ class DraftHandlers {
                         const originalOwner = pick.roster_id;
                         
                         // Find if this pick was traded
-                        const trade = this.state.tradedPicks.find(tp => 
-                            tp.season === currentSeason && 
-                            tp.round === round && 
-                            tp.roster_id === originalOwner
-                        );
+                        // NOTE: traded picks use roster list index (0-9), draft order uses positions (1-10)
+                        // Need to convert between the two systems
+                        const trade = this.state.tradedPicks.find(tp => {
+                            // Convert draft position to roster list index for comparison
+                            const draftPositionToIndex = originalOwner - 1; // Convert 1-10 to 0-9
+                            return tp.season === currentSeason && 
+                                   tp.round === round && 
+                                   tp.roster_id === draftPositionToIndex;
+                        });
                         
-                        if (trade && trade.owner_id !== originalOwner) {
-                            const newOwnerUserId = this.getRosterOwnerUserId(trade.owner_id);
+                        if (trade && trade.owner_id !== draftPositionToIndex) {
+                            // Convert roster list index back to draft position for user lookup
+                            const newOwnerDraftPosition = trade.owner_id + 1; // Convert 0-9 to 1-10
+                            const newOwnerUserId = this.getRosterOwnerUserId(newOwnerDraftPosition);
                             if (newOwnerUserId) {
-                                console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, ${originalOwner} -> ${trade.owner_id}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
+                                console.log(`🔄 TRADE Pick ${pickNumber}: Round ${round}, ${originalOwner} -> ${newOwnerDraftPosition}, User: ${pick.picked_by} -> ${newOwnerUserId}`);
                                 pick.picked_by = newOwnerUserId;
-                                pick.roster_id = trade.owner_id;
+                                pick.roster_id = newOwnerDraftPosition;
                                 tradesApplied++;
                             } else {
-                                console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for new owner ${trade.owner_id}`);
+                                console.warn(`⚠️ TRADE Pick ${pickNumber}: Could not find user for new owner ${newOwnerDraftPosition}`);
                             }
                         }
                     });
