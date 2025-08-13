@@ -2065,6 +2065,9 @@ class DraftHandlers {
                         const numTeams = 10;
                         let tradesApplied = 0;
                         
+                        // Track which trades have been applied to avoid duplicates
+                        const appliedTrades = new Set();
+                        
                         this.state.draftPicks.forEach((pick, index) => {
                             const pickNumber = index + 1;
                             const round = Math.ceil(pickNumber / numTeams);
@@ -2086,6 +2089,15 @@ class DraftHandlers {
                             );
                             
                             if (trade && trade.owner_id !== rosterIdInTrades) {
+                                // Create unique key for this trade to avoid applying it multiple times
+                                const tradeKey = `${trade.season}-${trade.round}-${trade.roster_id}-${trade.owner_id}`;
+                                
+                                if (appliedTrades.has(tradeKey)) {
+                                    console.log(`🔄 SKIP Pick ${pickNumber}: Trade already applied for ${tradeKey}`);
+                                    return; // Skip this trade, already applied
+                                }
+                                
+                                appliedTrades.add(tradeKey);
                                 // Use slot_to_roster_id mapping to find the correct user
                                 // Find which draft position owns the new roster
                                 let newOwnerDraftPosition = null;
