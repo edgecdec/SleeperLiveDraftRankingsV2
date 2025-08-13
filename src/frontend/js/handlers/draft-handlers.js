@@ -3733,16 +3733,22 @@ class DraftHandlers {
      */
     getRosterOwnerUserId(rosterId) {
         if (!this.state.currentDraft?.draft_order) {
+            console.error('❌ getRosterOwnerUserId: No draft_order available');
             return null;
         }
         
+        console.log(`🔍 getRosterOwnerUserId(${rosterId}): Searching in draft_order:`, this.state.currentDraft.draft_order);
+        
         // draft_order maps user_id -> roster_id, we need the reverse
         for (const [userId, userRosterId] of Object.entries(this.state.currentDraft.draft_order)) {
-            if (userRosterId === rosterId) {
+            console.log(`🔍 Checking: userId=${userId} has rosterId=${userRosterId}, looking for ${rosterId}`);
+            if (parseInt(userRosterId) === parseInt(rosterId)) {
+                console.log(`✅ Found match: rosterId ${rosterId} belongs to userId ${userId}`);
                 return userId;
             }
         }
         
+        console.error(`❌ getRosterOwnerUserId: No user found for rosterId ${rosterId}`);
         return null;
     }
 }
