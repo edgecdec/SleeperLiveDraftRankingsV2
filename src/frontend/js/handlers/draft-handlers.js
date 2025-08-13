@@ -1765,7 +1765,22 @@ class DraftHandlers {
             }
             
             // Calculate team values for each user
-            for (const userId of userIds) {
+            // Use the same roster-to-user mapping as trades
+            const rosterToUser = {
+                1: "499393148506599424",  // AggressiveIyAvg
+                2: "587948115202449408",  // pullmanguy  
+                3: "727725654417719296",  // spencedaddy11
+                4: "727725864363581440",  // cemisme
+                5: "727732656132943872",  // TheSebasDog
+                6: "727738754193776640",  // cdalton3
+                7: "727760561156239360",  // Junebugge
+                8: "587043546847019008",  // egruis
+                9: "587035242359988224",  // edgecdec (YOU)
+                10: "728762621490229248"  // kermason
+            };
+            
+            // Calculate team values using roster-based approach
+            for (const [rosterId, userId] of Object.entries(rosterToUser)) {
                 const userPicks = this.state.draftPicks.filter(p => p.picked_by === userId);
                 let totalValue = 0;
                 
@@ -1781,6 +1796,7 @@ class DraftHandlers {
                 
                 teams.push({
                     userId: userId,
+                    rosterId: parseInt(rosterId),
                     displayName: displayName,
                     teamName: displayName,
                     value: totalValue,
