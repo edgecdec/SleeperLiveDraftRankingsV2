@@ -1972,7 +1972,7 @@ class DraftHandlers {
                         console.log(`🔍 Emergency Pick ${pickNumber}: slot_to_roster_id[${pickNumber}] = ${slotOwner}`);
                     } else {
                         // For picks 11+, calculate based on snake draft pattern
-                        const numTeams = Object.keys(this.state.currentDraft.draft_order).length;
+                        const numTeams = Object.keys(this.state.realDraftOrder || this.state.currentDraft.draft_order).length;
                         const round = Math.ceil(pickNumber / numTeams);
                         const positionInRound = ((pickNumber - 1) % numTeams) + 1;
                         
@@ -1980,7 +1980,7 @@ class DraftHandlers {
                         const draftPosition = (round % 2 === 1) ? positionInRound : (numTeams - positionInRound + 1);
                         slotOwner = this.state.currentDraft.slot_to_roster_id[draftPosition];
                         
-                        console.log(`🔍 Emergency Pick ${pickNumber}: Round ${round}, Position ${positionInRound}, Draft Position ${draftPosition} = Roster ${slotOwner}`);
+                        console.log(`🔍 Emergency Pick ${pickNumber}: Round ${round}, Position ${positionInRound}, Draft Position ${draftPosition}, NumTeams ${numTeams} = Roster ${slotOwner}`);
                     }
                     
                     if (slotOwner) {
