@@ -110,23 +110,33 @@ def check_and_update_rankings() -> bool:
         
         needs_update = True
         newest_file_time = None
+        existing_files = 0
         
         for filename in ranking_files:
             filepath = os.path.join(data_dir, filename)
             if os.path.exists(filepath):
+                existing_files += 1
                 file_time = datetime.fromtimestamp(os.path.getmtime(filepath))
                 if newest_file_time is None or file_time > newest_file_time:
                     newest_file_time = file_time
+        
+        print(f"📊 Found {existing_files} existing ranking files")
         
         if newest_file_time:
             age = datetime.now() - newest_file_time
             needs_update = age > timedelta(hours=6)
             print(f"📅 Rankings age: {age}, needs update: {needs_update}")
         else:
-            print("📅 No existing rankings found, will update")
+            print("📅 No existing rankings found, will try to update")
         
-        if needs_update:
-            print("🔄 Updating rankings synchronously on startup...")
+        # If we have existing files that are recent enough, use them
+        if existing_files > 0 and not needs_update:
+            print("✅ Rankings are current")
+            return True
+        
+        # Try to update rankings if needed
+        if needs_update or existing_files == 0:
+            print("🔄 Attempting to update rankings...")
             
             # Try to import and use RankingsManager
             try:
@@ -136,14 +146,19 @@ def check_and_update_rankings() -> bool:
                     print("✅ Rankings updated successfully")
                     return True
                 else:
-                    print("⚠️ Rankings update failed, will use fallback")
-                    return False
+                    print("⚠️ Rankings update failed")
             except Exception as e:
                 print(f"⚠️ Could not use RankingsManager: {e}")
+            
+            # If update failed but we have existing files, use them
+            if existing_files > 0:
+                print("✅ Using existing ranking files as fallback")
+                return True
+            else:
+                print("⚠️ No rankings available, will use mock data")
                 return False
-        else:
-            print("✅ Rankings are current")
-            return True
+        
+        return True
             
     except Exception as e:
         print(f"❌ Error checking rankings: {e}")
