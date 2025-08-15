@@ -43,8 +43,19 @@ class DraftHandlers {
      * Apply emergency pick override to fix mock draft ownership
      */
     applyEmergencyPickOverride() {
-        // Only apply for mock drafts
-        if (!this.state.isMockDraft || !this.state.currentDraft?.slot_to_roster_id || !this.state.draftPicks) {
+        // Only apply for mock drafts - use URL as primary check
+        const isMockFromUrl = window.location.pathname.includes('/mock/');
+        
+        if (!isMockFromUrl) {
+            console.log('🚑 EMERGENCY OVERRIDE SKIPPED - Not a mock draft URL:', window.location.pathname);
+            return;
+        }
+        
+        if (!this.state.currentDraft?.slot_to_roster_id || !this.state.draftPicks) {
+            console.log('🚑 EMERGENCY OVERRIDE SKIPPED - Missing data:', {
+                hasSlotMapping: !!this.state.currentDraft?.slot_to_roster_id,
+                hasDraftPicks: !!this.state.draftPicks
+            });
             return;
         }
         
@@ -825,9 +836,9 @@ class DraftHandlers {
                     // Apply emergency override immediately after loading picks
                     this.applyEmergencyPickOverride();
                     
-                    // Override picked_by for all picks based on real draft order
-                    if (this.state.currentDraft?.slot_to_roster_id) {
-                        console.log('🔄 Overriding picked_by for all picks based on real draft order');
+                    // Override picked_by for all picks based on real draft order (MOCK DRAFTS ONLY)
+                    if (this.state.currentDraft?.slot_to_roster_id && window.location.pathname.includes('/mock/')) {
+                        console.log('🎭 Mock draft: Overriding picked_by for all picks based on real draft order');
                         console.log('🔍 slot_to_roster_id:', this.state.currentDraft.slot_to_roster_id);
                         console.log('🔍 draft_order:', this.state.currentDraft.draft_order);
                         
@@ -1045,9 +1056,9 @@ class DraftHandlers {
                 if (picks.length > 0) {
                     console.log('🔍 Sample Sleeper pick:', picks[0]);
                     
-                    // Override picked_by for all picks based on real draft order
-                    if (this.state.currentDraft?.slot_to_roster_id) {
-                        console.log('🔄 Overriding picked_by for all picks based on real draft order');
+                    // Override picked_by for all picks based on real draft order (MOCK DRAFTS ONLY)
+                    if (this.state.currentDraft?.slot_to_roster_id && window.location.pathname.includes('/mock/')) {
+                        console.log('🎭 Mock draft: Overriding picked_by for all picks based on real draft order');
                         picks.forEach((pick, index) => {
                             const pickNumber = index + 1;
                             const slotOwner = this.state.currentDraft.slot_to_roster_id[pickNumber];
@@ -1866,7 +1877,17 @@ class DraftHandlers {
                 });
             }
             
-            console.log('🔍 Found', userIds.size, 'unique users from draft picks');
+            // For regular drafts, also try to get users from league data if available
+            if (!this.state.isMockDraft && this.state.currentLeague?.users) {
+                console.log('🔍 Adding league users to ensure all participants are included');
+                this.state.currentLeague.users.forEach(user => {
+                    if (user.user_id) {
+                        userIds.add(user.user_id);
+                    }
+                });
+            }
+            
+            console.log('🔍 Found', userIds.size, 'unique users from draft picks + league');
             console.log('🔍 User IDs:', Array.from(userIds));
             
             if (userIds.size === 0) {
@@ -3577,6 +3598,11 @@ class DraftHandlers {
             // Get all draft participants (for mock drafts, use draft picks to identify users)
             let allUsers = [];
             
+            console.log('🔍 DEBUG: Available data:');
+            console.log('  - currentDraft:', this.state.currentDraft);
+            console.log('  - draftPicks length:', this.state.draftPicks?.length);
+            console.log('  - currentLeague:', this.state.currentLeague);
+            
             if (this.state.isMockDraft) {
                 // For mock drafts, get unique users from draft picks
                 const uniqueUsers = new Set();
@@ -3616,9 +3642,58 @@ class DraftHandlers {
                     console.log('🔍 DEBUG Mock Draft - Unique users found:', Array.from(uniqueUsers));
                 }
             } else {
-                // For real drafts, use league users
-                allUsers = this.state.currentLeague?.users || [];
-                console.log('🏆 Real draft users from league:', allUsers);
+                // For regular drafts, get all league users directly
+                console.log('🏆 Regular draft - fetching all league users...');
+                
+                try {
+                    const username = window.app?.state?.currentUser?.username || 
+                                   this.landingHandlers?.state?.currentUser?.username;
+                    const leagueId = this.state.currentLeague?.league_id;
+                    
+                    if (username && leagueId) {
+                        const usersResponse = await this.apiService.getLeagueUsers(username, leagueId);
+                        
+                        if (usersResponse.status === 'success' && usersResponse.users) {
+                            allUsers = usersResponse.users.map(user => ({
+                                user_id: user.user_id,
+                                display_name: user.display_name || user.username || `Team ${user.user_id.slice(-4)}`
+                            }));
+                            console.log('🏆 Loaded', allUsers.length, 'league users with names');
+                        } else {
+                            console.warn('⚠️ League users API failed, falling back to draft picks');
+                            // Fallback to draft picks method
+                            const uniqueUsers = new Set();
+                            if (this.state.draftPicks) {
+                                this.state.draftPicks.forEach(pick => {
+                                    if (pick.picked_by) {
+                                        uniqueUsers.add(pick.picked_by);
+                                    }
+                                });
+                            }
+                            allUsers = Array.from(uniqueUsers).map(userId => ({
+                                user_id: userId,
+                                display_name: `Team ${userId.slice(-4)}`
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error fetching league users:', error);
+                    // Fallback to draft picks method
+                    const uniqueUsers = new Set();
+                    if (this.state.draftPicks) {
+                        this.state.draftPicks.forEach(pick => {
+                            if (pick.picked_by) {
+                                uniqueUsers.add(pick.picked_by);
+                            }
+                        });
+                    }
+                    allUsers = Array.from(uniqueUsers).map(userId => ({
+                        user_id: userId,
+                        display_name: `Team ${userId.slice(-4)}`
+                    }));
+                }
+                
+                console.log('🏆 Final league users:', allUsers);
             }
             
             if (allUsers.length === 0) {
@@ -3629,9 +3704,18 @@ class DraftHandlers {
             
             // Calculate team values for all users
             const teamValues = [];
+            
+            console.log('🔍 DEBUG: User ID matching:');
+            console.log('  - Draft picks user IDs:', [...new Set(this.state.draftPicks?.map(p => p.picked_by) || [])]);
+            console.log('  - League users IDs:', allUsers.map(u => u.user_id));
+            
             for (const user of allUsers) {
                 const userId = user.user_id;
+                const userPicks = this.state.draftPicks?.filter(p => p.picked_by === userId) || [];
+                console.log(`🔍 User ${user.display_name} (${userId}): ${userPicks.length} picks`);
+                
                 const teamValue = await this.calculateTeamValue(userId);
+                console.log(`💰 Team value for ${user.display_name} (${userId}): ${teamValue}`);
                 teamValues.push({
                     userId,
                     displayName: user.display_name || `Team ${userId.slice(-4)}`,
