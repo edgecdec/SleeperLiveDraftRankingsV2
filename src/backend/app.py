@@ -72,6 +72,84 @@ def get_static_path() -> str:
         return os.path.join(os.path.dirname(__file__), '..', 'frontend')
 
 
+def get_data_directory() -> str:
+    """
+    Get the data directory path, handling both development and PyInstaller builds.
+    
+    Returns:
+        Absolute path to the data directory
+    """
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller executable - data is in temporary directory
+        return os.path.join(sys._MEIPASS, 'data')
+    else:
+        # Development mode - data is in project root
+        return os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+
+
+def check_and_update_rankings() -> bool:
+    """
+    Check if rankings are stale (>6 hours) and update them synchronously.
+    
+    Returns:
+        True if rankings were updated or are current, False if update failed
+    """
+    try:
+        from datetime import datetime, timedelta
+        import os
+        
+        data_dir = get_data_directory()
+        print(f"📊 Checking rankings in: {data_dir}")
+        
+        # Check if any ranking files exist and their age
+        ranking_files = [
+            'FantasyPros_Rankings_half_ppr_standard.csv',
+            'FantasyPros_Rankings_ppr_standard.csv',
+            'FantasyPros_Rankings_standard_standard.csv'
+        ]
+        
+        needs_update = True
+        newest_file_time = None
+        
+        for filename in ranking_files:
+            filepath = os.path.join(data_dir, filename)
+            if os.path.exists(filepath):
+                file_time = datetime.fromtimestamp(os.path.getmtime(filepath))
+                if newest_file_time is None or file_time > newest_file_time:
+                    newest_file_time = file_time
+        
+        if newest_file_time:
+            age = datetime.now() - newest_file_time
+            needs_update = age > timedelta(hours=6)
+            print(f"📅 Rankings age: {age}, needs update: {needs_update}")
+        else:
+            print("📅 No existing rankings found, will update")
+        
+        if needs_update:
+            print("🔄 Updating rankings synchronously on startup...")
+            
+            # Try to import and use RankingsManager
+            try:
+                from .rankings.RankingsManager import rankings_manager
+                success = rankings_manager.update_all_rankings(background=False)
+                if success:
+                    print("✅ Rankings updated successfully")
+                    return True
+                else:
+                    print("⚠️ Rankings update failed, will use fallback")
+                    return False
+            except Exception as e:
+                print(f"⚠️ Could not use RankingsManager: {e}")
+                return False
+        else:
+            print("✅ Rankings are current")
+            return True
+            
+    except Exception as e:
+        print(f"❌ Error checking rankings: {e}")
+        return False
+
+
 def get_base_path() -> str:
     """
     Get the base path for the application (for data files).
@@ -108,6 +186,14 @@ def create_app(debug: bool = False) -> Flask:
     # Initialize paths for data files
     base_path = get_base_path()
     init_paths(base_path)
+    
+    # Check and update rankings if needed (synchronous on startup)
+    print("🏈 Checking rankings on startup...")
+    rankings_updated = check_and_update_rankings()
+    if rankings_updated:
+        print("✅ Rankings are ready")
+    else:
+        print("⚠️ Rankings update failed, will use fallback data")
     
     # Initialize rankings manager (optional)
     if RANKINGS_AVAILABLE:

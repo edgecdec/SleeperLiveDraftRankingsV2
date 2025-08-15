@@ -39,6 +39,17 @@ def find_column_match(headers, target_names):
     
     return None
 
+def get_data_directory():
+    """Get data directory path for both development and PyInstaller builds"""
+    import sys
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller executable
+        return os.path.join(sys._MEIPASS, 'data')
+    else:
+        # Development mode
+        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        return os.path.join(current_dir, 'data')
+
 def load_ranking_from_csv(ranking_id):
     """Load ranking data directly from CSV file as fallback or generate mock data"""
     try:
@@ -48,8 +59,7 @@ def load_ranking_from_csv(ranking_id):
             return generate_mock_player_data(ranking_id)
         
         # Get the data directory path
-        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        data_dir = os.path.join(current_dir, 'data')
+        data_dir = get_data_directory()
         
         # Construct the CSV filename
         csv_filename = f"{ranking_id}.csv"
@@ -185,9 +195,7 @@ def create_fallback_rankings():
     
     try:
         # Look for existing Fantasy Pros files in the data directory
-        # Get the data directory path
-        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        data_dir = os.path.join(current_dir, 'data')
+        data_dir = get_data_directory()
         
         if os.path.exists(data_dir):
             for filename in os.listdir(data_dir):
