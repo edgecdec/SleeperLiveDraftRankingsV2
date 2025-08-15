@@ -3709,6 +3709,12 @@ class DraftHandlers {
             console.log('  - Draft picks user IDs:', [...new Set(this.state.draftPicks?.map(p => p.picked_by) || [])]);
             console.log('  - League users IDs:', allUsers.map(u => u.user_id));
             
+            // DEBUG: Show first few picks with their picked_by values
+            console.log('🔍 First 5 draft picks with picked_by:');
+            (this.state.draftPicks || []).slice(0, 5).forEach(pick => {
+                console.log(`  Pick ${pick.pick_no}: Player ${pick.player_id}, picked_by: "${pick.picked_by}", should be for user in your mapping`);
+            });
+            
             for (const user of allUsers) {
                 const userId = user.user_id;
                 const userPicks = this.state.draftPicks?.filter(p => p.picked_by === userId) || [];
