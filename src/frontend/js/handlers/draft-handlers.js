@@ -1890,43 +1890,69 @@ class DraftHandlers {
             }
             
             // Calculate team values for each user
-            // Use the same roster-to-user mapping as trades
-            const rosterToUser = {
-                1: "499393148506599424",  // AggressiveIyAvg
-                2: "587948115202449408",  // pullmanguy  
-                3: "727725654417719296",  // spencedaddy11
-                4: "727725864363581440",  // cemisme
-                5: "727732656132943872",  // TheSebasDog
-                6: "727738754193776640",  // cdalton3
-                7: "727760561156239360",  // Junebugge
-                8: "587043546847019008",  // egruis
-                9: "587035242359988224",  // edgecdec (YOU)
-                10: "728762621490229248"  // kermason
-            };
-            
-            // Calculate team values using roster-based approach
-            for (const [rosterId, userId] of Object.entries(rosterToUser)) {
-                const userPicks = this.state.draftPicks.filter(p => p.picked_by === userId);
-                let totalValue = 0;
+            if (this.state.isMockDraft) {
+                // For mock drafts, use the same roster-to-user mapping as trades
+                const rosterToUser = {
+                    1: "499393148506599424",  // AggressiveIyAvg
+                    2: "587948115202449408",  // pullmanguy  
+                    3: "727725654417719296",  // spencedaddy11
+                    4: "727725864363581440",  // cemisme
+                    5: "727732656132943872",  // TheSebasDog
+                    6: "727738754193776640",  // cdalton3
+                    7: "727760561156239360",  // Junebugge
+                    8: "587043546847019008",  // egruis
+                    9: "587035242359988224",  // edgecdec (YOU)
+                    10: "728762621490229248"  // kermason
+                };
                 
-                // Calculate total value from draft picks
-                userPicks.forEach(pick => {
-                    const player = this.createPlayerFromSleeperId(pick.player_id);
-                    if (player) {
-                        totalValue += Math.max(0, player.value || 0);
-                    }
-                });
-                
-                const displayName = userNameMap[userId] || `Team ${userId}`;
-                
-                teams.push({
-                    userId: userId,
-                    rosterId: parseInt(rosterId),
-                    displayName: displayName,
-                    teamName: displayName,
-                    value: totalValue,
-                    pickCount: userPicks.length
-                });
+                // Calculate team values using roster-based approach for mock drafts
+                for (const [rosterId, userId] of Object.entries(rosterToUser)) {
+                    const userPicks = this.state.draftPicks.filter(p => p.picked_by === userId);
+                    let totalValue = 0;
+                    
+                    // Calculate total value from draft picks
+                    userPicks.forEach(pick => {
+                        const player = this.createPlayerFromSleeperId(pick.player_id);
+                        if (player) {
+                            totalValue += Math.max(0, player.value || 0);
+                        }
+                    });
+                    
+                    const displayName = userNameMap[userId] || `Team ${userId}`;
+                    
+                    teams.push({
+                        userId: userId,
+                        rosterId: parseInt(rosterId),
+                        displayName: displayName,
+                        teamName: displayName,
+                        value: totalValue,
+                        pickCount: userPicks.length
+                    });
+                }
+            } else {
+                // For regular drafts, use the actual picked_by values from draft picks
+                for (const userId of userIds) {
+                    const userPicks = this.state.draftPicks.filter(p => p.picked_by === userId);
+                    let totalValue = 0;
+                    
+                    // Calculate total value from draft picks
+                    userPicks.forEach(pick => {
+                        const player = this.createPlayerFromSleeperId(pick.player_id);
+                        if (player) {
+                            totalValue += Math.max(0, player.value || 0);
+                        }
+                    });
+                    
+                    const displayName = userNameMap[userId] || `Team ${userId}`;
+                    
+                    teams.push({
+                        userId: userId,
+                        displayName: displayName,
+                        teamName: displayName,
+                        value: totalValue,
+                        pickCount: userPicks.length
+                    });
+                }
             }
             
             // Sort by value (highest first)
