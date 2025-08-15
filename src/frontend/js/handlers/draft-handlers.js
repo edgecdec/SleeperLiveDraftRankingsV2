@@ -1852,6 +1852,12 @@ class DraftHandlers {
             
             // Get unique users from draft picks
             const userIds = new Set();
+            
+            console.log('🔍 DEBUG Team Values:');
+            console.log('  - isMockDraft:', this.state.isMockDraft);
+            console.log('  - draftPicks length:', this.state.draftPicks?.length || 0);
+            console.log('  - Sample pick:', this.state.draftPicks?.[0]);
+            
             if (this.state.draftPicks) {
                 this.state.draftPicks.forEach(pick => {
                     if (pick.picked_by) {
@@ -1860,7 +1866,8 @@ class DraftHandlers {
                 });
             }
             
-            console.log('🏆 Found', userIds.size, 'unique users from draft picks');
+            console.log('🔍 Found', userIds.size, 'unique users from draft picks');
+            console.log('🔍 User IDs:', Array.from(userIds));
             
             if (userIds.size === 0) {
                 leaderboardList.innerHTML = '<div style="padding: 1rem; text-align: center;">No teams found</div>';
