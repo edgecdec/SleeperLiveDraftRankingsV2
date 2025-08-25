@@ -224,6 +224,7 @@
                                 <sl-icon name="arrow-clockwise" class="refresh-icon"></sl-icon>
                                 <span id="auto-refresh-text">30s</span>
                             </div>
+                            <sl-icon-button id="settings-btn" name="gear" label="Auto-Refresh Settings" title="Configure auto-refresh settings"></sl-icon-button>
                         </div>
                         <div class="draft-controls">
                             <button id="toggle-roster-btn" class="roster-toggle-btn">
@@ -312,6 +313,92 @@
         </div>
     </div>
 
+    <!-- Settings Dialog -->
+    <sl-dialog id="settings-dialog" label="Auto-Refresh Settings" class="settings-dialog">
+        <div class="settings-form">
+            <div class="form-group">
+                <div class="form-group-header">
+                    <sl-icon name="arrow-clockwise"></sl-icon>
+                    <label>Enable Auto-Refresh</label>
+                </div>
+                <sl-switch id="auto-refresh-toggle" checked>Auto-refresh draft data</sl-switch>
+                <small>Automatically update draft picks and player availability</small>
+            </div>
+            
+            <div class="form-group">
+                <div class="form-group-header">
+                    <sl-icon name="clock"></sl-icon>
+                    <label for="refresh-interval-slider">Refresh Interval</label>
+                </div>
+                <div class="interval-slider-container">
+                    <sl-range id="refresh-interval-slider" 
+                             min="10" 
+                             max="300" 
+                             step="5" 
+                             value="30" 
+                             label="Refresh Interval"
+                             help-text="How often to check for updates">
+                    </sl-range>
+                    <div class="interval-display">
+                        <span id="interval-value-display">Normal (30s)</span>
+                    </div>
+                </div>
+                <div class="interval-presets">
+                    <button type="button" class="preset-btn" data-value="10">Very Fast</button>
+                    <button type="button" class="preset-btn" data-value="15">Fast</button>
+                    <button type="button" class="preset-btn active" data-value="30">Normal</button>
+                    <button type="button" class="preset-btn" data-value="60">Slow</button>
+                    <button type="button" class="preset-btn" data-value="120">Very Slow</button>
+                    <button type="button" class="preset-btn" data-value="300">Minimal</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="form-group-header">
+                    <sl-icon name="play-circle"></sl-icon>
+                    <label>Mock Draft Settings</label>
+                </div>
+                <sl-switch id="separate-mock-interval" checked>Use different interval for mock drafts</sl-switch>
+                <div id="mock-interval-container" class="mock-interval-settings">
+                    <sl-range id="mock-refresh-interval-slider" 
+                             min="10" 
+                             max="300" 
+                             step="5" 
+                             value="60" 
+                             label="Mock Draft Interval"
+                             help-text="Interval for mock drafts (typically slower)">
+                    </sl-range>
+                    <div class="interval-display">
+                        <span id="mock-interval-value-display">Slow (60s)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group preview-group">
+                <div class="form-group-header">
+                    <sl-icon name="eye"></sl-icon>
+                    <label>Preview</label>
+                </div>
+                <div class="settings-preview">
+                    <div class="preview-item">
+                        <span class="preview-label">Live Drafts:</span>
+                        <span id="live-preview">Updates every 30 seconds</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Mock Drafts:</span>
+                        <span id="mock-preview">Updates every 60 seconds</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div slot="footer">
+            <sl-button variant="default" id="reset-settings">Reset to Defaults</sl-button>
+            <sl-button variant="default" id="cancel-settings">Cancel</sl-button>
+            <sl-button variant="primary" id="save-settings">Save Changes</sl-button>
+        </div>
+    </sl-dialog>
+
     <!-- File Upload Dialog -->
     <sl-dialog id="upload-dialog" label="Upload Custom Rankings">
         <div class="upload-form">
@@ -367,6 +454,7 @@
     <!-- Then load other scripts -->
     <script src="/js/api-service.js"></script>
     <script src="/js/services/rankings-service.js"></script>
+    <script src="/js/utils/settings-manager.js"></script>
     <script src="/js/handlers/navigation-handlers.js"></script>
     <script src="/js/handlers/landing-handlers.js"></script>
     <script src="/js/handlers/draft-handlers.js"></script>

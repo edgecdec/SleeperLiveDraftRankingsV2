@@ -1396,3 +1396,324 @@ input[type="file"]:focus {
         font-size: 0.875rem;
     }
 }
+
+/* ==================== SETTINGS STYLES ==================== */
+
+/* Settings Button */
+#settings-btn {
+    margin-left: 0.5rem;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+#settings-btn:hover {
+    color: #374151;
+    transform: scale(1.1);
+}
+
+#settings-btn:active {
+    transform: scale(0.95);
+}
+
+/* Settings Dialog */
+.settings-dialog {
+    --width: 500px;
+    --header-spacing: var(--sl-spacing-large);
+}
+
+.settings-dialog sl-dialog::part(panel) {
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.settings-dialog sl-dialog::part(header) {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1.5rem;
+}
+
+.settings-dialog sl-dialog::part(title) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.settings-dialog sl-dialog::part(body) {
+    padding: 0;
+}
+
+.settings-dialog sl-dialog::part(footer) {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Settings Form */
+.settings-form {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-group-header sl-icon {
+    color: #3b82f6;
+    font-size: 1.125rem;
+}
+
+.form-group-header label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.form-group small {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin-top: -0.5rem;
+}
+
+/* Switch Styling */
+.form-group sl-switch {
+    margin: 0.25rem 0;
+}
+
+/* Interval Slider Container */
+.interval-slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.interval-display {
+    text-align: center;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1.125rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Interval Presets */
+.interval-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.preset-btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.preset-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    transform: translateY(-1px);
+}
+
+.preset-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.preset-btn:active {
+    transform: translateY(0);
+}
+
+/* Mock Draft Settings */
+.mock-interval-settings {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #fef7ff;
+    border: 1px solid #e9d5ff;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.mock-interval-settings.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Settings Preview */
+.preview-group {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.settings-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0f2fe;
+}
+
+.preview-label {
+    font-weight: 500;
+    color: #0f172a;
+}
+
+.preview-item span:last-child {
+    font-weight: 600;
+    color: #0369a1;
+    background: #e0f2fe;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+/* Footer Buttons */
+#reset-settings {
+    margin-right: auto;
+}
+
+#save-settings {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+
+#save-settings:hover {
+    background: #16a34a;
+    border-color: #16a34a;
+}
+
+/* Loading State */
+.settings-form.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.settings-form.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e2e8f0;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive Design for Settings */
+@media (max-width: 640px) {
+    .settings-dialog {
+        --width: 95vw;
+    }
+    
+    .settings-form {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+    
+    .interval-presets {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .preview-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .settings-dialog sl-dialog::part(footer) {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+    
+    .settings-dialog sl-dialog::part(footer) sl-button {
+        width: 100%;
+    }
+    
+    #reset-settings {
+        margin-right: 0;
+        order: 3;
+    }
+}
+
+/* Animation for settings changes */
+@keyframes settings-saved {
+    0% { background: #dcfce7; }
+    100% { background: transparent; }
+}
+
+.settings-saved {
+    animation: settings-saved 1.5s ease-out;
+}
+
+/* Enhanced Auto-Refresh Indicator when Settings Active */
+#auto-refresh-indicator.settings-active {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e40af;
+}
+
+#auto-refresh-indicator.settings-active .refresh-icon {
+    color: #3b82f6;
+}
+
+/* Settings Button Badge */
+#settings-btn::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#settings-btn.has-custom-settings::after {
+    opacity: 1;
+}

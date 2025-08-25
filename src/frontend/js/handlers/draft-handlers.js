@@ -12,6 +12,9 @@ class DraftHandlers {
         // Initialize rankings service
         this.rankingsService = new RankingsService();
         
+        // Initialize settings manager
+        this.settingsManager = new SettingsManager();
+        
         // State
         this.state = {
             currentDraft: null,
@@ -27,11 +30,14 @@ class DraftHandlers {
             currentRankings: null
         };
         
-        // Auto-refresh settings
+        // Auto-refresh settings (will be overridden by settings manager)
         this.autoRefreshInterval = null;
         this.countdownInterval = null;
         this.autoRefreshEnabled = true;
-        this.refreshIntervalMs = 30000; // 30 seconds
+        this.refreshIntervalMs = 30000; // 30 seconds (default, will be updated by settings)
+        
+        // Load settings and apply them
+        this.loadAndApplySettings();
         
         // Setup event listeners
         this.setupEventListeners();
@@ -290,6 +296,17 @@ class DraftHandlers {
                 this.triggerManualRefresh();
             });
         }
+        
+        // Settings button click
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                this.showSettingsModal();
+            });
+        }
+        
+        // Settings modal handlers
+        this.setupSettingsModalHandlers();
         
         // Listen for draft selection events
         document.addEventListener('draftSelected', (event) => {
@@ -3503,8 +3520,8 @@ class DraftHandlers {
         // Clear any existing interval
         this.stopAutoRefresh();
         
-        // Less aggressive refresh for mock drafts
-        const refreshInterval = this.state.isMockDraft ? 60000 : this.refreshIntervalMs; // 60s for mock, 30s for real
+        // Get configurable refresh interval from settings
+        const refreshInterval = this.getCurrentRefreshInterval();
         this.currentRefreshInterval = refreshInterval; // Store for countdown
         
         console.log(`🔄 Starting auto-refresh every ${refreshInterval / 1000} seconds${this.state.isMockDraft ? ' (Mock Draft Mode)' : ''}`);
@@ -3530,6 +3547,554 @@ class DraftHandlers {
         }, refreshInterval);
     }
     
+    // ==================== SETTINGS METHODS ====================
+    
+    /**
+     * Load and apply settings from SettingsManager
+     */
+    loadAndApplySettings() {
+        try {
+            console.log('⚙️ Loading settings...');
+            
+            // Load settings from SettingsManager
+            const settings = this.settingsManager.loadSettings();
+            
+            // Apply auto-refresh settings
+            this.autoRefreshEnabled = settings.autoRefresh.enabled;
+            this.refreshIntervalMs = settings.autoRefresh.interval;
+            
+            // Update button indicator if custom settings are used
+            this.updateSettingsButtonIndicator(settings);
+            
+            console.log('✅ Settings loaded and applied:', {
+                enabled: this.autoRefreshEnabled,
+                interval: this.refreshIntervalMs,
+                mockInterval: settings.autoRefresh.mockDraftInterval
+            });
+            
+        } catch (error) {
+            console.error('❌ Error loading settings:', error);
+            // Use defaults if settings fail to load
+            this.autoRefreshEnabled = true;
+            this.refreshIntervalMs = 30000;
+        }
+    }
+    
+    /**
+     * Show settings modal
+     */
+    showSettingsModal() {
+        const dialog = document.getElementById('settings-dialog');
+        if (!dialog) {
+            console.error('❌ Settings dialog not found');
+            return;
+        }
+        
+        console.log('⚙️ Opening settings modal');
+        
+        // Load current settings into modal
+        this.populateSettingsModal();
+        
+        // Show modal
+        dialog.show();
+    }
+    
+    /**
+     * Setup settings modal event handlers
+     */
+    setupSettingsModalHandlers() {
+        console.log('⚙️ Setting up settings modal handlers...');
+        
+        // Auto-refresh toggle
+        const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+        if (autoRefreshToggle) {
+            autoRefreshToggle.addEventListener('sl-change', (event) => {
+                this.handleAutoRefreshToggle(event.target.checked);
+            });
+        }
+        
+        // Refresh interval slider
+        const intervalSlider = document.getElementById('refresh-interval-slider');
+        if (intervalSlider) {
+            intervalSlider.addEventListener('sl-input', (event) => {
+                this.handleIntervalSliderChange(event.target.value, false);
+            });
+        }
+        
+        // Mock draft interval toggle
+        const separateMockToggle = document.getElementById('separate-mock-interval');
+        if (separateMockToggle) {
+            separateMockToggle.addEventListener('sl-change', (event) => {
+                this.handleSeparateMockToggle(event.target.checked);
+            });
+        }
+        
+        // Mock interval slider
+        const mockIntervalSlider = document.getElementById('mock-refresh-interval-slider');
+        if (mockIntervalSlider) {
+            mockIntervalSlider.addEventListener('sl-input', (event) => {
+                this.handleIntervalSliderChange(event.target.value, true);
+            });
+        }
+        
+        // Preset buttons
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        presetButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const value = parseInt(event.target.dataset.value);
+                this.handlePresetSelection(value);
+            });
+        });
+        
+        // Modal action buttons
+        const saveBtn = document.getElementById('save-settings');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                this.saveSettings();
+            });
+        }
+        
+        const cancelBtn = document.getElementById('cancel-settings');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                this.cancelSettings();
+            });
+        }
+        
+        const resetBtn = document.getElementById('reset-settings');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.resetSettings();
+            });
+        }
+        
+        console.log('✅ Settings modal handlers setup complete');
+    }
+    
+    /**
+     * Populate settings modal with current values
+     */
+    populateSettingsModal() {
+        try {
+            console.log('⚙️ Populating settings modal...');
+            
+            const settings = this.settingsManager.loadSettings();
+            
+            // Auto-refresh toggle
+            const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+            if (autoRefreshToggle) {
+                autoRefreshToggle.checked = settings.autoRefresh.enabled;
+            }
+            
+            // Refresh interval slider (convert ms to seconds)
+            const intervalSlider = document.getElementById('refresh-interval-slider');
+            if (intervalSlider) {
+                const seconds = settings.autoRefresh.interval / 1000;
+                intervalSlider.value = seconds;
+                this.updateIntervalDisplay(seconds, false);
+            }
+            
+            // Separate mock interval toggle
+            const separateMockToggle = document.getElementById('separate-mock-interval');
+            if (separateMockToggle) {
+                separateMockToggle.checked = settings.autoRefresh.mockDraftInterval !== settings.autoRefresh.interval;
+            }
+            
+            // Mock interval slider
+            const mockIntervalSlider = document.getElementById('mock-refresh-interval-slider');
+            if (mockIntervalSlider) {
+                const mockSeconds = settings.autoRefresh.mockDraftInterval / 1000;
+                mockIntervalSlider.value = mockSeconds;
+                this.updateIntervalDisplay(mockSeconds, true);
+            }
+            
+            // Update preset buttons
+            this.updatePresetButtons(settings.autoRefresh.interval / 1000);
+            
+            // Update preview
+            this.updateSettingsPreview(settings);
+            
+            // Update mock interval container visibility
+            this.updateMockIntervalVisibility(separateMockToggle?.checked || false);
+            
+            console.log('✅ Settings modal populated');
+            
+        } catch (error) {
+            console.error('❌ Error populating settings modal:', error);
+        }
+    }
+    
+    /**
+     * Handle auto-refresh toggle change
+     */
+    handleAutoRefreshToggle(enabled) {
+        console.log('⚙️ Auto-refresh toggle changed:', enabled);
+        
+        // Update preview
+        this.updatePreviewFromModal();
+        
+        // Update form state
+        const settingsForm = document.querySelector('.settings-form');
+        if (settingsForm) {
+            settingsForm.classList.toggle('disabled', !enabled);
+        }
+    }
+    
+    /**
+     * Handle interval slider changes
+     */
+    handleIntervalSliderChange(value, isMockDraft = false) {
+        const seconds = parseInt(value);
+        console.log('⚙️ Interval slider changed:', seconds, isMockDraft ? '(mock)' : '(live)');
+        
+        // Update display
+        this.updateIntervalDisplay(seconds, isMockDraft);
+        
+        // Update preset buttons if this is the main slider
+        if (!isMockDraft) {
+            this.updatePresetButtons(seconds);
+        }
+        
+        // Update preview
+        this.updatePreviewFromModal();
+    }
+    
+    /**
+     * Handle separate mock toggle
+     */
+    handleSeparateMockToggle(enabled) {
+        console.log('⚙️ Separate mock toggle changed:', enabled);
+        
+        // Update mock interval container visibility
+        this.updateMockIntervalVisibility(enabled);
+        
+        // Update preview
+        this.updatePreviewFromModal();
+    }
+    
+    /**
+     * Handle preset button selection
+     */
+    handlePresetSelection(seconds) {
+        console.log('⚙️ Preset selected:', seconds);
+        
+        // Update slider
+        const intervalSlider = document.getElementById('refresh-interval-slider');
+        if (intervalSlider) {
+            intervalSlider.value = seconds;
+            this.updateIntervalDisplay(seconds, false);
+        }
+        
+        // Update preset buttons
+        this.updatePresetButtons(seconds);
+        
+        // Update preview
+        this.updatePreviewFromModal();
+    }
+    
+    /**
+     * Update interval display text
+     */
+    updateIntervalDisplay(seconds, isMockDraft = false) {
+        const targetId = isMockDraft ? 'mock-interval-value-display' : 'interval-value-display';
+        const displayElement = document.getElementById(targetId);
+        
+        if (displayElement) {
+            const option = this.settingsManager.getIntervalOption(seconds * 1000);
+            const label = option ? option.label : `${seconds}s`;
+            displayElement.textContent = label;
+        }
+    }
+    
+    /**
+     * Update preset buttons active state
+     */
+    updatePresetButtons(seconds) {
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        presetButtons.forEach(button => {
+            const buttonValue = parseInt(button.dataset.value);
+            button.classList.toggle('active', buttonValue === seconds);
+        });
+    }
+    
+    /**
+     * Update mock interval container visibility
+     */
+    updateMockIntervalVisibility(visible) {
+        const container = document.getElementById('mock-interval-container');
+        if (container) {
+            container.classList.toggle('disabled', !visible);
+            container.style.display = visible ? 'block' : 'none';
+        }
+    }
+    
+    /**
+     * Update settings preview
+     */
+    updateSettingsPreview(settings = null) {
+        if (!settings) {
+            this.updatePreviewFromModal();
+            return;
+        }
+        
+        const livePreview = document.getElementById('live-preview');
+        const mockPreview = document.getElementById('mock-preview');
+        
+        if (livePreview) {
+            const liveInterval = this.settingsManager.formatInterval(settings.autoRefresh.interval);
+            livePreview.textContent = settings.autoRefresh.enabled ? 
+                `Updates every ${liveInterval.toLowerCase()}` : 
+                'Auto-refresh disabled';
+        }
+        
+        if (mockPreview) {
+            const mockInterval = this.settingsManager.formatInterval(settings.autoRefresh.mockDraftInterval);
+            mockPreview.textContent = settings.autoRefresh.enabled ? 
+                `Updates every ${mockInterval.toLowerCase()}` : 
+                'Auto-refresh disabled';
+        }
+    }
+    
+    /**
+     * Update preview from current modal values
+     */
+    updatePreviewFromModal() {
+        try {
+            const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+            const intervalSlider = document.getElementById('refresh-interval-slider');
+            const separateMockToggle = document.getElementById('separate-mock-interval');
+            const mockIntervalSlider = document.getElementById('mock-refresh-interval-slider');
+            
+            const enabled = autoRefreshToggle?.checked || false;
+            const liveSeconds = parseInt(intervalSlider?.value || 30);
+            const useSeparateMock = separateMockToggle?.checked || false;
+            const mockSeconds = useSeparateMock ? 
+                parseInt(mockIntervalSlider?.value || 60) : 
+                liveSeconds;
+            
+            const liveInterval = this.settingsManager.formatInterval(liveSeconds * 1000);
+            const mockInterval = this.settingsManager.formatInterval(mockSeconds * 1000);
+            
+            const livePreview = document.getElementById('live-preview');
+            const mockPreview = document.getElementById('mock-preview');
+            
+            if (livePreview) {
+                livePreview.textContent = enabled ? 
+                    `Updates every ${liveInterval.toLowerCase()}` : 
+                    'Auto-refresh disabled';
+            }
+            
+            if (mockPreview) {
+                mockPreview.textContent = enabled ? 
+                    `Updates every ${mockInterval.toLowerCase()}` : 
+                    'Auto-refresh disabled';
+            }
+            
+        } catch (error) {
+            console.error('❌ Error updating preview from modal:', error);
+        }
+    }
+    
+    /**
+     * Save settings
+     */
+    saveSettings() {
+        try {
+            console.log('⚙️ Saving settings...');
+            
+            // Get values from modal
+            const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
+            const intervalSlider = document.getElementById('refresh-interval-slider');
+            const separateMockToggle = document.getElementById('separate-mock-interval');
+            const mockIntervalSlider = document.getElementById('mock-refresh-interval-slider');
+            
+            const enabled = autoRefreshToggle?.checked || false;
+            const liveInterval = parseInt(intervalSlider?.value || 30) * 1000; // Convert to ms
+            const useSeparateMock = separateMockToggle?.checked || false;
+            const mockInterval = useSeparateMock ? 
+                parseInt(mockIntervalSlider?.value || 60) * 1000 : 
+                liveInterval;
+            
+            // Create settings object
+            const settings = {
+                autoRefresh: {
+                    enabled: enabled,
+                    interval: liveInterval,
+                    mockDraftInterval: mockInterval,
+                    lastUpdated: new Date().toISOString()
+                },
+                version: '1.0'
+            };
+            
+            // Validate and save
+            const success = this.settingsManager.saveSettings(settings);
+            
+            if (success) {
+                // Apply new settings
+                this.autoRefreshEnabled = enabled;
+                this.refreshIntervalMs = liveInterval;
+                
+                // Update button indicator
+                this.updateSettingsButtonIndicator(settings);
+                
+                // Restart auto-refresh with new settings if currently running
+                if (this.autoRefreshInterval) {
+                    console.log('🔄 Restarting auto-refresh with new settings');
+                    this.stopAutoRefresh();
+                    this.startAutoRefresh();
+                }
+                
+                // Update auto-refresh indicator to show new interval
+                this.updateAutoRefreshIndicator();
+                
+                // Show success feedback
+                this.showSettingsSaveSuccess();
+                
+                // Close modal
+                this.closeSettingsModal();
+                
+                console.log('✅ Settings saved successfully');
+            } else {
+                throw new Error('Failed to save settings');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error saving settings:', error);
+            this.showSettingsError('Failed to save settings: ' + error.message);
+        }
+    }
+    
+    /**
+     * Cancel settings changes
+     */
+    cancelSettings() {
+        console.log('⚙️ Cancelling settings changes');
+        this.closeSettingsModal();
+    }
+    
+    /**
+     * Reset settings to defaults
+     */
+    resetSettings() {
+        console.log('⚙️ Resetting settings to defaults');
+        
+        try {
+            // Reset to defaults
+            const success = this.settingsManager.resetToDefaults();
+            
+            if (success) {
+                // Repopulate modal with defaults
+                this.populateSettingsModal();
+                
+                console.log('✅ Settings reset to defaults');
+            } else {
+                throw new Error('Failed to reset settings');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error resetting settings:', error);
+            this.showSettingsError('Failed to reset settings: ' + error.message);
+        }
+    }
+    
+    /**
+     * Close settings modal
+     */
+    closeSettingsModal() {
+        const dialog = document.getElementById('settings-dialog');
+        if (dialog) {
+            dialog.hide();
+        }
+    }
+    
+    /**
+     * Update settings button indicator
+     */
+    updateSettingsButtonIndicator(settings) {
+        const settingsBtn = document.getElementById('settings-btn');
+        if (!settingsBtn) return;
+        
+        const defaults = this.settingsManager.getDefaults();
+        const hasCustomSettings = 
+            settings.autoRefresh.enabled !== defaults.autoRefresh.enabled ||
+            settings.autoRefresh.interval !== defaults.autoRefresh.interval ||
+            settings.autoRefresh.mockDraftInterval !== defaults.autoRefresh.mockDraftInterval;
+        
+        settingsBtn.classList.toggle('has-custom-settings', hasCustomSettings);
+    }
+    
+    /**
+     * Update auto-refresh indicator to show current settings
+     */
+    updateAutoRefreshIndicator() {
+        const autoRefreshIndicator = document.getElementById('auto-refresh-indicator');
+        if (!autoRefreshIndicator) return;
+        
+        const settings = this.settingsManager.loadSettings();
+        const currentInterval = this.state.isMockDraft ? 
+            settings.autoRefresh.mockDraftInterval : 
+            settings.autoRefresh.interval;
+        
+        // Add visual indicator for custom settings
+        const isCustom = currentInterval !== (this.state.isMockDraft ? 60000 : 30000);
+        autoRefreshIndicator.classList.toggle('settings-active', isCustom);
+    }
+    
+    /**
+     * Show settings save success feedback
+     */
+    showSettingsSaveSuccess() {
+        const settingsForm = document.querySelector('.settings-form');
+        if (settingsForm) {
+            settingsForm.classList.add('settings-saved');
+            setTimeout(() => {
+                settingsForm.classList.remove('settings-saved');
+            }, 1500);
+        }
+    }
+    
+    /**
+     * Show settings error message
+     */
+    showSettingsError(message) {
+        // You could integrate with your existing error display system here
+        console.error('⚙️ Settings error:', message);
+        alert('Settings Error: ' + message); // Fallback - replace with your UI error system
+    }
+    
+    /**
+     * Get current refresh interval based on draft type and settings
+     */
+    getCurrentRefreshInterval() {
+        const settings = this.settingsManager.loadSettings();
+        return this.state.isMockDraft ? 
+            settings.autoRefresh.mockDraftInterval : 
+            settings.autoRefresh.interval;
+    }
+    
+    /**
+     * Check if user has custom settings (non-default)
+     */
+    hasCustomSettings(settings) {
+        const defaults = this.settingsManager.getDefaults();
+        
+        // Check if auto-refresh is disabled
+        if (!settings.autoRefresh.enabled) {
+            return true;
+        }
+        
+        // Check if intervals differ from defaults
+        if (settings.autoRefresh.interval !== defaults.autoRefresh.interval) {
+            return true;
+        }
+        
+        if (settings.autoRefresh.mockDraftInterval !== defaults.autoRefresh.mockDraftInterval) {
+            return true;
+        }
+        
+        return false;
+    }
+    
     /**
      * Start countdown display
      */
@@ -3544,7 +4109,18 @@ class DraftHandlers {
         
         if (refreshText) {
             const updateCountdown = () => {
-                refreshText.textContent = `Auto-refresh: ${secondsLeft}s`;
+                // Get current settings to show status
+                const settings = this.settingsManager.loadSettings();
+                const isCustomSettings = this.hasCustomSettings(settings);
+                const intervalText = this.settingsManager.formatInterval(this.currentRefreshInterval || this.refreshIntervalMs);
+                
+                // Add settings indicator if custom settings are used
+                const settingsIndicator = isCustomSettings ? ' ⚙️' : '';
+                const draftModeText = this.state.isMockDraft ? ' (Mock)' : '';
+                
+                refreshText.textContent = `Auto-refresh: ${secondsLeft}s${settingsIndicator}${draftModeText}`;
+                refreshText.title = `Interval: ${intervalText}${isCustomSettings ? ' (Custom Settings)' : ' (Default)'}${draftModeText}`;
+                
                 secondsLeft--;
                 
                 if (secondsLeft < 0) {
